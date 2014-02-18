@@ -16,6 +16,14 @@ public class NamedPointCutASTNode extends PointCutASTNode{
 	private static final long serialVersionUID = 1L;
 
 	public static final String NODE_TYPE = NamedPointCutASTNode.class.getSimpleName();
+
+    /**
+     * this constructor is needed to support duplicate
+     * @param self this object
+     */
+    public NamedPointCutASTNode(PointCutASTNode self) {
+        super(self);
+    }
 	
 	public NamedPointCutASTNode(ScannerInfo scannerInfo) {
 		super(AopASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, NamedPointCutASTNode.NODE_TYPE, null, scannerInfo);
