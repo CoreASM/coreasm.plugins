@@ -13,11 +13,11 @@ aspect ParserTest {
 	
 	rule asd = skip
 
-	pointcut call_Test_1(rname, p1, p2) : call("RuleName.*" as rname, "par1" as p1, string_in_x as p2)
+	pointcut call_Test_1(rname, p1, p2) : call("RuleName.*" as rname, "par1" as p1, string_in_x as p2) and call("DifferentRule.*")
 	
 	pointcut call_Test_2 : call("RuleName.*", "par1", string_in_x)
 	
-	pointcut call_Test_3(rname) : call("RuleName.*" as rname, "par1", string_in_x)
+	pointcut call_Test_3(rname) : call("RuleName.*" as rname, "par1", string_in_x) by agent with result
 	
 	advice adviceName(rname) before  : call_Test_3(rname) {
 		print "Hallo"

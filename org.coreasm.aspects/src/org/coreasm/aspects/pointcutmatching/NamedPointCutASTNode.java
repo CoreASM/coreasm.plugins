@@ -22,17 +22,30 @@ public class NamedPointCutASTNode extends PointCutASTNode{
 
 	}
 
+    public PointCutASTNode getPointCutASTNode(){
+        for(ASTNode node: this.getAbstractChildNodes() )
+            if ( node instanceof  BinOrASTNode)
+                return (BinOrASTNode)node;
+        return null;
+    }
+
 	@Override
 	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+        for(ASTNode node: this.getAbstractChildNodes() )
+            if ( node instanceof  BinOrASTNode) {
+                return ((BinOrASTNode) node).matches(compareToNode);
+            }
+        return null;
+
 	}
 
 	@Override
 	public String generateExpressionString() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        for(ASTNode node: this.getAbstractChildNodes() )
+            if ( node instanceof  BinOrASTNode)
+                return ((BinOrASTNode) node).generateExpressionString();
+        return null;
+    }
 
 
 }

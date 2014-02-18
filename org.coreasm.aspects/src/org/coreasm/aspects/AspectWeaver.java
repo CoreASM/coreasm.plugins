@@ -103,8 +103,8 @@ public class AspectWeaver {
 			astNodes = AspectTools.collectASTNodesByGrammar(rootnode);
 
 			//searching for errors of proceed nodes
-			if ( astNodes.get("AdviceASTNode") != null ) /** \todo modularity plugin nicht zum reinen Parsen verfügbar */
-			for (ASTNode node : astNodes.get("AdviceASTNode"))
+			if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) /** \todo modularity plugin nicht zum reinen Parsen verfügbar */
+			for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
 				if(node instanceof AdviceASTNode)
 				{
 					LinkedList<ProceedASTNode> pn = (LinkedList<ProceedASTNode>) AspectTools.getChildrenOfType(node, ProceedASTNode.class);

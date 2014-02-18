@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.coreasm.aspects.AopASMPlugin;
 import org.coreasm.aspects.AspectTools;
+import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.PointCutASTNode.PointCutMatchingResult;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -111,9 +112,11 @@ public class AdviceASTNode extends ASTNode {
 	
 	private PointCutASTNode getPointCut(ASTNode currentNode){
 		for (ASTNode child : currentNode.getAbstractChildNodes()) {
-			if (child instanceof PointCutASTNode)
+			if (child instanceof NamedPointCutASTNode)
+                return ((NamedPointCutASTNode)child).getPointCutASTNode();
+            else if (child instanceof PointCutASTNode)
 				return (PointCutASTNode)child;
-		}
+        }
 		return null;
 	}
 

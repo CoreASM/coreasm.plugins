@@ -142,7 +142,7 @@ public class AopASMPlugin extends Plugin
 	private static final String KW_CFLOWBELOW = "cflowbelow";
 	private static final String KW_CFLOWTOP = "cflowtop";
 	private static final String KW_BY = "by";
-	private static final String KW_WITHOUT = "without";
+	public static final String KW_WITHOUT = "without";
 	private static final String KW_AS ="as";
 	private static final String KW_POINTCUT = "pointcut";
 	//private static final String KW_PROCEED = "proceed";
@@ -298,26 +298,26 @@ public class AopASMPlugin extends Plugin
 					pTools.getOprParser(":"),
 					refBinOrParser.lazy()
 				).map(
-						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-							@Override
-							public Node map(Object[] from) {
-								NamedPointCutASTNode node = new NamedPointCutASTNode(
-										// get scanner info from first
-										// element of the complex node call
-										((Node) from[0]).getScannerInfo());
-								// ((Node) ((Object[]) from[0])[0])
-								// .getScannerInfo());
-								addChildren(node, from);
-								return node;
-							}
+                        new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+                            @Override
+                            public Node map(Object[] from) {
+                                NamedPointCutASTNode node = new NamedPointCutASTNode(
+                                        // get scanner info from first
+                                        // element of the complex node call
+                                        ((Node) from[0]).getScannerInfo());
+                                // ((Node) ((Object[]) from[0])[0])
+                                // .getScannerInfo());
+                                addChildren(node, from);
+                                return node;
+                            }
 
-							public void addChild(Node parent, Node child) {
-								if (child instanceof ASTNode)
-									parent.addChild("lambda", child);
-								else
-									parent.addChild(child);
-							}
-						});
+                            public void addChild(Node parent, Node child) {
+                                if (child instanceof ASTNode)
+                                    parent.addChild("lambda", child);
+                                else
+                                    parent.addChild(child);
+                            }
+                        });
 			
 			/** Parser for call expression
 			 * The parser should accept names of agents which execute a call (maybe fuzzy by including *- and _-operators),
@@ -469,7 +469,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow expression */
 			Parser<Node> cFlowParser = // cflow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOW, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
+					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -493,7 +493,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow below expression */
 			Parser<Node> cFlowBelowParser = // cflowbelow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWBELOW, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
+					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -519,7 +519,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow top expression */
 			Parser<Node> cFlowTopParser = // cflowtop(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWTOP, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
+					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -543,7 +543,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for not expression */
 			Parser<Node> notParser = // not(pointCutParser)
 			Parsers.array(pTools.getKeywParser(OP_NOT, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
+					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -595,7 +595,7 @@ public class AopASMPlugin extends Plugin
 			Parser<Node> pointCutExpressionParser = Parsers.or(
 					Parsers.array(
 							pTools.getOprParser("("),
-							refBinOrParser.lazy(),
+							Parsers.or(refBinOrParser.lazy(), ruleSignature),
 							pTools.getOprParser(")")
 						),
 					Parsers.array(
@@ -634,7 +634,7 @@ public class AopASMPlugin extends Plugin
 					pTools.star(
 							Parsers.array(
 									pTools.getOprParser(OP_AND),
-									refBinAndParser.lazy()
+                                    Parsers.or(refBinAndParser.lazy(), ruleSignature)
 									)
 								)
 					).map(
@@ -666,11 +666,11 @@ public class AopASMPlugin extends Plugin
 
 			//BinOr =  BinAnd ( 'or' BinOr )*
 			Parser<Node> binOrParser = Parsers.array(
-				refBinAndParser.lazy(),
+                    Parsers.or(refBinAndParser.lazy(), ruleSignature),
 				pTools.star(
 						Parsers.array(
 								pTools.getOprParser(OP_OR),
-								refBinOrParser.lazy()
+								Parsers.or(refBinOrParser.lazy(), ruleSignature)
 								)
 							)
 			).map(
@@ -681,7 +681,7 @@ public class AopASMPlugin extends Plugin
 									// get scanner info from first
 									// element of the complex node call
 									((Node)from[0]).getScannerInfo());
-							addChildren(node, from);
+                            addChildren(node, from);
 							return node;
 						}
 
@@ -702,7 +702,7 @@ public class AopASMPlugin extends Plugin
 
 			//PointCut =  BinOr
 			Parser<Node> pointCutParser =
-					binOrParser;
+					Parsers.or(binOrParser, ruleSignature);
 			refPointCutParser.set(pointCutParser);
 			parsers.put(
 					"PointCut",
@@ -758,7 +758,7 @@ public class AopASMPlugin extends Plugin
 			Parser<Node> adviceBlockParser = Parsers.array(
 					pTools.getKeywParser(KW_ADVICE, PLUGIN_NAME),
 					ruleSignature, locatorParser, pTools.getOprParser(OP_COLON),
-					Parsers.or(pointCutParser, ruleSignature), blockRuleParser).map(
+					pointCutParser, blockRuleParser).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
