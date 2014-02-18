@@ -21,7 +21,7 @@ public class NamedPointCutASTNode extends PointCutASTNode{
      * this constructor is needed to support duplicate
      * @param self this object
      */
-    public NamedPointCutASTNode(PointCutASTNode self) {
+    public NamedPointCutASTNode(NamedPointCutASTNode self) {
         super(self);
     }
 	
