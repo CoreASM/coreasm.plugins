@@ -1,0 +1,9 @@
+bin/
+target/
+doxygen/
+.DS_Store
+.project
+.classpath
+.settings
+*.iml
+*.class
