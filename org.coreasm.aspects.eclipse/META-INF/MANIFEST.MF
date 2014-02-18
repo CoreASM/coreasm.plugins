@@ -2,20 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CoreASM AopASM Eclipse Plugin
 Bundle-SymbolicName: org.coreasm.aspects.eclipse;singleton:=true
-Bundle-Version: 1.7.0.qualifier
+Bundle-Version: 1.7.1.qualifier
 Bundle-Vendor: coreasm.org
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.debug.ui,
- org.eclipse.jface.text,
- org.eclipse.ui.console,
+ org.coreasm.eclipse,
  org.eclipse.ui.editors,
+ org.eclipse.core.resources,
  org.eclipse.ui.ide
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Bundle-ActivationPolicy: lazy
-Import-Package: org.eclipse.ui.dialogs,
- org.eclipse.ui.views.contentoutline
-Bundle-ClassPath: .,
- target/lib/org.coreasm.engine.jar,
- target/lib/org.coreasm.aspects.jar,
- target/lib/org.coreasm.eclipse.jar
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.coreasm.util,
+ org.coreasm.util.odf,
+ org.coreasm.util.information,
+ org.coreasm.eclipse.util
