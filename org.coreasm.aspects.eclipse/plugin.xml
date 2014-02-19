@@ -2,15 +2,16 @@
 <?eclipse version="3.4"?>
 <plugin>
 	<extension
-         id="org.coreasm.aspects.eclipse.marker.PointCutMarker"
-         name="PointCut Marker"
+         id="org.coreasm.aspects.eclipse.marker.PointCutMatchMarker"
+         name="PointCutMatch Marker"
          point="org.eclipse.core.resources.markers">
       <super
-            type="org.eclipse.core.resources.marker">
+            type="org.eclipse.core.resources.textmarker">
       </super>
       <persistent
             value="true">
       </persistent>
+      <attribute name="name" />
    </extension>
    <extension
          id="org.coreasm.aspects.eclipse.StartUp"
@@ -19,5 +20,33 @@
          <startup
             class="org.coreasm.aspects.eclipse.StartUp">
          </startup>
+   </extension>
+   <extension point="org.eclipse.ui.editors.annotationTypes">
+        <type markerSeverity="0"
+            super="org.eclipse.ui.workbench.texteditor.info"
+            name="org.coreasm.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+            markerType="org.coreasm.aspects.eclipse.marker.PointCutMatchMarker"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification"
+         id="org.coreasm.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+         name="PointCutMatch Marker Annotation">
+         <specification annotationType="org.coreasm.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+         	label="PointCut Match"
+         	icon="icons/pointcutmatchmarker.gif"
+			overviewRulerPreferenceKey="clruler"
+			overviewRulerPreferenceValue="true"
+			colorPreferenceKey="clcolor"
+			colorPreferenceValue="0,0,255"
+			textPreferenceKey="cltext"
+			textPreferenceValue="true"
+			verticalRulerPreferenceKey="clvertical"
+			verticalRulerPreferenceValue="true"
+			textStylePreferenceKey="clstyle"
+			textStylePreferenceValue="BOX">
+		</specification>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
    </extension>
 </plugin>

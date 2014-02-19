@@ -4,6 +4,7 @@ Bundle-Name: CoreASM AopASM Eclipse Plugin
 Bundle-SymbolicName: org.coreasm.aspects.eclipse;singleton:=true
 Bundle-Version: 1.7.1.qualifier
 Bundle-Vendor: coreasm.org
+Bundle-ClassPath: ., target/lib/org.coreasm.aspects.jar
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.coreasm.eclipse,

@@ -1,11 +1,18 @@
 package org.coreasm.aspects.eclipse;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.eclipse.util.Utilities;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
-import org.coreasm.util.information.InformationObject.VerbosityLevel;
 import org.coreasm.util.information.InformationObserver;
+import org.eclipse.ui.texteditor.MarkerUtilities;
 
 public class AopASMEclipsePlugin implements InformationObserver {
+	
+	public static final String MARKER_TYPE_POINTCUT_MATCH = "org.coreasm.aspects.eclipse.marker.PointCutMatchMarker";
 
 	public AopASMEclipsePlugin() {
 		InformationDispatcher.addObserver(this);
@@ -13,56 +20,34 @@ public class AopASMEclipsePlugin implements InformationObserver {
 
 	@Override
 	public void informationCreated(InformationObject information) {
-		if ( information.getVerbosity() == VerbosityLevel.ERROR )
-			System.err.println(information.toString());
-		else if( information.getVerbosity() == VerbosityLevel.INFO )
-			System.out.println("AopBla:" + information.getMessage());
-		else
+		switch (information.getVerbosity()) {
+		case ERROR:
+			System.err.println("AopASMEclipsePlugin:" + information);
+			break;
+		case INFO:
+			System.out.println("AopASMEclipsePlugin:" + information.getMessage());
+			break;
+		case COMMUNICATION:
+			if (AopASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+//				if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage())) {
+					Map<String, String> data = information.getData();
+					HashMap<String, Object> attributes = new HashMap<String, Object>();
+					attributes.put("name", data.get("name"));
+					MarkerUtilities.setMessage(attributes, "PointCut Match for " + data.get("name"));
+					Utilities.createMarker(MARKER_TYPE_POINTCUT_MATCH, data.get("file"), Integer.parseInt(data.get("line")), Integer.parseInt(data.get("column")), Integer.parseInt(data.get("length")), attributes);
+//				}
+			}
+			break;
+		default:
 			System.out.println("AopASMEclipsePlugin:" + information);
-	}
-
-	private void createMarker(final InformationObject information){
-//		Display.getDefault().asyncExec(new Runnable() {
-//
-//			@Override
-//			public void run() {
-//				IWorkbenchWindow window = PlatformUI.getWorkbench()
-//						.getActiveWorkbenchWindow();
-//				if (window.getActivePage().getActiveEditor() instanceof ASMEditor)
-//					editor = (ASMEditor) window.getActivePage()
-//							.getActiveEditor();
-//
-//				AspectASTNode astnode = null;
-//				if ( information.getObjectOfInterest() instanceof AspectASTNode )
-//					astnode = (AspectASTNode)information.getObjectOfInterest();
-//
-//				int line = 0;
-//				try {
-//					line = editor.getInputDocument().getLineOfOffset(astnode.getScannerInfo().charPosition);
-//				} catch (BadLocationException e) {
-//					e.printStackTrace();
-//				}
-//
-//				Map<String, Object> map = new HashMap<String, Object>();
-//				MarkerUtilities.setLineNumber(map, line);
-//				MarkerUtilities.setMessage(map, information.getMessage());
-//				MarkerUtilities.setCharStart(map, astnode.getScannerInfo().charPosition);
-//				MarkerUtilities.setCharEnd(map, astnode.getScannerInfo().charPosition + 6);
-//				map.put(IMarker.LOCATION, editor.getInputFile().getFullPath().toString());
-//				map.put(IMarker.SEVERITY, IMarker.SEVERITY_WARNING);
-//				map.put("data", astnode);/**TODO serialization for all nodes*/
-//				try {
-//					MarkerUtilities.createMarker(editor.getInputFile(), map, "org.coreasm.aspects.eclipse.AopASMEclipseErrorMarker");
-//				} catch (CoreException e) {
-//					e.printStackTrace();
-//				}
-//			}
-//		});
+		}
 	}
 
 	@Override
-	public void clearInformation() {
-		// TODO Auto-generated method stub
-		System.out.println("AopASMEclipsePlugin:" + "clear Information");
+	public void clearInformation(InformationObject information) {
+		if (AopASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+//			if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage()))
+				Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH);
+		}
 	}
 }
