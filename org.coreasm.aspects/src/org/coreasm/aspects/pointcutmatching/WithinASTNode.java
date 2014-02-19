@@ -8,7 +8,7 @@ import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -39,11 +39,11 @@ public class WithinASTNode extends PointCutASTNode {
 
 
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws MatchingError {
+	public Binding matches(ASTNode compareToNode) throws MatchingError {
 
 		// do not consider macro call rule within advice blocks (first if)
 		if (compareToNode.getParent().getParent() instanceof AdviceASTNode)
-			return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+			return new Binding(compareToNode, this);
 
 		// compareToNode has to be directly defined in a rule
 		// which name matches the pointCutToken
@@ -62,10 +62,10 @@ public class WithinASTNode extends PointCutASTNode {
 		}catch (PatternSyntaxException e){
 			throw new MatchingError(pointCutToken, this, e.getMessage(), e.getCause());
 		}
-		return new PointCutMatchingResult(
-				rulename.matches(pointCutToken),
-				new LinkedList<ArgsASTNode>()
-				);
+        if ( rulename.matches(pointCutToken) )
+            return new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+        else
+            return new Binding(compareToNode, this);
 	}
 
 	@Override

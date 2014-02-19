@@ -9,6 +9,7 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -40,8 +41,8 @@ public class BinAndASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
-		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
+	public Binding matches(ASTNode compareToNode) throws Exception {
+        ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//just one node which must be a ExpressionASTNode according to the grammar;
 		//return the result of the child node.
 		if (children.size()==1 && this.getFirstChild() instanceof ExpressionASTNode)
@@ -51,17 +52,14 @@ public class BinAndASTNode extends PointCutASTNode {
 				this.getFirstChild() instanceof ExpressionASTNode && 
 				this.getSecondChild() instanceof BinAndASTNode)
 			{
-				PointCutMatchingResult firstChildResult, secondChildResult;
+				Binding firstChildResult, secondChildResult, resultingBinding;
 				firstChildResult = this.getFirstChild().matches(compareToNode);
 				secondChildResult = this.getSecondChild().matches(compareToNode);
-				boolean result = (firstChildResult.getBoolean() && secondChildResult.getBoolean());
-				LinkedList<ArgsASTNode> listOfArgs = new LinkedList<ArgsASTNode>();
-				listOfArgs.addAll(firstChildResult.getArgsASTNodes());
-				listOfArgs.addAll(secondChildResult.getArgsASTNodes());
-				return new PointCutMatchingResult(result, listOfArgs);
-			}
-		else
-			return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+                resultingBinding = new Binding(firstChildResult, secondChildResult, this);
+				return resultingBinding;
+            }
+        else
+			return new Binding(compareToNode, this);
 	}
 
 	@Override
@@ -77,6 +75,6 @@ public class BinAndASTNode extends PointCutASTNode {
 				children.get(1) instanceof BinAndASTNode)
 			return ((ExpressionASTNode)children.get(0)).generateExpressionString()+" and "+
 					((BinAndASTNode)children.get(1)).generateExpressionString();
-		else throw new CoreASMError("generation of espression failed", this);
+		else throw new CoreASMError("generation of expression failed", this);
 	}
 }

@@ -9,7 +9,6 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 /**
  * @author Marcel Dausend
@@ -37,13 +36,13 @@ public class ExpressionASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws Exception {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//just one node which must be a BinAndASTNode according to the grammar;
 		//return the result of the child node.
 		if (children.size()==1 && children.get(0) instanceof PointCutASTNode)
 			return ((PointCutASTNode)children.get(0)).matches(compareToNode);
-		else return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+		else return new Binding(compareToNode, this);
 	}
 
 	@Override

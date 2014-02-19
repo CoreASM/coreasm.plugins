@@ -207,14 +207,12 @@ public class AspectWeaver {
 
 					//if there exist matching arg expressions in the pointcut of the advice...
 					/**\note LinkedList<ArgsASTNode> argsList holds the list of valid bindings for the given advice and candidate*/
-					LinkedList<ArgsASTNode> argsList = advice.matches(candidate).getArgsASTNodes();
-					AdviceASTNode boundAdvice;
+					Binding binding = advice.matches(candidate);
+
+                    AdviceASTNode boundAdvice;
 					/** \note Binding binding holds the first binding from the valid bindings, and thereby determines the precedence of bindings in pointcuts from left to right */
-					Binding binding = null;
-					if (! argsList.isEmpty())
-						binding = argsList.getFirst().getBindings(candidate);
-					//...clone the current node and insert the binding depending for the current candidate
-					boundAdvice = advice.cloneWithBinding(binding);
+				    //...clone the current node and insert the binding depending for the current candidate
+				    boundAdvice = advice.cloneWithBinding(binding);
 
 					// create adviceMacroCallRules and add each to its
 					// collection
@@ -683,7 +681,7 @@ public class AspectWeaver {
 						.get(AdviceASTNode.NODE_TYPE)) {
 					// if an advice matches the current astnode
 					// it is added to the hashmap of candidates for weaving
-					if (((AdviceASTNode) advice).matches(macroCall).getBoolean())
+					if (((AdviceASTNode) advice).matches(macroCall).exists())
 						if (weavingCandidates.get(macroCall) == null) {
 							LinkedList<AdviceASTNode> newAdviceList = new LinkedList<AdviceASTNode>();
 							newAdviceList.add((AdviceASTNode) advice);

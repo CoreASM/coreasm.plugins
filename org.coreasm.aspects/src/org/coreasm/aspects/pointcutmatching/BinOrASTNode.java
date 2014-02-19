@@ -4,12 +4,12 @@
 package org.coreasm.aspects.pointcutmatching;
 
 import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 /**
  * @author Marcel Dausend
@@ -36,41 +36,51 @@ public class BinOrASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws Exception {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//just one node which must be a BinAndASTNode according to the grammar;
 		//return the result of the child node.
-		if (children.size()==1 && this.getFirstChild() instanceof BinAndASTNode)
-			return this.getFirstChild().matches(compareToNode);
+		if (children.size()==1 )
+			if ( this.getFirstChild() instanceof BinAndASTNode ) 
+				return this.getFirstChild().matches(compareToNode);
+			else if ( this.getFirstChild().getGrammarRule().equals(AspectTools.RULESIGNATURE) )
+				//exchange with pointcut from namedpointcut
+				return new Binding(compareToNode, this);
+			else //error!!! \todo errorhandling
+				return new Binding(compareToNode, this);
 		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
 		else if (children.size()==2 && 
 				this.getFirstChild() instanceof BinAndASTNode && 
 				this.getSecondChild() instanceof BinOrASTNode)
 			{
-				PointCutMatchingResult firstChildResult, secondChildResult;
-				firstChildResult = this.getFirstChild().matches(compareToNode);
-				secondChildResult = this.getSecondChild().matches(compareToNode);
-				boolean result = (firstChildResult.getBoolean() || secondChildResult.getBoolean());
-				LinkedList<ArgsASTNode> listOfArgs = new LinkedList<ArgsASTNode>();
-				if (firstChildResult.getBoolean()) listOfArgs.addAll(firstChildResult.getArgsASTNodes());
-				if (secondChildResult.getBoolean()) listOfArgs.addAll(secondChildResult.getArgsASTNodes());
-				return new PointCutMatchingResult(result, listOfArgs);
+				Binding firstChildBinding, secondChildBinding;
+				firstChildBinding = this.getFirstChild().matches(compareToNode);
+				secondChildBinding = this.getSecondChild().matches(compareToNode);
+				//compute resulting binding if at least one matching has been succesfull (i.e. a binding exists)
+                Binding resultingBinding = new Binding(firstChildBinding, secondChildBinding, this);
+
+                //todo null check for resulting bindings of children
+				if (firstChildBinding.exists()) resultingBinding = new Binding(compareToNode, this, firstChildBinding.getBinding());
+				else if (secondChildBinding.exists()) resultingBinding = new Binding(compareToNode, this, secondChildBinding.getBinding());
+                else
+                    new Binding(compareToNode, this);
+                return resultingBinding;
 		}
 		else
-			return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+			return new Binding(compareToNode, this);
 	}
 	
 	@Override
 	public String generateExpressionString() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
-		if (children.size()==1 && children.get(0) instanceof BinAndASTNode)
-			return ((BinAndASTNode)children.get(0)).generateExpressionString();
+		if (children.size()==1 && children.get(0) instanceof BinAndASTNode )
+				return ((BinAndASTNode)children.get(0)).generateExpressionString();
 		else if (children.size()==2 && 
 				children.get(0) instanceof BinAndASTNode && 
 				children.get(1) instanceof BinOrASTNode)
-		return ((BinAndASTNode)children.get(0)).generateExpressionString()+" or "+
+			return ((BinAndASTNode)children.get(0)).generateExpressionString()+" or "+
 				((BinOrASTNode)children.get(1)).generateExpressionString();
-		else throw new CoreASMError("generation of espression failed", this);
+		throw new CoreASMError("generation of expression failed", this);
 	}
 
 }

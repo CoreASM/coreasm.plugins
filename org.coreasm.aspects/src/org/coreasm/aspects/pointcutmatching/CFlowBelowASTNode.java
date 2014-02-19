@@ -7,8 +7,6 @@ import org.coreasm.aspects.AopASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
-import java.util.LinkedList;
-
 /**
  * @author Marcel Dausend
  *
@@ -35,8 +33,8 @@ public class CFlowBelowASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) {
-		return new PointCutMatchingResult(true, new LinkedList<ArgsASTNode>());
+	public Binding matches(ASTNode compareToNode) {
+		return new Binding(compareToNode, this);
 	}
 
 	@Override

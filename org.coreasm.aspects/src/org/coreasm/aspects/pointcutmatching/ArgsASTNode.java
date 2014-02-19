@@ -53,7 +53,7 @@ public class ArgsASTNode extends PointCutASTNode {
 	 * (non-Javadoc)
 	 * @see org.coreasm.aspects.pointcutmatching.PointCutASTNode#matches(org.coreasm.engine.interpreter.ASTNode)
 	 */
-	public PointCutMatchingResult matches(ASTNode compareToNode) {		
+	public Binding matches(ASTNode compareToNode) {
 		
 		//create a new instance of an argument binding for this compareToNode
 		parameterBinding = new Binding(compareToNode, this);
@@ -74,20 +74,20 @@ public class ArgsASTNode extends PointCutASTNode {
 					compareChildren.get(i) instanceof FunctionRuleTermNode )
 				{	
 					if(! areASTNodesBindable((FunctionRuleTermNode)children.get(i), (FunctionRuleTermNode)compareChildren.get(i)))
-						return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+						return new Binding(compareToNode, this);
 				}
 				else if(! areASTNodesBindable(children.get(i), compareChildren.get(i)))
-					return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+					return new Binding(compareToNode, this);
 			}
 		else
-			return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+			return new Binding(compareToNode, this);
 		//all params of args match the compareToNode macro call
 		LinkedList<ArgsASTNode> returnList = new LinkedList<ArgsASTNode>();
 		returnList.add(this);
 		{
 			//if the matching is successful, add store binding
 			bindings.put(compareToNode, parameterBinding);
-			return new PointCutMatchingResult(true, returnList);
+			return parameterBinding;
 		}
 	}
 	

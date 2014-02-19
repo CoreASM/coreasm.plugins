@@ -9,7 +9,6 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 /**
  * @author Marcel Dausend
@@ -36,9 +35,9 @@ public class CFlowASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) {
+	public Binding matches(ASTNode compareToNode) {
 		//this concept is always true before execution, because its a runtime concept
-		return new PointCutMatchingResult(true, new LinkedList<ArgsASTNode>());
+		return new Binding(compareToNode, this);
 	}
 
 	@Override

@@ -3,7 +3,7 @@ CoreASM ParserTest
 use Standard
 use AopASM
 
-init Start
+init TestCallPointcut
 
 rule Start = skip
 
@@ -19,8 +19,26 @@ aspect ParserTest {
 	
 	pointcut call_Test_3(rname) : call("RuleName.*" as rname, "par1", string_in_x) by agent with result
 	
-	advice adviceName(rname) before  : call_Test_3(rname) {
+	pointcut call_sdasd : call("as")
+	
+	pointcut call_Test_4 : callsdasd(asd) or call("ass")
+		
+	advice adviceName(rname) before : call_Test_3(rname) and call_Test8as(asd) or asdcas {
+		print "Hallo"
+	}
+	
+	advice Test before : call("MyMacroCallRule" as x) {
 		print "Hallo"
 	}
 
 }
+
+rule test =
+	MyMacroCallRule(asdas)
+	
+
+rule MyMacroCallRule(a) =
+	print a
+
+rule TestCallPointcut =
+	MyMacroCallRule(4)

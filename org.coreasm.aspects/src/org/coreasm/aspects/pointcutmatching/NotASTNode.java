@@ -7,6 +7,8 @@ import org.coreasm.aspects.AopASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
+import java.util.HashMap;
+
 /**
  * @author Marcel Dausend
  *
@@ -37,11 +39,14 @@ public class NotASTNode extends PointCutASTNode {
 	 * @throws Exception 
 	 */
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
-		PointCutMatchingResult result = this.getFirstChild().matches(compareToNode);
+	public Binding matches(ASTNode compareToNode) throws Exception {
+		Binding result = this.getFirstChild().matches(compareToNode);
 		//TODO not for args nodes - what is an inverted return value of args list?!
-		//\attention argslist not yed inverted!!!
-		return new PointCutMatchingResult(! result.getBoolean(), result.getArgsASTNodes());
+		//\attention argslist not yet inverted!!!
+        if (result.getBinding() == null)
+            return new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+        else
+            return  new Binding(compareToNode, this);
 	}
 
 	@Override

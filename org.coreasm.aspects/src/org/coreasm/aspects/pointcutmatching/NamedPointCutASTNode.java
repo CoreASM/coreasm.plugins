@@ -4,56 +4,44 @@
 package org.coreasm.aspects.pointcutmatching;
 
 import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AspectTools;
+import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 /**
  * @author marcel
  *
  */
-public class NamedPointCutASTNode extends PointCutASTNode{
-	
-	private static final long serialVersionUID = 1L;
+public class NamedPointCutASTNode extends PointCutASTNode {
 
 	public static final String NODE_TYPE = NamedPointCutASTNode.class.getSimpleName();
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-    /**
-     * this constructor is needed to support duplicate
-     * @param self this object
-     */
-    public NamedPointCutASTNode(NamedPointCutASTNode self) {
-        super(self);
-    }
-	
-	public NamedPointCutASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, NamedPointCutASTNode.NODE_TYPE, null, scannerInfo);
-
+	/**
+	 * this constructor is needed to support duplicate
+	 * @param self this object
+	 */
+	public NamedPointCutASTNode(NamedPointCutASTNode self){
+		super(self);
 	}
 
-    public PointCutASTNode getPointCutASTNode(){
-        for(ASTNode node: this.getAbstractChildNodes() )
-            if ( node instanceof  BinOrASTNode)
-                return (BinOrASTNode)node;
-        return null;
-    }
+	public NamedPointCutASTNode(ScannerInfo scannerInfo) {
+		super(AopASMPlugin.PLUGIN_NAME, Node.OTHER_NODE, NamedPointCutASTNode.NODE_TYPE, null, scannerInfo);
+	}
 
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
-        for(ASTNode node: this.getAbstractChildNodes() )
-            if ( node instanceof  BinOrASTNode) {
-                return ((BinOrASTNode) node).matches(compareToNode);
-            }
-        return null;
-
+	public Binding matches(ASTNode compareToNode) throws Exception {
+		throw new MatchingError("no pattern for matching", this, "NamedPointcut should not occcur during matching",null);
 	}
 
 	@Override
 	public String generateExpressionString() {
-        for(ASTNode node: this.getAbstractChildNodes() )
-            if ( node instanceof  BinOrASTNode)
-                return ((BinOrASTNode) node).generateExpressionString();
-        return null;
-    }
-
+		return AspectTools.node2String(this);		
+	}
 
 }

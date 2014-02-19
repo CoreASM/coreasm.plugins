@@ -7,7 +7,9 @@ import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
+import org.coreasm.engine.kernel.MacroCallRuleNode;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -44,9 +46,15 @@ public class CallASTNode extends PointCutASTNode {
 	 */
 	/** \TODO init rule is a problem!!! */
 	@Override
-	public PointCutMatchingResult matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws Exception {
+        if ( !(compareToNode instanceof MacroCallRuleNode) )
+            return new Binding(compareToNode, this);
+        //name of the macro call rule node
 		String compareToNodeToken = compareToNode.getFirstASTNode().getFirstASTNode().getToken();
-		String pointCutToken = null;
+
+        String pointCutToken = null;
+		Binding resultingBinding = new Binding(compareToNode, this);
+        // \todo add bindings
 		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
 		for(Node astn : this.getChildNodes()){
 			switch (this.getChildNodes().indexOf(astn)) {
@@ -62,7 +70,7 @@ public class CallASTNode extends PointCutASTNode {
 					//check if the pointcut token is a regular expression
 					if ( Pattern.compile(pointCutToken) != null ){
 						if (!Pattern.matches(pointCutToken, compareToNodeToken))
-							return new PointCutMatchingResult(false, new LinkedList<ArgsASTNode>());
+							return new Binding(compareToNode, this);
 					}
 				}
 				catch (PatternSyntaxException e){
@@ -78,18 +86,13 @@ public class CallASTNode extends PointCutASTNode {
 			case 5: //last check => return result
 				//if the matching was successful, the compareToNode rule definition has to be investigated for return statements depending on the given condition
 				if(astn.getToken().equals(AopASMPlugin.KW_WITHOUT)) //if the token of astn is "without" it has to be checked that no return or result exists in the ruledefinitoin
-					return new PointCutMatchingResult(
-							checkRuleReturn(compareToNodeToken, false, astn.getNextCSTNode()),
-							new LinkedList<ArgsASTNode>()
-							);
+					if ( ! checkRuleReturn(compareToNodeToken, false, astn.getNextCSTNode()))
+                    return new Binding(compareToNode, this);
 				else
-					return new PointCutMatchingResult(
-							checkRuleReturn(compareToNodeToken, true, astn.getNextCSTNode()),
-							new LinkedList<ArgsASTNode>()
-							);
+					return resultingBinding;
 				}
 		}
-		return new PointCutMatchingResult(true, new LinkedList<ArgsASTNode>());
+		return resultingBinding;
 	}
 
 	/**

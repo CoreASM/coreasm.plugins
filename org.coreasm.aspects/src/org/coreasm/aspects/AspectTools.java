@@ -2,6 +2,7 @@ package org.coreasm.aspects;
 
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
+import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMIssue;
@@ -31,6 +32,8 @@ import java.util.regex.Pattern;
  */
 public class AspectTools {
 
+	public final static String RULESIGNATURE = "RuleSignature"; //from SignaturPlugin
+	
 	/* ControlAPI used to reproduce text or dot output from a given AST*/
 	private static ControlAPI capi = null;
 
@@ -66,7 +69,7 @@ public class AspectTools {
 			output = node.getToken();
 		}else if (node.getGrammarRule().equals("StringTerm") ) {
 			output = "\"" + node.getToken() + "\"";
-		}else if (node.getGrammarRule().equals("FunctionRuleTerm") ) {
+		}else if (node.getGrammarRule().equals("FunctionRuleTerm") || node instanceof NamedPointCutASTNode) {
 			if (node.getAbstractChildNodes().size() == 1)
 				output = node.getFirst().getToken();
 			else {

@@ -29,6 +29,7 @@ import org.coreasm.aspects.pointcutmatching.CFlowBelowASTNode;
 import org.coreasm.aspects.pointcutmatching.CFlowTopASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
 import org.coreasm.aspects.pointcutmatching.ExpressionASTNode;
+import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NotASTNode;
 import org.coreasm.aspects.pointcutmatching.WithinASTNode;
@@ -50,6 +51,8 @@ import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugin.Plugin;
 import org.coreasm.engine.plugin.VocabularyExtender;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
+import org.coreasm.util.information.InformationDispatcher;
+import org.coreasm.util.information.InformationObject.VerbosityLevel;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -122,6 +125,8 @@ public class AopASMPlugin extends Plugin
 	/** map of parsers defined in {\link getParsers()} */
 	private Map<String, GrammarRule> parsers = null;
 
+	private static InformationDispatcher info = InformationDispatcher.getInstance(PLUGIN_NAME);
+	
 	/**
 	 * @name Keywords and Operators
 	 * final strings used in the {\link getParsers()} method
@@ -301,7 +306,7 @@ public class AopASMPlugin extends Plugin
                         new ParserTools.ArrayParseMap(PLUGIN_NAME) {
                             @Override
                             public Node map(Object[] from) {
-                                NamedPointCutASTNode node = new NamedPointCutASTNode(
+                                NamedPointCutDefinitionASTNode node = new NamedPointCutDefinitionASTNode(
                                         // get scanner info from first
                                         // element of the complex node call
                                         ((Node) from[0]).getScannerInfo());
@@ -469,7 +474,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow expression */
 			Parser<Node> cFlowParser = // cflow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOW, PLUGIN_NAME),
-					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
+					pTools.getOprParser("("), refBinOrParser.lazy(),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -493,7 +498,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow below expression */
 			Parser<Node> cFlowBelowParser = // cflowbelow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWBELOW, PLUGIN_NAME),
-					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
+					pTools.getOprParser("("), refBinOrParser.lazy(),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -519,7 +524,7 @@ public class AopASMPlugin extends Plugin
 			/* Parser for cflow top expression */
 			Parser<Node> cFlowTopParser = // cflowtop(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWTOP, PLUGIN_NAME),
-					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
+					pTools.getOprParser("("), refBinOrParser.lazy(),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -543,12 +548,34 @@ public class AopASMPlugin extends Plugin
 			/* Parser for not expression */
 			Parser<Node> notParser = // not(pointCutParser)
 			Parsers.array(pTools.getKeywParser(OP_NOT, PLUGIN_NAME),
-					pTools.getOprParser("("), Parsers.or(refBinOrParser.lazy(), ruleSignature),
+					pTools.getOprParser("("), refBinOrParser.lazy(),
 					pTools.getOprParser(")")).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
 							NotASTNode node = new NotASTNode(
+									// get scanner info from first
+									// element of the complex node call
+									((Node) from[0]).getScannerInfo());
+							addChildren(node, from);
+							return node;
+						}
+
+						public void addChild(Node parent, Node child) {
+							if (child instanceof ASTNode)
+								parent.addChild("lambda", child);
+							else
+								parent.addChild(child);
+						}
+					});
+			
+			/* Parser for not expression */
+			Parser<Node> namedPointcut = // not(pointCutParser)
+			Parsers.array(ruleSignature).map(
+					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+						@Override
+						public Node map(Object[] from) {
+							NamedPointCutASTNode node = new NamedPointCutASTNode(
 									// get scanner info from first
 									// element of the complex node call
 									((Node) from[0]).getScannerInfo());
@@ -580,7 +607,9 @@ public class AopASMPlugin extends Plugin
 					// cflowbelow(pointCutParser)
 						cFlowBelowParser,
 					// cflowtop(pointCutParser)
-						cFlowTopParser
+						cFlowTopParser,
+					// namedPointcut
+						namedPointcut
 							);
 			refPointCutTermParser.set(pointCutTermParser);
 
@@ -595,7 +624,7 @@ public class AopASMPlugin extends Plugin
 			Parser<Node> pointCutExpressionParser = Parsers.or(
 					Parsers.array(
 							pTools.getOprParser("("),
-							Parsers.or(refBinOrParser.lazy(), ruleSignature),
+							refBinOrParser.lazy(),
 							pTools.getOprParser(")")
 						),
 					Parsers.array(
@@ -634,7 +663,7 @@ public class AopASMPlugin extends Plugin
 					pTools.star(
 							Parsers.array(
 									pTools.getOprParser(OP_AND),
-                                    Parsers.or(refBinAndParser.lazy(), ruleSignature)
+                                    refBinAndParser.lazy()
 									)
 								)
 					).map(
@@ -666,11 +695,11 @@ public class AopASMPlugin extends Plugin
 
 			//BinOr =  BinAnd ( 'or' BinOr )*
 			Parser<Node> binOrParser = Parsers.array(
-                    Parsers.or(refBinAndParser.lazy(), ruleSignature),
+                    refBinAndParser.lazy(),
 				pTools.star(
 						Parsers.array(
 								pTools.getOprParser(OP_OR),
-								Parsers.or(refBinOrParser.lazy(), ruleSignature)
+								refBinOrParser.lazy()
 								)
 							)
 			).map(
@@ -702,7 +731,7 @@ public class AopASMPlugin extends Plugin
 
 			//PointCut =  BinOr
 			Parser<Node> pointCutParser =
-					Parsers.or(binOrParser, ruleSignature);
+					binOrParser;
 			refPointCutParser.set(pointCutParser);
 			parsers.put(
 					"PointCut",
@@ -999,6 +1028,15 @@ public class AopASMPlugin extends Plugin
 		try {
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
+				info.clearInformation("clear now!");
+				Map<String, String> data = new HashMap<String, String>();
+				data.put("file",capi.getSpec().getAbsolutePath());
+				data.put("line", "1");
+				data.put("column","9");
+				data.put("length", "10");
+				data.put("name","marcel");
+				
+				info.createInformation("hallo", VerbosityLevel.COMMUNICATION, data);
 				//create marker for all aspects and submit them via IInformation to Observers
 				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi.getParser().getRootNode());
 				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());

@@ -40,11 +40,12 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	/**
 	 * This node references a special type of itself or is either a binary operation node with 'and' or 'or'
 	 * 
-	 * @param compareToNode
-	 * @return
+	 *
+     * @param compareToNode
+     * @return
 	 * @throws Exception 
 	 */
-	public abstract PointCutMatchingResult matches(ASTNode compareToNode) throws Exception;
+	public abstract Binding matches(ASTNode compareToNode) throws Exception;
 	
 	/**
 	 * @return
@@ -122,23 +123,5 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	public HashMap <String, LinkedList<ASTNode>> getExpressions(){
 		return PointCutASTNode.expressions;
 	}
-	
-	public class PointCutMatchingResult {
-		
-		private final boolean result;
-		private final LinkedList<ArgsASTNode> listOfArgs;
-	
-		public PointCutMatchingResult(boolean result, LinkedList<ArgsASTNode> listOfArgs){
-			this.result = result;
-			this.listOfArgs = listOfArgs;
-		}
-		
-		public boolean getBoolean(){
-			return this.result;
-		}
-		
-		public LinkedList<ArgsASTNode> getArgsASTNodes(){
-			return this.listOfArgs;
-		}
-	}
+
 }

@@ -3,20 +3,17 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.coreasm.aspects.AopASMPlugin;
 import org.coreasm.aspects.AspectTools;
-import org.coreasm.aspects.AspectWeaver;
-import org.coreasm.aspects.pointcutmatching.Binding;
-import org.coreasm.aspects.pointcutmatching.PointCutASTNode.PointCutMatchingResult;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
-import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
 
 
 /**
@@ -33,6 +30,7 @@ public class AdviceASTNode extends ASTNode {
 	private String realName;/*TODO String realName maybe useful for debugging*/
 	
 	private List<ProceedASTNode> proceedNodes = new LinkedList<ProceedASTNode>();;
+    private HashMap <ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
 
 	/**
 	 * this constructor is needed to support duplicate
@@ -101,7 +99,7 @@ public class AdviceASTNode extends ASTNode {
 	 * @return result of the matching
 	 * @throws Exception 
 	 */
-	public PointCutMatchingResult matches(ASTNode candidate) throws Exception{
+	public Binding matches(ASTNode candidate) throws Exception{
 		//pointcut cannot be null (which is assured by parsing)
 		return getPointCut().matches(candidate);
 	}
@@ -113,7 +111,8 @@ public class AdviceASTNode extends ASTNode {
 	private PointCutASTNode getPointCut(ASTNode currentNode){
 		for (ASTNode child : currentNode.getAbstractChildNodes()) {
 			if (child instanceof NamedPointCutASTNode)
-                return ((NamedPointCutASTNode)child).getPointCutASTNode();
+				//\todo Preprocessing substitute NamedPointcuts by anonymous inner pointcut expression
+                return null;
             else if (child instanceof PointCutASTNode)
 				return (PointCutASTNode)child;
         }
