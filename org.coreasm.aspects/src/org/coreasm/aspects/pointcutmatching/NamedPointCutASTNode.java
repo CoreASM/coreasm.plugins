@@ -34,11 +34,19 @@ public class NamedPointCutASTNode extends PointCutASTNode {
 		super(AopASMPlugin.PLUGIN_NAME, Node.OTHER_NODE, NamedPointCutASTNode.NODE_TYPE, null, scannerInfo);
 	}
 
+	/**
+	 * get the name of the pointcut
+	 * @return token as name of the pointut
+	 */
+	public String getName(){
+		return this.getFirstASTNode().getFirstASTNode().getToken();
+	}
+	
 	@Override
 	public Binding matches(ASTNode compareToNode) throws Exception {
 		throw new MatchingError("no pattern for matching", this, "NamedPointcut should not occcur during matching",null);
 	}
-
+	
 	@Override
 	public String generateExpressionString() {
 		return AspectTools.node2String(this);		

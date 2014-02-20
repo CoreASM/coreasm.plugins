@@ -81,6 +81,9 @@ public class Binding {
 	}
 
 	public boolean addBinding(String parameterOfArgsASTNode, ASTNode parameterOfCompareToNode){
+		if (binding == null)
+			binding = new HashMap<String, ASTNode>();
+
 		if (! binding.containsKey(parameterOfArgsASTNode) && ! parameterOfArgsASTNode.equals("_")){
 			this.binding.put(parameterOfArgsASTNode, parameterOfCompareToNode);
 			return true;
@@ -110,7 +113,7 @@ public class Binding {
 	}
 
 	public String toString(){
-		return "binding between parameters of "+ getPointcutASTNode()+" and "+getCompareToNode()+"\n"+
+		return "Match between "+ getPointcutASTNode().toString() +" and "+AspectTools.constructName(getCompareToNode())+"\n"+
 				binding.toString();
 	}
 }

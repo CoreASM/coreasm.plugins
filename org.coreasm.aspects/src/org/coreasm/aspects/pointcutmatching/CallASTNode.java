@@ -4,12 +4,15 @@ import org.coreasm.aspects.AopASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.errorhandling.MatchingError;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -49,48 +52,62 @@ public class CallASTNode extends PointCutASTNode {
 	public Binding matches(ASTNode compareToNode) throws Exception {
         if ( !(compareToNode instanceof MacroCallRuleNode) )
             return new Binding(compareToNode, this);
-        //name of the macro call rule node
-		String compareToNodeToken = compareToNode.getFirstASTNode().getFirstASTNode().getToken();
 
+        //name of the macro call rule node
+        FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode.getFirst();
+        Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
         String pointCutToken = null;
-		Binding resultingBinding = new Binding(compareToNode, this);
+		Binding resultingBinding = null;
+		Node node;
+		ASTNode astn = fnNode.getFirst();
         // \todo add bindings
 		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
-		for(Node astn : this.getChildNodes()){
-			switch (this.getChildNodes().indexOf(astn)) {
-			//check if the name/regEx of the pointcut matches the compareToNode
-			case 2: //index of the pointcut name expression
-
+		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
+			if (node instanceof PointCutParameterNode) {
+				//check if the name/regEx of the pointcut matches the compareToNode
+				PointCutParameterNode parameterNode = (PointCutParameterNode)node;
 				//get pointcut's token
-				pointCutToken = astn.getToken();
+				pointCutToken = parameterNode.getPattern();
 
 				//compare the token of the given node with this node's token by using regular expressions
 				//if a string is given instead of an id node, the regular expression has to be generated
 				try {
 					//check if the pointcut token is a regular expression
 					if ( Pattern.compile(pointCutToken) != null ){
-						if (!Pattern.matches(pointCutToken, compareToNodeToken))
+						if (!Pattern.matches(pointCutToken, astn.getToken()))
 							return new Binding(compareToNode, this);
+						else {
+							String id = parameterNode.getId();
+							if (id == null)
+								resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+							else {
+								if (resultingBinding == null)
+									resultingBinding = new Binding(compareToNode, this);
+								if ( ! resultingBinding.addBinding(id, astn))
+									throw new CoreASMError("Id "+id+ "already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+							}
+						}
 					}
 				}
 				catch (PatternSyntaxException e){
 					//if the pointcut token is no regular expression throw an exception towards the weaver
 					throw new MatchingError(pointCutToken, this, e.getMessage(), e);
 				}
-				break;
-			//agent expression relevant in method \link generateExpressionString to extend the runtime condition
-			case 4:
-				callByAgent = astn.getToken();
-				break;
-			//if tokens match, check if compareToNode fulfills the return-condition
-			case 5: //last check => return result
-				//if the matching was successful, the compareToNode rule definition has to be investigated for return statements depending on the given condition
-				if(astn.getToken().equals(AopASMPlugin.KW_WITHOUT)) //if the token of astn is "without" it has to be checked that no return or result exists in the ruledefinitoin
-					if ( ! checkRuleReturn(compareToNodeToken, false, astn.getNextCSTNode()))
-                    return new Binding(compareToNode, this);
-				else
-					return resultingBinding;
-				}
+				astn = (argIterator.hasNext() ? argIterator.next() : null);
+			}
+		}
+		if (astn != null || node instanceof PointCutParameterNode)
+			return new Binding(compareToNode, this);
+		
+		while ( node != null ) {
+			if (node.getConcreteNodeType().equals("keyword") && node.getToken().startsWith("with")) {
+				if ( checkRuleReturn(fnNode.getName(), node.getToken().equals("with"), node.getNextCSTNode() )){
+					if (resultingBinding == null)
+						resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+				}else
+					return new Binding(compareToNode, this);
+			}
+			node = node.getNextCSTNode();
 		}
 		return resultingBinding;
 	}
@@ -105,7 +122,7 @@ public class CallASTNode extends PointCutASTNode {
 	 */
 	boolean checkRuleReturn(String compareToNodeToken, boolean returnRequired, Node returnOrResult){
 		String ruleDeclarationName;
-		for(ASTNode astn : AspectWeaver.getAstNodes().get("RuleDeclaration")){
+		for(ASTNode astn : AspectWeaver.getInstance().getAstNodes().get("RuleDeclaration")){
 			ruleDeclarationName = astn.getFirst().getFirst().getToken();
 			//check if the current rule declaration is the one with the name of the searching one
 			if ( Pattern.matches(compareToNodeToken,  ruleDeclarationName) )

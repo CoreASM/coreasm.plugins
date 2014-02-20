@@ -5,10 +5,14 @@
 package org.coreasm.aspects;
 
 import org.codehaus.jparsec.Parser;
+import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
+import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
+import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ProceedASTNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
@@ -22,7 +26,9 @@ import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * The weaver integrates the aspects in terms of new nodes into the AST of the
@@ -78,7 +84,7 @@ public class AspectWeaver {
 	 * returns a hashmap of astnodes of the current specification
 	 * @return hashmap of astnodes @see astNodes
 	 */
-	public static HashMap<String, LinkedList<ASTNode>> getAstNodes() {
+	public HashMap<String, LinkedList<ASTNode>> getAstNodes() {
 		return astNodes;
 	}
 
@@ -102,20 +108,6 @@ public class AspectWeaver {
 			// collect all ASTNodes from aspects from the capi
 			astNodes = AspectTools.collectASTNodesByGrammar(rootnode);
 
-			//searching for errors of proceed nodes
-			if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) /** \todo modularity plugin nicht zum reinen Parsen verfügbar */
-			for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
-				if(node instanceof AdviceASTNode)
-				{
-					LinkedList<ProceedASTNode> pn = (LinkedList<ProceedASTNode>) AspectTools.getChildrenOfType(node, ProceedASTNode.class);
-					//more than one proceed
-					if (pn.size() > 1 )
-						capi.error(new CoreASMError("more than one proceed node in advice node "+AspectTools.constructName(node), null, null, null, node));
-					//proceed without around
-					if (!pn.isEmpty() && node.getChildNodes().get(2).getToken().equals("around"))
-						capi.error(new CoreASMError("proceed can only be used if the advice "+AspectTools.constructName(node)+" has the locator \"around\"", null, null, null, node));
-				}
-
 			//continue initialization
 			if (astNodes.get("MacroCallRule") != null
 					&& astNodes.get(AdviceASTNode.NODE_TYPE) != null) {
@@ -128,6 +120,26 @@ public class AspectWeaver {
 		return false;
 	}
 
+	/**
+	 * statically check the specification for errors
+	 * @throws AspectException
+	 */
+	private void PerformStaticChecks() throws AspectException{
+		//searching for errors of proceed nodes
+		if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) /** \todo modularity plugin nicht zum reinen Parsen verfügbar */
+		for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
+			if(node instanceof AdviceASTNode)
+			{
+				LinkedList<ProceedASTNode> pn = (LinkedList<ProceedASTNode>) AspectTools.getChildrenOfType(node, ProceedASTNode.class);
+				//more than one proceed
+				if (pn.size() > 1 )
+					capi.error(new CoreASMError("more than one proceed node in advice node "+AspectTools.constructName(node), null, null, null, node));
+				//proceed without around
+				if (!pn.isEmpty() && node.getChildNodes().get(2).getToken().equals("around"))
+					capi.error(new CoreASMError("proceed can only be used if the advice "+AspectTools.constructName(node)+" has the locator \"around\"", null, null, null, node));
+			}
+	}
+	
 	/**
 	 * Transform the AST after the initialization process has been completed.
 	 * Afterwards, the reset method is called to prepare the next weaving
@@ -169,9 +181,9 @@ public class AspectWeaver {
 	 	reset -> end;
 	 	}
 	 \enddot
-	 * @throws Exception
+	 * @throws Throwable 
 	 */
-	public void weave() throws Exception{
+	public void weave() throws Throwable{
 
 		//HashMap with ASTNodes of the original program as key and a list of all advices having pointcuts matching this node
 		HashMap<ASTNode, LinkedList<AdviceASTNode>> weavingCandidates = new HashMap<ASTNode, LinkedList<AdviceASTNode>>();
@@ -180,6 +192,32 @@ public class AspectWeaver {
 		 * try to match the pointcuts
 		 */
 		if (this.initialize) {
+			
+			//check the specification statically for errors
+			PerformStaticChecks();
+			
+			///@{
+			/** Preprocessing **/
+			LinkedList<ASTNode> nPtcList = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
+			for(ASTNode nptc : nPtcList){
+				if (nptc instanceof NamedPointCutDefinitionASTNode){
+					HashSet<String> substituted = new HashSet<String>();
+					NamedPointCutDefinitionASTNode nptcdef = (NamedPointCutDefinitionASTNode) nptc;
+					substituted.add(nptcdef.getName());
+					substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
+				}
+			}
+			
+			LinkedList<ASTNode> adviceAstNode = AspectWeaver.getInstance().getAstNodes().get(AdviceASTNode.NODE_TYPE);
+			for(ASTNode advDef : adviceAstNode){
+				if (advDef instanceof AdviceASTNode){
+					new HashSet<String>();
+					substituteNamedPointcuts(((AdviceASTNode)advDef).getPointCut(), new HashSet<String>());
+				}
+			}
+			///@}
+			
+			/** pointcut matching **/
 			try {
 				weavingCandidates = pointCutMatching(getAstNodes());
 			}catch (MatchingError e){
@@ -303,6 +341,30 @@ public class AspectWeaver {
 		}
 		// prepare next weaving (new initialization required)
 		reset();
+	}
+
+	private void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws Throwable {
+		if (astnode instanceof NamedPointCutASTNode) {
+			NamedPointCutASTNode nptc = ((NamedPointCutASTNode) astnode);
+			if (substituted.contains(nptc.getName()))
+				throw new CoreASMError("cycle in pointcut defintion!", astnode);
+			//exchange
+			LinkedList<ASTNode> nptcdefs = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
+			for(ASTNode nptcdef : nptcdefs){
+				if (nptcdef instanceof NamedPointCutDefinitionASTNode) {
+					NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
+					if ( definition.isDefinitionOf(nptc) ){
+						ASTNode parent = nptc.getParent();
+						Node positionToInsert = nptc.removeFromTree();
+						parent.addChildAfter(positionToInsert, definition.getName(), definition.getPointCut().cloneTree());
+						substituted.add(definition.getName());
+						substituteNamedPointcuts(parent, substituted);						
+					}
+				}
+			}
+		} else
+			for(ASTNode child : astnode.getAbstractChildNodes())
+				substituteNamedPointcuts(child, substituted);
 	}
 
 	/**
@@ -681,7 +743,10 @@ public class AspectWeaver {
 						.get(AdviceASTNode.NODE_TYPE)) {
 					// if an advice matches the current astnode
 					// it is added to the hashmap of candidates for weaving
-					if (((AdviceASTNode) advice).matches(macroCall).exists())
+					Binding binding = ((AdviceASTNode) advice).matches(macroCall);
+					if (binding.exists()){
+						//create marker	
+						AopASMPlugin.createMarker(capi, macroCall, binding);
 						if (weavingCandidates.get(macroCall) == null) {
 							LinkedList<AdviceASTNode> newAdviceList = new LinkedList<AdviceASTNode>();
 							newAdviceList.add((AdviceASTNode) advice);
@@ -692,6 +757,7 @@ public class AspectWeaver {
 							oldAdviceList.add((AdviceASTNode) advice);
 							weavingCandidates.put(macroCall, oldAdviceList);
 						}
+					}
 				}
 		}
 		return weavingCandidates;
@@ -753,6 +819,13 @@ public class AspectWeaver {
 	 */
 	public void setRootnode(ASTNode rootnode) {
 		this.rootnode = rootnode;
+	}
+	/**
+	 * 
+	 * @return currently used control api
+	 */
+	public ControlAPI getControlAPI(){
+		return capi;
 	}
 
 }

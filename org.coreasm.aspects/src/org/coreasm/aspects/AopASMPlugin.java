@@ -17,6 +17,14 @@
 
 package org.coreasm.aspects;
 
+import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -24,17 +32,22 @@ import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
 import org.coreasm.aspects.pointcutmatching.AspectASTNode;
 import org.coreasm.aspects.pointcutmatching.BinAndASTNode;
 import org.coreasm.aspects.pointcutmatching.BinOrASTNode;
+import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.CFlowASTNode;
 import org.coreasm.aspects.pointcutmatching.CFlowBelowASTNode;
 import org.coreasm.aspects.pointcutmatching.CFlowTopASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
 import org.coreasm.aspects.pointcutmatching.ExpressionASTNode;
-import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
+import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.NotASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.pointcutmatching.WithinASTNode;
+import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.EngineException;
+import org.coreasm.engine.Specification;
 import org.coreasm.engine.VersionInfo;
 import org.coreasm.engine.absstorage.BackgroundElement;
 import org.coreasm.engine.absstorage.FunctionElement;
@@ -44,6 +57,8 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.KernelServices;
+import org.coreasm.engine.kernel.MacroCallRuleNode;
+import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.parser.GrammarRule;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ExtensionPointPlugin;
@@ -53,9 +68,6 @@ import org.coreasm.engine.plugin.VocabularyExtender;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject.VerbosityLevel;
-
-import java.sql.Timestamp;
-import java.util.*;
 
 
 /**
@@ -284,6 +296,38 @@ public class AopASMPlugin extends Plugin
 
 			ParserTools pTools = ParserTools.getInstance(capi);
 
+			Parser<Node> pointCutParameterParser = //(String || id) ['as' id]
+					Parsers.array(
+							Parsers.or(
+									stringParser,
+									idParser
+									),
+							Parsers.array(
+									pTools.getKeywParser(KW_AS, PLUGIN_NAME),
+									idParser
+							).optional()
+					).map(
+						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+                        @Override
+                        public Node map(Object[] from) {
+                            PointCutParameterNode node = new PointCutParameterNode(
+                                    // get scanner info from first
+                                    // element of the complex node call
+                                    ((Node) from[0]).getScannerInfo());
+                            // ((Node) ((Object[]) from[0])[0])
+                            // .getScannerInfo());
+                            addChildren(node, from);
+                            return node;
+                        }
+
+                        public void addChild(Node parent, Node child) {
+                            if (child instanceof ASTNode)
+                                parent.addChild("lambda", child);
+                            else
+                                parent.addChild(child);
+                        }
+                    });
+					
 			
 			Parser<Node> namedPointcutParser = // 'pointcut' id '(' id (',' id)*  ')' ':' binOrParser
 				Parsers.array(
@@ -333,29 +377,11 @@ public class AopASMPlugin extends Plugin
 			Parser<Node> callParser = // 'call' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
 			Parsers.array(pTools.getKeywParser(KW_RULECALL, PLUGIN_NAME),
 						pTools.getOprParser("("),
-						Parsers.array(
-							Parsers.or(
-								idParser, //had to be a string at compile time
-								stringParser
-							),
-							Parsers.array(
-								pTools.getKeywParser(KW_AS, PLUGIN_NAME),
-								idParser
-							).optional()
-						),
+						pointCutParameterParser.optional(),
 						pTools.star(
 							Parsers.array(
 								pTools.getOprParser(","),
-								Parsers.array(
-									Parsers.or(
-										idParser, //had to be a string at compile time
-										stringParser
-									),
-									Parsers.array(
-										pTools.getKeywParser(KW_AS, PLUGIN_NAME),
-										idParser
-									).optional()
-								)
+								pointCutParameterParser.optional()
 							)
 						),
 						pTools.getOprParser(")"),						
@@ -1028,24 +1054,25 @@ public class AopASMPlugin extends Plugin
 		try {
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
-				info.clearInformation("clear now!");
-				Map<String, String> data = new HashMap<String, String>();
-				data.put("file",capi.getSpec().getAbsolutePath());
-				data.put("line", "1");
-				data.put("column","9");
-				data.put("length", "10");
-				data.put("name","marcel");
-				
-				info.createInformation("hallo", VerbosityLevel.COMMUNICATION, data);
+
+//				info.clearInformation("clear now!");
+//				Map<String, String> data = new HashMap<String, String>();
+//				data.put("file",capi.getSpec().getAbsolutePath());
+//				data.put("line", "1");
+//				data.put("column","9");
+//				data.put("length", "10");
+//				data.put("name","marcel");
+//				info.createInformation("hallo", VerbosityLevel.COMMUNICATION, data);
 				//create marker for all aspects and submit them via IInformation to Observers
 				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi.getParser().getRootNode());
 				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());
 
 				//weave with cloned tree to get warnings for current CoreASM specification
-				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
+				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
+//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
 					AspectWeaver.getInstance().weave();
 				}
-
+				
 			}
 			else if (source == EngineMode.emParsingSpec && target != EngineMode.emIdle)//running the spec
 			{
@@ -1059,9 +1086,27 @@ public class AopASMPlugin extends Plugin
 				AspectTools.writeProgramToFile(capi, capi.getSpec().getFileName()+"_"+timestamp, capi.getParser().getRootNode(), capi.getSpec().getAbsolutePath());
 				AspectTools.writeParseTreeToFile("program.dot", capi.getParser().getRootNode());
 			}
-		}catch (Exception e){
-			//Logger.log(Logger.ERROR, Logger.global, e.getMessage()==null?e.toString():e.getMessage());
+		}catch (CoreASMError e){
+			AspectWeaver.getInstance().reset();
+			capi.error(e);
+		}		
+		catch (Throwable e){
+			AspectWeaver.getInstance().reset();
+			capi.error(e);
 		}
+	}
+	
+	public static void createMarker(ControlAPI capi, ASTNode astNode, Binding binding) {
+		info.clearInformation("clear now!");
+		Map<String, String> data = new HashMap<String, String>();
+		Specification spec = capi.getSpec();
+		CharacterPosition charPos = astNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
+		data.put("file", spec.getAbsolutePath());
+		data.put("line", "" + spec.getLine(charPos.line).line);
+		data.put("column", "" + charPos.column);
+		data.put("length", "" + astNode.getFirst().getFirst().getToken().length());
+		data.put("name", binding.toString());
+		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 
 	/**

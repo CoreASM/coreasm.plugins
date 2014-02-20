@@ -104,18 +104,16 @@ public class AdviceASTNode extends ASTNode {
 		return getPointCut().matches(candidate);
 	}
 	
+	/**
+	 * returns the root of the pointcut expression used or defined by this advice
+	 * @return 
+	 */
 	public PointCutASTNode getPointCut(){
-			return getPointCut(this);
-	}
-	
-	private PointCutASTNode getPointCut(ASTNode currentNode){
-		for (ASTNode child : currentNode.getAbstractChildNodes()) {
-			if (child instanceof NamedPointCutASTNode)
-				//\todo Preprocessing substitute NamedPointcuts by anonymous inner pointcut expression
-                return null;
-            else if (child instanceof PointCutASTNode)
+		for (ASTNode child : this.getAbstractChildNodes()) {
+			if (child instanceof PointCutASTNode)
 				return (PointCutASTNode)child;
         }
+		//\todo exception no pointcut defined as direct child of AdviceASTNode
 		return null;
 	}
 
