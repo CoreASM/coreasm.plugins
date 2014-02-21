@@ -1,7 +1,7 @@
 CoreASM ParserTest
 
 use Standard
-use AopASM
+use AoASMPlugin
 
 init TestCallPointcut
 
@@ -17,12 +17,14 @@ aspect ParserTest {
 
 	pointcut b(b1) : call("X" as var, "[0-9]*" as nmb) by agen without return
 	
-	advice test(a1) before : a(a1) { print "test( "+ a1 +" )"} 	
+	advice test(var, nmb) before : a(a1) { print "test( "+ nmb +" )"}	
  
 }
 
 rule X(a) =
-	print b
+	print a
 
-rule TestCallPointcut =
+rule TestCallPointcut = {
 	X(4)
+	print "Hallo Welt!"
+}
