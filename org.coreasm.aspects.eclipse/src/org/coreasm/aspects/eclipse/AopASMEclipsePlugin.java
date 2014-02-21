@@ -3,7 +3,7 @@ package org.coreasm.aspects.eclipse;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.eclipse.util.Utilities;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
@@ -28,7 +28,7 @@ public class AopASMEclipsePlugin implements InformationObserver {
 			System.out.println("AopASMEclipsePlugin:" + information.getMessage());
 			break;
 		case COMMUNICATION:
-			if (AopASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+			if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
 //				if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage())) {
 					Map<String, String> data = information.getData();
 					HashMap<String, Object> attributes = new HashMap<String, Object>();
@@ -45,7 +45,7 @@ public class AopASMEclipsePlugin implements InformationObserver {
 
 	@Override
 	public void clearInformation(InformationObject information) {
-		if (AopASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+		if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
 //			if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage()))
 				Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH);
 		}
