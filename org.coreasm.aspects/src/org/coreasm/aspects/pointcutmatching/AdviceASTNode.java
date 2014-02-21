@@ -94,6 +94,7 @@ public class AdviceASTNode extends ASTNode {
 	
 	/**
 	 * returns the boolean value of the pointcut expression of this advice
+	 * and stores successful bindings in the bindings HashMap of the advice
 	 * 
 	 * @param candidate given pointcut of the advice
 	 * @return result of the matching
@@ -101,7 +102,12 @@ public class AdviceASTNode extends ASTNode {
 	 */
 	public Binding matches(ASTNode candidate) throws Exception{
 		//pointcut cannot be null (which is assured by parsing)
-		return getPointCut().matches(candidate);
+		Binding binding = getPointCut().matches(candidate);
+		/*	stores the binding in the bindings HashMap
+			where the key is the node that successfully matches this advice */
+		if ( binding != null )
+			bindings.put(candidate, binding);
+		return  binding;
 	}
 	
 	/**
@@ -176,6 +182,16 @@ public class AdviceASTNode extends ASTNode {
 				cloneWithBinding(child, binding);
 
 		
+	}
+
+	/**
+	 * returns the binding between this advice and the given node
+	 * if such a binding exists, otherwise null is returned
+	 * @param candidate
+	 * @return
+	 */
+	public Binding getBinding(ASTNode candidate){
+		return this.bindings.get(candidate);
 	}
 
 	/**
