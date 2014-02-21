@@ -1055,7 +1055,7 @@ public class AoASMPlugin extends Plugin
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
 
-//				info.clearInformation("clear now!");
+				info.clearInformation("clear now!");
 //				Map<String, String> data = new HashMap<String, String>();
 //				data.put("file",capi.getSpec().getAbsolutePath());
 //				data.put("line", "1");
@@ -1096,7 +1096,6 @@ public class AoASMPlugin extends Plugin
 	}
 	
 	public static void createMarker(ControlAPI capi, ASTNode astNode, Binding binding) {
-		info.clearInformation("clear now!");
 		Map<String, String> data = new HashMap<String, String>();
 		Specification spec = capi.getSpec();
 		CharacterPosition charPos = astNode.getScannerInfo().getPos(capi.getParser().getPositionMap());

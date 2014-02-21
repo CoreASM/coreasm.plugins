@@ -96,7 +96,13 @@ public class CallASTNode extends PointCutASTNode {
 				astn = (argIterator.hasNext() ? argIterator.next() : null);
 			}
 		}
-		if (astn != null || node instanceof PointCutParameterNode)
+		
+		// find next ASTNode
+		Node parameterNode = node;
+		while (parameterNode != null && !(parameterNode instanceof ASTNode))
+			parameterNode = parameterNode.getNextCSTNode();
+		
+		if (astn != null || parameterNode instanceof PointCutParameterNode)
 			return new Binding(compareToNode, this);
 		
 		while ( node != null ) {
