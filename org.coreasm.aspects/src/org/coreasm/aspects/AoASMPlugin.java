@@ -1068,8 +1068,7 @@ public class AoASMPlugin extends Plugin
 				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());
 
 				//weave with cloned tree to get warnings for current CoreASM specification
-				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
-//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
+				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
 					AspectWeaver.getInstance().weave();
 				}
 				
