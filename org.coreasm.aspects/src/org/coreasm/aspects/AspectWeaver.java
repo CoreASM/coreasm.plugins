@@ -8,11 +8,9 @@ import org.codehaus.jparsec.Parser;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
-import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
-import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ProceedASTNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
@@ -28,7 +26,6 @@ import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * The weaver integrates the aspects in terms of new nodes into the AST of the
@@ -125,19 +122,19 @@ public class AspectWeaver {
 	 * @throws AspectException
 	 */
 	private void PerformStaticChecks() throws AspectException{
-		//searching for errors of proceed nodes
-		if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) /** \todo modularity plugin nicht zum reinen Parsen verfügbar */
-		for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
-			if(node instanceof AdviceASTNode)
-			{
-				LinkedList<ProceedASTNode> pn = (LinkedList<ProceedASTNode>) AspectTools.getChildrenOfType(node, ProceedASTNode.class);
-				//more than one proceed
-				if (pn.size() > 1 )
-					capi.error(new CoreASMError("more than one proceed node in advice node "+AspectTools.constructName(node), null, null, null, node));
-				//proceed without around
-				if (!pn.isEmpty() && node.getChildNodes().get(2).getToken().equals("around"))
-					capi.error(new CoreASMError("proceed can only be used if the advice "+AspectTools.constructName(node)+" has the locator \"around\"", null, null, null, node));
-			}
+//		//searching for errors of proceed nodes
+//		if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) // \todo modularity plugin nicht zum reinen Parsen verfügbar
+//		for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
+//			if(node instanceof AdviceASTNode)
+//			{
+//				LinkedList<ProceedASTNode> pn = (LinkedList<ProceedASTNode>) AspectTools.getChildrenOfType(node, ProceedASTNode.class);
+//				//more than one proceed
+//				if (pn.size() > 1 )
+//					capi.error(new CoreASMError("more than one proceed node in advice node "+AspectTools.constructName(node), null, null, null, node));
+//				//proceed without around
+//				if (!pn.isEmpty() && node.getChildNodes().get(2).getToken().equals("around"))
+//					capi.error(new CoreASMError("proceed can only be used if the advice "+AspectTools.constructName(node)+" has the locator \"around\"", null, null, null, node));
+//			}
 	}
 	
 	/**
