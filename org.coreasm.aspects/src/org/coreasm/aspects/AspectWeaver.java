@@ -195,16 +195,25 @@ public class AspectWeaver {
 			
 			///@{
 			/** Preprocessing **/
+			//substitute all named pointcuts by referenced pointcut expressions (transitively)
 			LinkedList<ASTNode> nPtcList = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
 			for(ASTNode nptc : nPtcList){
 				if (nptc instanceof NamedPointCutDefinitionASTNode){
+					/* the set substituted keeps track of the named pointcuts that have already
+					 *  taken into account for during the substitution.
+					 *  If a named pointcut would be taken into account twice,
+					 *  the definition of named pointcuts is cyclic!
+					 */
 					HashSet<String> substituted = new HashSet<String>();
 					NamedPointCutDefinitionASTNode nptcdef = (NamedPointCutDefinitionASTNode) nptc;
 					substituted.add(nptcdef.getName());
+					//perfomr the substutution recursively
 					substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
 				}
 			}
 			
+			//substitute the named pointcuts used inside an advices
+			//there can be no cyclic definitions if the substitution of the named pointcuts (above) was successful
 			LinkedList<ASTNode> adviceAstNode = AspectWeaver.getInstance().getAstNodes().get(AdviceASTNode.NODE_TYPE);
 			for(ASTNode advDef : adviceAstNode){
 				if (advDef instanceof AdviceASTNode){
@@ -242,9 +251,8 @@ public class AspectWeaver {
 
 					//if there exist matching arg expressions in the pointcut of the advice...
 					/**\note LinkedList<ArgsASTNode> argsList holds the list of valid bindings for the given advice and candidate*/
-					Binding binding = advice.matches(candidate);
-
-                    AdviceASTNode boundAdvice;
+					Binding binding = advice.getBinding(candidate);
+					AdviceASTNode boundAdvice;
 					/** \note Binding binding holds the first binding from the valid bindings, and thereby determines the precedence of bindings in pointcuts from left to right */
 				    //...clone the current node and insert the binding depending for the current candidate
 				    boundAdvice = advice.cloneWithBinding(binding);
