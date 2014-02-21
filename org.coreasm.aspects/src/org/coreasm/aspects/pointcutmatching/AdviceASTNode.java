@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
@@ -43,7 +43,7 @@ public class AdviceASTNode extends ASTNode {
 	}
 	
 	public AdviceASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, AdviceASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, AdviceASTNode.NODE_TYPE, null, scannerInfo);
 		adviceId = "adv".concat(Integer.toString(numberOfAdviceNodes));
 		numberOfAdviceNodes++;
 	}

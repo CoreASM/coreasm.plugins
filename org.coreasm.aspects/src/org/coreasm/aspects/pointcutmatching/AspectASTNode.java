@@ -1,6 +1,6 @@
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -26,7 +26,7 @@ public class AspectASTNode extends ASTNode {
 	 * @param scannerInfo    necessary for super constructor
 	 */
 	public AspectASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, AspectASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, AspectASTNode.NODE_TYPE, null, scannerInfo);
 	}
 
 }

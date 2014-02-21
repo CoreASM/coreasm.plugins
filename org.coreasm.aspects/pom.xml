@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>org.coreasm.aspects</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>CoreASM Plugin for Aspect-Oriented Programming </name>
-	<description>extends CoreASM to support aspect oriented programming (AOP)</description>
+	<version>0.0.2-SNAPSHOT</version>
+	<name>CoreASM Plugin for Aspect-Oriented Specification</name>
+	<description>extends CoreASM to support aspect-oriented specification similar to aspect-oriented programming (AOP)</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

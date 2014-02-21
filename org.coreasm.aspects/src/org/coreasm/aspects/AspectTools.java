@@ -593,7 +593,7 @@ public class AspectTools {
 	 */
 	private static SeqBlockRuleNode createSeqBlockRuleNode(ScannerInfo info) {
 		SeqBlockRuleNode seqBlockRuleNode = new SeqBlockRuleNode(info);
-		Node seqBlock = new Node(AopASMPlugin.PLUGIN_NAME, "seqblock",
+		Node seqBlock = new Node(AoASMPlugin.PLUGIN_NAME, "seqblock",
 				info, Node.KEYWORD_NODE);
 		seqBlockRuleNode.addChild(seqBlock);
 		return seqBlockRuleNode;
@@ -649,7 +649,7 @@ public class AspectTools {
 							seqBlock.addChild(node);
 						}
 					}
-					Node endseqBlock = new Node(AopASMPlugin.PLUGIN_NAME,
+					Node endseqBlock = new Node(AoASMPlugin.PLUGIN_NAME,
 							"endseqblock", seqBlock.getScannerInfo(),
 							Node.KEYWORD_NODE);
 					seqBlock.addChild(endseqBlock);
@@ -666,9 +666,9 @@ public class AspectTools {
 	private static ASTNode createBlockRule(ScannerInfo info) {
 		ASTNode node = new ASTNode(BlockRulePlugin.PLUGIN_NAME,
 				ASTNode.RULE_CLASS, "BlockRule", null, info);
-		Node par = new Node(AopASMPlugin.PLUGIN_NAME, "par", info,
+		Node par = new Node(AoASMPlugin.PLUGIN_NAME, "par", info,
 				Node.KEYWORD_NODE);
-		Node endpar = new Node(AopASMPlugin.PLUGIN_NAME, "endpar", info,
+		Node endpar = new Node(AoASMPlugin.PLUGIN_NAME, "endpar", info,
 				Node.KEYWORD_NODE);
 		node.addChild(par);
 		node.addChild(endpar);

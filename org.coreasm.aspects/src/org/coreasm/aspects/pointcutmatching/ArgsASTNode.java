@@ -3,7 +3,7 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -36,7 +36,7 @@ public class ArgsASTNode extends PointCutASTNode {
 	}
 	
 	public ArgsASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, ArgsASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, ArgsASTNode.NODE_TYPE, null, scannerInfo);
 	}
 	/**
 	 *  returns the bindings which exist for the given node

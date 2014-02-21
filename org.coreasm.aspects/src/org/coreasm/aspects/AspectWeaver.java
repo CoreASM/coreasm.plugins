@@ -413,7 +413,7 @@ public class AspectWeaver {
 			// condition node (is an ASTNode)
 			conditionASTNode = (ASTNode) parser.parse(ifThenConstruct);
 
-			if (AopASMPlugin.isDebugMode())
+			if (AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(advice.getFirst().getFirst().getToken()+"_condition.dot", conditionASTNode);
 
 			// 2) remove skip rule from new condition
@@ -442,7 +442,7 @@ public class AspectWeaver {
 			// 6) add condition to old position of the rule body
 			ruleParent.addChildAfter(ruleInsertionReference,
 					conditionBlock.getToken(), conditionBlock);
-			if(AopASMPlugin.isDebugMode())
+			if(AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(advice.getFirst().getFirst().getToken()+".dot", advice);
 			/// covert advice node into rule declaration
 
@@ -544,7 +544,7 @@ public class AspectWeaver {
 			functionSignitureDeclarationNode.getToken(),
 			functionSignitureDeclarationNode);
 
-		if (AopASMPlugin.isDebugMode())
+		if (AoASMPlugin.isDebugMode())
 			AspectTools.writeParseTreeToFile("callStack.dot", functionSignitureDeclarationNode);
 
 		//step 1
@@ -615,7 +615,7 @@ public class AspectWeaver {
 
 			parent.addChildAfter(insertionReference, seqBlockASTNode.getToken(), seqBlockASTNode);
 
-			if(AopASMPlugin.isDebugMode())
+			if(AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken()+".dot", parent);
 		}
 
@@ -661,13 +661,13 @@ public class AspectWeaver {
 		this.getRootnode().
 			addChildAfter(capi.getParser().getRootNode().getFirst(),
 						ruleCallASTNode.getToken(), ruleCallASTNode);
-		if (AopASMPlugin.isDebugMode())
+		if (AoASMPlugin.isDebugMode())
 			AspectTools.writeParseTreeToFile(((ASTNode)ruleCallASTNode).getFirst().getFirst().getToken()+".dot", ruleCallASTNode);
 
 		this.getRootnode()
 			.addChildAfter(capi.getParser().getRootNode().getFirst(),
 						argsCheckASTNode.getToken(), argsCheckASTNode);
-		if (AopASMPlugin.isDebugMode())
+		if (AoASMPlugin.isDebugMode())
 			AspectTools.writeParseTreeToFile(((ASTNode)argsCheckASTNode).getFirst().getFirst().getToken()+".dot", argsCheckASTNode);
 	}
 
@@ -746,7 +746,7 @@ public class AspectWeaver {
 					Binding binding = ((AdviceASTNode) advice).matches(macroCall);
 					if (binding.exists()){
 						//create marker	
-						AopASMPlugin.createMarker(capi, macroCall, binding);
+						AoASMPlugin.createMarker(capi, macroCall, binding);
 						if (weavingCandidates.get(macroCall) == null) {
 							LinkedList<AdviceASTNode> newAdviceList = new LinkedList<AdviceASTNode>();
 							newAdviceList.add((AdviceASTNode) advice);

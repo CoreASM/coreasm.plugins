@@ -1,6 +1,6 @@
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.errorhandling.MatchingError;
@@ -37,7 +37,7 @@ public class CallASTNode extends PointCutASTNode {
 	}
 
 	public CallASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, Node.OTHER_NODE, CallASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, Node.OTHER_NODE, CallASTNode.NODE_TYPE, null, scannerInfo);
 	}
 
 	/**

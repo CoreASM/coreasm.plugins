@@ -3,7 +3,7 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -28,7 +28,7 @@ public class CFlowBelowASTNode extends PointCutASTNode {
 	 * @param scannerInfo
 	 */
 	public CFlowBelowASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, CFlowBelowASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, CFlowBelowASTNode.NODE_TYPE, null, scannerInfo);
 		// TODO Auto-generated constructor stub
 	}
 	

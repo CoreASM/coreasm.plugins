@@ -3,7 +3,7 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -32,7 +32,7 @@ public class BinOrASTNode extends PointCutASTNode {
 	 * @param scannerInfo
 	 */
 	public BinOrASTNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, BinOrASTNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, BinOrASTNode.NODE_TYPE, null, scannerInfo);
 	}
 	
 	@Override

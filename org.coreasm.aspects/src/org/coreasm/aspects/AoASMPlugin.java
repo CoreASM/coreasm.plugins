@@ -114,7 +114,7 @@ import org.coreasm.util.information.InformationObject.VerbosityLevel;
  * @see org.coreasm.engine.plugin.ExtensionPointPlugin
  * extends @see org.coreasm.engine.plugin.Plugin
  */
-public class AopASMPlugin extends Plugin
+public class AoASMPlugin extends Plugin
 		implements
 			ParserPlugin,
 			VocabularyExtender,
@@ -129,7 +129,7 @@ public class AopASMPlugin extends Plugin
 	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1,
 			"alpha");
 	/** name of the aspect-oriented CoreASM-Plugin*/
-	public static final String PLUGIN_NAME = AopASMPlugin.class
+	public static final String PLUGIN_NAME = AoASMPlugin.class
 			.getSimpleName();
 	/** the Plugin-names where this plugin depends on*/
 	private Set<String> dependencyNames = null;

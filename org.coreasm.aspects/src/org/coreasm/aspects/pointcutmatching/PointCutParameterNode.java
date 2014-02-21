@@ -1,6 +1,6 @@
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.aspects.AopASMPlugin;
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
@@ -26,7 +26,7 @@ public class PointCutParameterNode extends ASTNode{
 	}
 
 	public PointCutParameterNode(ScannerInfo scannerInfo) {
-		super(AopASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, PointCutParameterNode.NODE_TYPE, null, scannerInfo);
+		super(AoASMPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, PointCutParameterNode.NODE_TYPE, null, scannerInfo);
 
 	}
 	
@@ -43,7 +43,7 @@ public class PointCutParameterNode extends ASTNode{
 							 fn.getInitNode() != null && fn.getInitNode().getGrammarRule().equals("StringTerm") ))
 							throw new CoreASMError("Value of function "+fn.getName()+" is not a string but is used as pointcut pattern.", fn);
 						if (fn.getFunctionClass() != FunctionClass.fcStatic) {
-							CoreASMWarning warn = new CoreASMWarning(AopASMPlugin.PLUGIN_NAME, "Function "+fn.getName()+" is not static but used as pointcut pattern.", fn);
+							CoreASMWarning warn = new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "Function "+fn.getName()+" is not static but used as pointcut pattern.", fn);
 							AspectWeaver.getInstance().getControlAPI().warning(warn);
 						}
 						return fn.getInitNode().getToken();

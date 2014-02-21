@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: CoreASM AopASM Eclipse Plugin
+Bundle-Name: CoreASM AoASM Eclipse Plugin
 Bundle-SymbolicName: org.coreasm.aspects.eclipse;singleton:=true
 Bundle-Version: 1.7.1.qualifier
 Bundle-Vendor: coreasm.org
