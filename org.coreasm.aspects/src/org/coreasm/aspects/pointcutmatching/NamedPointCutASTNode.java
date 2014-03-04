@@ -3,10 +3,14 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectTools;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -39,7 +43,16 @@ public class NamedPointCutASTNode extends PointCutASTNode {
 	 * @return token as name of the pointut
 	 */
 	public String getName(){
-		return this.getFirstASTNode().getFirstASTNode().getToken();
+		return this.getFirst().getFirst().getToken();
+	}
+
+	public List<FunctionRuleTermNode> getPointCutParameters(){
+		List<FunctionRuleTermNode> params = new LinkedList<FunctionRuleTermNode>();
+		for (ASTNode child = this.getFirst().getNext(); child != null; child = child.getNext()) {
+			if (child instanceof FunctionRuleTermNode)
+				params.add((FunctionRuleTermNode)child);
+		}
+		return params;
 	}
 	
 	@Override

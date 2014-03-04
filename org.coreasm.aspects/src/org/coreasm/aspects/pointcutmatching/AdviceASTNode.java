@@ -144,7 +144,7 @@ public class AdviceASTNode extends ASTNode {
 	 */
 	public AdviceASTNode cloneWithBinding(Binding binding) {
 		//if the given binding is null, the this object is returned
-		if (binding == null)
+		if (!binding.exists())
 			return (AdviceASTNode)this.cloneTree();
 		else
 		//clone this object taking into account the given binding
@@ -174,10 +174,10 @@ public class AdviceASTNode extends ASTNode {
 			{
 				ASTNode parentNode = node.getParent();
 				Node insertionReference = node.removeFromTree();
-				parentNode.addChildAfter(insertionReference, binding.getBindingPartner(node.getToken()).getToken(), binding.getBindingPartner(node.getToken()));
+				//children are named "beta" according to ..kernel.RuleDeclarationParseMap.java
+				parentNode.addChildAfter(insertionReference, "beta", binding.getBindingPartner(node.getToken()));
 			}
 		
-		if ( node.getAbstractChildNodes().size()>0)
 			for(ASTNode child : node.getAbstractChildNodes())
 				cloneWithBinding(child, binding);
 

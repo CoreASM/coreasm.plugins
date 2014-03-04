@@ -77,14 +77,14 @@ public class CallASTNode extends PointCutASTNode {
 						if (!Pattern.matches(pointCutToken, astn.getToken()))
 							return new Binding(compareToNode, this);
 						else {
-							String id = parameterNode.getId();
-							if (id == null)
+							String name = parameterNode.getName();
+							if (name == null)
 								resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
 							else {
 								if (resultingBinding == null)
 									resultingBinding = new Binding(compareToNode, this);
-								if ( ! resultingBinding.addBinding(id, astn))
-									throw new CoreASMError("Id "+id+ "already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+								if ( ! resultingBinding.addBinding(name, astn))
+									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
 							}
 						}
 					}

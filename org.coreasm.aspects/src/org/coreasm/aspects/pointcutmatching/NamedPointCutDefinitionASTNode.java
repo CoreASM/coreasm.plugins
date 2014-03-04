@@ -3,6 +3,9 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
@@ -35,7 +38,24 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	 * @return token as name of the pointut
 	 */
 	public String getName(){
-		return this.getFirstASTNode().getToken();
+		return this.getFirst().getToken();
+	}
+
+	/**
+	 * return the parameters of this node
+	 * omit the BinOrASTNode at the end
+	 * @return
+	 */
+	public List<ASTNode> getPointCutParameters(){
+		List<ASTNode> params = new LinkedList<ASTNode>();
+		ASTNode child = this.getFirst().getNext();
+		while (child != null) {
+			ASTNode next = child.getNext();
+			if (next != null)
+				params.add(child);
+			child = next;
+		}
+		return params;
 	}
 	
 	/**
@@ -47,7 +67,10 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	 * @return true, if the usage and the defintion of the named pointcut have the same name
 	 */
 	public boolean isDefinitionOf(NamedPointCutASTNode nptc){
-		return this.getName().equals(nptc.getName());
+		if ( ! this.getName().equals(nptc.getName()) )
+			return false;
+		//check parameter number
+		return this.getPointCutParameters().size() == nptc.getPointCutParameters().size();
 	}
 	
 	/**

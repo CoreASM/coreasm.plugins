@@ -6,10 +6,9 @@ import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.absstorage.FunctionElement.FunctionClass;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.plugins.signature.FunctionNode;
-import org.coreasm.engine.plugins.signature.SignaturePlugin;
-import org.coreasm.engine.plugins.string.StringElement;
 
 public class PointCutParameterNode extends ASTNode{
 
@@ -55,8 +54,15 @@ public class PointCutParameterNode extends ASTNode{
 			return this.getFirst().getToken();		
 	}
 	
-	public String getId(){
-		return this.getFirst().getNext().getToken();
+	public FunctionRuleTermNode getFuntionRuleTermNode() {
+		return (FunctionRuleTermNode)this.getFirst().getNext();
 	}
 	
+	public String getName(){
+		FunctionRuleTermNode fnNode = getFuntionRuleTermNode();
+		if (fnNode == null)
+			return null;
+		return fnNode.getFirst().getToken();
+	}
+
 }

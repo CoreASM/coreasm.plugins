@@ -54,10 +54,10 @@ import org.coreasm.engine.absstorage.FunctionElement;
 import org.coreasm.engine.absstorage.RuleElement;
 import org.coreasm.engine.absstorage.UniverseElement;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.KernelServices;
-import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.parser.GrammarRule;
 import org.coreasm.engine.parser.ParserTools;
@@ -320,12 +320,17 @@ public class AoASMPlugin extends Plugin
                             return node;
                         }
 
-                        public void addChild(Node parent, Node child) {
-                            if (child instanceof ASTNode)
-                                parent.addChild("lambda", child);
-                            else
-                                parent.addChild(child);
-                        }
+						public void addChild(Node parent, Node child) {
+							if (child instanceof ASTNode) {
+								if (((ASTNode) child).getGrammarRule().equals("ID")) {
+									FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
+									fn.addChild(child);
+									parent.addChild("lambda", fn);
+								} else
+									parent.addChild("lambda", child);
+							} else
+								parent.addChild(child);
+						}
                     });
 					
 			
@@ -339,7 +344,7 @@ public class AoASMPlugin extends Plugin
 						pTools.star(
 							Parsers.array(
 									pTools.getOprParser(","),
-									idParser							
+									idParser
 							)
 						),
 						pTools.getOprParser(")")
@@ -347,26 +352,26 @@ public class AoASMPlugin extends Plugin
 					pTools.getOprParser(":"),
 					refBinOrParser.lazy()
 				).map(
-                        new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-                            @Override
-                            public Node map(Object[] from) {
-                                NamedPointCutDefinitionASTNode node = new NamedPointCutDefinitionASTNode(
-                                        // get scanner info from first
-                                        // element of the complex node call
-                                        ((Node) from[0]).getScannerInfo());
-                                // ((Node) ((Object[]) from[0])[0])
-                                // .getScannerInfo());
-                                addChildren(node, from);
-                                return node;
-                            }
+					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+						@Override
+						public Node map(Object[] from) {
+							NamedPointCutDefinitionASTNode node = new NamedPointCutDefinitionASTNode(
+							// get scanner info from first
+							// element of the complex node call
+									((Node) from[0]).getScannerInfo());
+							// ((Node) ((Object[]) from[0])[0])
+							// .getScannerInfo());
+							addChildren(node, from);
+							return node;
+						}
 
-                            public void addChild(Node parent, Node child) {
-                                if (child instanceof ASTNode)
-                                    parent.addChild("lambda", child);
-                                else
-                                    parent.addChild(child);
-                            }
-                        });
+						public void addChild(Node parent, Node child) {
+							if (child instanceof ASTNode) {
+								parent.addChild("lambda", child);
+							} else
+								parent.addChild(child);
+						}
+					});
 			
 			/** Parser for call expression
 			 * The parser should accept names of agents which execute a call (maybe fuzzy by including *- and _-operators),
@@ -595,26 +600,44 @@ public class AoASMPlugin extends Plugin
 						}
 					});
 			
-			/* Parser for not expression */
-			Parser<Node> namedPointcut = // not(pointCutParser)
-			Parsers.array(ruleSignature).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							NamedPointCutASTNode node = new NamedPointCutASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+			/* Parser for named pointcut expressions used as pointcut term*/
+			Parser<Node> namedPointcutExpressionParser = 
+					Parsers.array(
+						idParser,
+						Parsers.array(
+							pTools.getOprParser("("),
+							idParser,
+							pTools.star(
+								Parsers.array(
+									pTools.getOprParser(","),
+									idParser
+								)
+							),
+							pTools.getOprParser(")")
+						).optional())
+					.map(
+						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+							@Override
+							public Node map(Object[] from) {
+								NamedPointCutASTNode node = new NamedPointCutASTNode(
+										// get scanner info from first
+										// element of the complex node call
+										((Node) from[0]).getScannerInfo());
+								addChildren(node, from);
+								return node;
+							}
 
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
+							public void addChild(Node parent, Node child) {
+								if (child instanceof ASTNode) {
+									if (((ASTNode) child).getGrammarRule().equals("ID")) {
+										FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
+										fn.addChild(child);
+										parent.addChild("lambda", fn);
+									} else
+										parent.addChild("lambda", child);
+								} else
+									parent.addChild(child);
+							}
 					});
 
 
@@ -635,7 +658,7 @@ public class AoASMPlugin extends Plugin
 					// cflowtop(pointCutParser)
 						cFlowTopParser,
 					// namedPointcut
-						namedPointcut
+						namedPointcutExpressionParser
 							);
 			refPointCutTermParser.set(pointCutTermParser);
 
@@ -1068,7 +1091,8 @@ public class AoASMPlugin extends Plugin
 				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());
 
 				//weave with cloned tree to get warnings for current CoreASM specification
-				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
+				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
+//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
 					AspectWeaver.getInstance().weave();
 				}
 				

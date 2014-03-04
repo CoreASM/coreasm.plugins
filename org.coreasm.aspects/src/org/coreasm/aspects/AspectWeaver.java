@@ -11,6 +11,7 @@ import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.pointcutmatching.ProceedASTNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
@@ -217,7 +218,6 @@ public class AspectWeaver {
 			LinkedList<ASTNode> adviceAstNode = AspectWeaver.getInstance().getAstNodes().get(AdviceASTNode.NODE_TYPE);
 			for(ASTNode advDef : adviceAstNode){
 				if (advDef instanceof AdviceASTNode){
-					new HashSet<String>();
 					substituteNamedPointcuts(((AdviceASTNode)advDef).getPointCut(), new HashSet<String>());
 				}
 			}
@@ -361,7 +361,9 @@ public class AspectWeaver {
 					if ( definition.isDefinitionOf(nptc) ){
 						ASTNode parent = nptc.getParent();
 						Node positionToInsert = nptc.removeFromTree();
-						parent.addChildAfter(positionToInsert, definition.getName(), definition.getPointCut().cloneTree());
+						Node pointcut = cloneWithBinding(definition, nptc);
+						//pointcut.setParent(parent);//TODO add surrounding round brackets
+						parent.addChildAfter(positionToInsert, definition.getName(), pointcut);
 						substituted.add(definition.getName());
 						substituteNamedPointcuts(parent, substituted);						
 					}
@@ -370,6 +372,47 @@ public class AspectWeaver {
 		} else
 			for(ASTNode child : astnode.getAbstractChildNodes())
 				substituteNamedPointcuts(child, substituted);
+	}
+
+	/**
+	 * replace variables in pointcut expressions which will replace a namedpointcut with the corresponding ids used in this namedpointcut
+	 *
+	 * @param def 	definition form which the pointcut that is used to replace the namedpointcut is extracted
+	 * @param nptc	named pointcut that has to be replaced
+	 * @return	pointcut from def with exchanged variables according to the here constructed binding
+	 * @throws Exception
+	 */
+	private static Node cloneWithBinding(NamedPointCutDefinitionASTNode def, NamedPointCutASTNode nptc) throws Exception {
+		//binding between variables from def as key and nptc variables as value
+		HashMap<String, FunctionRuleTermNode> binding = new HashMap<String, FunctionRuleTermNode>();
+		for(int i = 0; i < def.getPointCutParameters().size(); i++){
+			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc.getPointCutParameters().get(i));
+			if (value != null && ! nptc.getPointCutParameters().get(i).getToken().equals(value.getName()) )
+				throw new Exception("Binding inconsistent!");
+		}
+		ASTNode pointcut = (ASTNode)def.getPointCut().cloneTree();
+		//replacement of the variables within pointcut according to the binding
+		cloneWithBinding(pointcut, binding);
+		return pointcut;
+	}
+
+	/**
+	 * replace id nodes in pointcut parameternodes with ASTNodes from the given binding if their name is a key of that binding
+	 * @param node
+	 * @param binding
+	 */
+	private static void cloneWithBinding(ASTNode node, HashMap<String, FunctionRuleTermNode> binding){
+		if (node instanceof PointCutParameterNode) {
+			PointCutParameterNode param = (PointCutParameterNode)node;
+			if (param.getFuntionRuleTermNode() != null && binding.containsKey(param.getName())){
+				String paramName =  param.getName();
+				FunctionRuleTermNode fnNode = param.getFuntionRuleTermNode();
+				Node insertionReference = fnNode.removeFromTree();
+				param.addChildAfter(insertionReference, "beta",binding.get(paramName));
+			}
+		}
+		for(ASTNode child : node.getAbstractChildNodes())
+			cloneWithBinding(child, binding);
 	}
 
 	/**
@@ -437,9 +480,9 @@ public class AspectWeaver {
 			// 4) add rule body to condition at old position of skip
 			conditionASTNode.setScannerInfo(ruleBody);
 			skipParent.addChildAfter(skipInsertionReference,
-					ruleBody.getToken(), ruleBody);
+					ruleBody.getToken(), ruleBody);//TODO name should be as used for block of if condition
 
-			// 5) create new block rule for condition
+			// 5) create new block rule for condition to satisfy the create method
 			LinkedList<ASTNode> conditionList = new LinkedList<ASTNode>();
 			conditionList.add(conditionASTNode);
 			ASTNode conditionBlock = AspectTools.create(AspectTools.BLOCKRULE,
@@ -453,7 +496,7 @@ public class AspectWeaver {
 
 			// 1) save insertion reference
 				ruleParent = advice.getParent();
-				ruleInsertionReference = advice.removeFromTree();
+				ruleInsertionReference = advice.removeFromTree();//TODO wrong parent - named pointcut instead of advice
 			// 2) transform advice into rule definition
 				ASTNode ruleDefinition = getRuleDefinitionFromAdvice(advice);
 			// 3) add ruleDefinition to Program
@@ -539,18 +582,18 @@ public class AspectWeaver {
 		Parser<Node> parser = functionSignatureRuleParser
 				.from(parserTools.getTokenizer(),
 						parserTools.getIgnored());
-		Node functionSignitureDeclarationNode = parser
+		Node functionSignatureDeclarationNode = parser
 				.parse("function callStack : Agents -> LIST");
 
 		// add new function definition as first child to the
 		// root of the parse tree
 			this.getRootnode().addChildAfter(
 			this.getRootnode().getFirst(),
-			functionSignitureDeclarationNode.getToken(),
-			functionSignitureDeclarationNode);
+			functionSignatureDeclarationNode.getToken(),
+			functionSignatureDeclarationNode);
 
 		if (AoASMPlugin.isDebugMode())
-			AspectTools.writeParseTreeToFile("callStack.dot", functionSignitureDeclarationNode);
+			AspectTools.writeParseTreeToFile("callStack.dot", functionSignatureDeclarationNode);
 
 		//step 1
 		LinkedList<ASTNode> ruleDeclarations = getRuleDefinitions(this.getRootnode());
