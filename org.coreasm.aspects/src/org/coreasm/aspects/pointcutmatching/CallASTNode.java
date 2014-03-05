@@ -10,6 +10,7 @@ import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
+import org.coreasm.engine.kernel.RuleOrFuncElementNode;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,7 +84,13 @@ public class CallASTNode extends PointCutASTNode {
 							else {
 								if (resultingBinding == null)
 									resultingBinding = new Binding(compareToNode, this);
-								if ( ! resultingBinding.addBinding(name, astn))
+								if (astn == fnNode.getFirst()) {
+									RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
+									ruleOrFuncElemNode.addChild("alpha", astn);
+									if ( ! resultingBinding.addBinding(name, ruleOrFuncElemNode))
+										throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+								}
+								else if ( ! resultingBinding.addBinding(name, astn))
 									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
 							}
 						}

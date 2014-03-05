@@ -324,7 +324,7 @@ public class AoASMPlugin extends Plugin
 							if (child instanceof ASTNode) {
 								if (((ASTNode) child).getGrammarRule().equals("ID")) {
 									FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
-									fn.addChild(child);
+									fn.addChild("alpha", child);
 									parent.addChild("lambda", fn);
 								} else
 									parent.addChild("lambda", child);
@@ -631,7 +631,7 @@ public class AoASMPlugin extends Plugin
 								if (child instanceof ASTNode) {
 									if (((ASTNode) child).getGrammarRule().equals("ID")) {
 										FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
-										fn.addChild(child);
+										fn.addChild("alpha", child);
 										parent.addChild("lambda", fn);
 									} else
 										parent.addChild("lambda", child);
