@@ -13,16 +13,18 @@ aspect ParserTest {
 	
 	rule asd = skip
 
-	pointcut a(a1) : b(b1)
+	pointcut a(a2) : b(a2)
 
-	pointcut b(b1) : call("X" as var, "[0-9]*" as nmb) by agen without return
+	pointcut b(nmb) : call("X" as var, "[0-9]*" as nmb) by agent without return
 	
-	advice test(var, nmb) before : a(a1) { print "test( "+ nmb +" )"}	
- 
-}
+	advice test(var, nmb) before : a(nmb) { print "test( "+ nmb +" )"} 
+
+} 
 
 rule X(a) =
-	print a
+	print a 
+	
+rule test(a,b) = skip//X(a(asd)) 
 
 rule TestCallPointcut = {
 	X(4)
