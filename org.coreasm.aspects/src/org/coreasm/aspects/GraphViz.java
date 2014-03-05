@@ -74,7 +74,7 @@ public class GraphViz {
 	/**
 	 * The dir. where temporary files will be created.
 	 */
-	private static String TEMP_DIR = "/tmp"; // Linux
+	private static String TEMP_DIR = System.getProperty("java.io.tmpdir");
 	// private static String TEMP_DIR = "c:/temp"; // Windows
 
 	/**
@@ -88,6 +88,8 @@ public class GraphViz {
 	 * The source of the graph written in dot language.
 	 */
 	private StringBuilder graph = new StringBuilder();
+	
+	private static boolean hasErrors = false;
 
 	/**
 	 * Constructor: creates a new GraphViz object that will contain a graph.
@@ -177,6 +179,8 @@ public class GraphViz {
 	 * @return Success: 1, Failure: -1
 	 */
 	public int writeGraphToFile(byte[] img, File to) {
+		if (img == null)
+			return -1;
 		try {
 			FileOutputStream fos = new FileOutputStream(to);
 			fos.write(img);
@@ -222,9 +226,11 @@ public class GraphViz {
 			if (img.delete() == false)
 				System.err.println("Warning: " + img.getAbsolutePath() + " could not be deleted!");
 		} catch (java.io.IOException ioe) {
-			System.err.println("Error:    in I/O processing of tempfile in dir " + GraphViz.TEMP_DIR + "\n");
-			System.err.println("       or in calling external command");
-			ioe.printStackTrace();
+			if (!hasErrors) {
+				System.err.println("Error:    in I/O processing of tempfile in dir " + GraphViz.TEMP_DIR + "\n");
+				System.err.println("       or in calling external command");
+				hasErrors = true;
+			}
 		} catch (java.lang.InterruptedException ie) {
 			System.err.println("Error: the execution of the external program was interrupted");
 			ie.printStackTrace();

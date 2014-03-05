@@ -386,8 +386,8 @@ public class AspectWeaver {
 		HashMap<String, FunctionRuleTermNode> binding = new HashMap<String, FunctionRuleTermNode>();
 		for(int i = 0; i < def.getPointCutParameters().size(); i++){
 			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc.getPointCutParameters().get(i));
-			if (value != null && ! nptc.getPointCutParameters().get(i).getToken().equals(value.getName()) )
-				throw new Exception("Binding inconsistent!");
+			if (value != null && ! value.getName().equals(nptc.getPointCutParameters().get(i).getToken()))
+				throw new CoreASMError("Binding inconsistent!", nptc.getPointCutParameters().get(i));
 		}
 		ASTNode pointcut = (ASTNode)def.getPointCut().cloneTree();
 		//replacement of the variables within pointcut according to the binding
