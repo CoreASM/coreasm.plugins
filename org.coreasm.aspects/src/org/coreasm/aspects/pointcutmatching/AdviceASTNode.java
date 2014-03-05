@@ -67,7 +67,7 @@ public class AdviceASTNode extends ASTNode {
 			this.getFirst().getFirst().setToken(adviceId);
 		}
 		
-		//if node is a FunctionRuleTermNode od MacroCallRule with token proceed, a new ProceedASTNode has to be inserted instead
+		//if node is a FunctionRuleTermNode or MacroCallRule with token proceed, a new ProceedASTNode has to be inserted instead
 		if ( node.getPluginName().equals("BlockRulePlugin")){//if the child of advice is the BlockRule, i.e. the advice's body
 			LinkedList<Node> proceedNodes = AspectTools.getNodesWithName(node, "proceed");
 			ASTNode proceedNode = null;
@@ -83,9 +83,9 @@ public class AdviceASTNode extends ASTNode {
 					parent = proceedNode.getParent();
 					insertionReference = proceedNode.removeFromTree();
 					if (proceedNode instanceof FunctionRuleTermNode)
-						parent.addChildAfter(insertionReference, AspectTools.constructName(proceedNode), (FunctionRuleTermNode)proceedNode.cloneTree());
+						AspectTools.addChildAfter(parent,insertionReference, AspectTools.constructName(proceedNode), (FunctionRuleTermNode)proceedNode.cloneTree());
 					else if (proceedNode instanceof MacroCallRuleNode)
-						parent.addChildAfter(insertionReference, AspectTools.constructName(proceedNode), (MacroCallRuleNode)proceedNode.cloneTree());
+						AspectTools.addChildAfter(parent,insertionReference, AspectTools.constructName(proceedNode), (MacroCallRuleNode)proceedNode.cloneTree());
 				}
 			}
 			

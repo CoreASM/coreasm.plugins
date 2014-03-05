@@ -86,7 +86,7 @@ public class CallASTNode extends PointCutASTNode {
 									resultingBinding = new Binding(compareToNode, this);
 								if (astn == fnNode.getFirst()) {
 									RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
-									ruleOrFuncElemNode.addChild("alpha", astn);
+									AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn);
 									if ( ! resultingBinding.addBinding(name, ruleOrFuncElemNode))
 										throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
 								}

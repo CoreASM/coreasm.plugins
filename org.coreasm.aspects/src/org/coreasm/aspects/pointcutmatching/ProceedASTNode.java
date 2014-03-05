@@ -41,7 +41,7 @@ public class ProceedASTNode extends MacroCallRuleNode{
 	
 	public ProceedASTNode(FunctionRuleTermNode proceedNode) {
 		super(proceedNode.getScannerInfo());
-		this.addChild(proceedNode);
+		AspectTools.addChild(this, proceedNode);
 	}
 	
 	public ProceedASTNode(ScannerInfo scannerInfo){

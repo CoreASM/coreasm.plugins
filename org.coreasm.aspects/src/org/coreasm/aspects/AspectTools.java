@@ -20,7 +20,11 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
@@ -51,6 +55,73 @@ public class AspectTools {
 	 */
 	private static ControlAPI getCapi() {
 		return AspectTools.capi;
+	}
+
+	public static void addChildAfter(Node parent, Node insertionReference, String name, Node node){
+		parent.addChildAfter(insertionReference, name, node);
+		List<Node> newNodes = new LinkedList<Node>();
+		newNodes.add(node);
+		Node root = parent;
+		while(root.getParent()!=null)
+			root = root.getParent();
+		AspectTools.update(nodes2dot(root), newNodes);
+		newNodes.clear();
+	}
+
+	public static void addChild(Node parent, String name, Node node){
+		if (name == null)
+			parent.addChild(node);
+		else
+			parent.addChild(name, node);
+		List<Node> newNodes = new LinkedList<Node>();
+		newNodes.add(node);
+		Node root = parent;
+		while(root.getParent()!=null)
+			root = root.getParent();
+		AspectTools.update(nodes2dot(root), newNodes);
+		newNodes.clear();
+	}
+
+	public static void addChild(Node parent, Node node){
+		addChild(parent, null, node);
+	}
+
+	private static String timestamp = null;
+	private static int currentDot = 0;
+	public static void update(String dot, List<Node> changed) {
+		currentDot++;
+
+		for (Node change : changed) {
+			String toMatch = getDotNodeId(change)+" [label";
+			dot.replace(toMatch, toMatch+"color=\"red\", ");
+		}
+
+		List<String> revised  = new LinkedList<String>(Arrays.asList(dot.split("\n")));
+
+		GraphViz gv = new GraphViz();
+		Iterator<String> it = revised.iterator();
+		gv.start_graph();
+		while (it.hasNext())
+			gv.addln(it.next());
+		gv.end_graph();
+
+		// String type = "gif";
+		String type = "dot";
+		// String type = "fig"; // open with xfig
+		// String type = "pdf";
+		// String type = "ps";
+		//String type = "svg"; // open with inkscape
+		// String type = "png";
+		// String type = "plain";
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+		if (timestamp == null)
+			timestamp = formatter.format(cal.getTime());
+
+		String tmpDir = System.getProperty("java.io.tmpdir");
+		File out = new File(tmpDir+"/"+timestamp+"/out."+currentDot+"."+ type);
+		out.getParentFile().mkdirs();
+		gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type), out);
 	}
 
 	private static File lastChoosenFile;
@@ -248,12 +319,26 @@ public class AspectTools {
 	}
 
 	/**
+	 * build a (hopefully) unique node id
+	 * @param node
+	 * @return
+	 */
+	static String getDotNodeId(Node node){
+		long hash = 0;
+		while (node != null) {
+			hash += node.hashCode()+node.getConcreteNodeType().hashCode();
+			node = node.getParent();
+		}
+		return Long.toString( hash ) ;
+	}
+
+	/**
 	 * Creates dot graph from tree starting from the given node.
 	 * 
 	 * @param node to start from the dot graph extraction
 	 * @return dot graph as String
 	 */
-	private static String nodes2dot(Node node) {
+	static String nodes2dot(Node node) {
 		String dot = "";
 		java.util.Date today = new java.util.Date();
 		dot += "//" + new java.sql.Timestamp(today.getTime()) + "\n";
@@ -276,8 +361,8 @@ public class AspectTools {
 	private static String nodes2dotRecursion(Node node) {
 		String dot = "";
 		dot += getLabel(node) + "\n";
-		dot += "\"" + node.getParent().hashCode() + "\" -- \""
-				+ node.hashCode() + "\"\n";
+		dot += "\"" + getDotNodeId(node.getParent()) + "\" -- \""
+				+ getDotNodeId(node) + "\"\n";
 		// recursion
 		for (Node child : node.getChildNodes()) {
 			dot += nodes2dotRecursion(child);
@@ -300,7 +385,7 @@ public class AspectTools {
 						+ (astn.getConcreteNodeType());
 			} else {
 				output = "";
-				if (astn.getGrammarRule().equals(""))
+				if (astn.getGrammarRule().isEmpty())
 					output += astn.getGrammarClass();
 				else
 					output += astn.getGrammarRule();
@@ -325,7 +410,7 @@ public class AspectTools {
 			int indentation = Integer.valueOf(context.split("[:,]")[2]);
 			output = "("+linenumber+","+indentation+") "+output;
 		}
-		return "\"" + node.hashCode() + "\"" + "[label=\"" + output +"\"]";
+		return "\"" + getDotNodeId(node) + "\"" + "[label=\"" + output +"\"]";
 	}
 
 	/**
@@ -506,7 +591,7 @@ public class AspectTools {
 			else
 				//operator nodes '(' and ',' must have no marks
 				functionRuleNode.addChild(node.cloneTree());
-		adviceMacroCallRule.addChild(functionRuleNode);
+		AspectTools.addChild(adviceMacroCallRule, functionRuleNode);
 		return adviceMacroCallRule;
 	}
 
@@ -685,7 +770,7 @@ public class AspectTools {
 	@SuppressWarnings("unchecked")
 	public static <A extends ASTNode> A insert(ASTNode node, ASTNode insertion) {
 		if (node.getGrammarRule().equals(BLOCKRULE)) {
-				node.addChildAfter(node.getFirstCSTNode(),
+			AspectTools.addChildAfter(node, node.getFirstCSTNode(),
 						insertion.getToken(), insertion);
 		}else if (node.getGrammarRule().equals(SEQBLOCKRULE)) {
 				if (node instanceof SeqBlockRuleNode)

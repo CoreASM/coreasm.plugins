@@ -1072,6 +1072,9 @@ public class AoASMPlugin extends Plugin
 		//Update Capi used in AspectTools
 		AspectTools.setCapi(capi);
 
+		LinkedList<Node> list = new LinkedList<Node>();
+		AspectTools.update(AspectTools.nodes2dot(capi.getParser().getRootNode()), list);
+
 		//AspectTools.writeParseTreeToFile("parseTree of the current program", capi.getParser().getRootNode());
 		// initialize weaver with current ControlAPI and start if weaving if initializing was successful
 		try {

@@ -12,7 +12,6 @@ import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
-import org.coreasm.aspects.pointcutmatching.ProceedASTNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.absstorage.RuleElement;
@@ -295,11 +294,11 @@ public class AspectWeaver {
 				if (aroundNodes.size() == 1 && beforeNodes.isEmpty()
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
-						parentOfCandiate.addChildAfter(insertionReference,
+						AspectTools.addChildAfter(parentOfCandiate, insertionReference,
 								aroundNodes.getFirst().getToken(),
 								aroundNodes.getFirst());
 					else
-						parentOfCandiate.addChild(aroundNodes.getFirst());
+						AspectTools.addChild(parentOfCandiate, aroundNodes.getFirst());
 				} else {
 					// add before nodes
 					if (!beforeNodes.isEmpty()) {
@@ -335,11 +334,11 @@ public class AspectWeaver {
 					// the position is indicated by its previous sibling node or
 					// null, if it is the first child.
 					if (insertionReference != null)
-						parentOfCandiate.addChildAfter(insertionReference,
+						AspectTools.addChildAfter(parentOfCandiate, insertionReference,
 								rootNodeOfSeqBlockSequence.getToken(),
 								rootNodeOfSeqBlockSequence);
 					else
-						parentOfCandiate.addChild(rootNodeOfSeqBlockSequence);
+						AspectTools.addChild(parentOfCandiate, rootNodeOfSeqBlockSequence);
 				}
 			}
 			/** \todo remove non matching advices and shift all definitions to the main context of the program @see orchestrate(ASTNode node) */
@@ -348,7 +347,7 @@ public class AspectWeaver {
 		reset();
 	}
 
-	private void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws Throwable {
+	private static void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws Throwable {
 		if (astnode instanceof NamedPointCutASTNode) {
 			NamedPointCutASTNode nptc = ((NamedPointCutASTNode) astnode);
 			if (substituted.contains(nptc.getName()))
@@ -363,7 +362,7 @@ public class AspectWeaver {
 						Node positionToInsert = nptc.removeFromTree();
 						Node pointcut = cloneWithBinding(definition, nptc);
 						//pointcut.setParent(parent);//TODO add surrounding round brackets
-						parent.addChildAfter(positionToInsert, definition.getName(), pointcut);
+						AspectTools.addChildAfter(parent, positionToInsert, definition.getName(), pointcut);
 						substituted.add(definition.getName());
 						substituteNamedPointcuts(parent, substituted);						
 					}
@@ -408,7 +407,7 @@ public class AspectWeaver {
 				String paramName =  param.getName();
 				FunctionRuleTermNode fnNode = param.getFuntionRuleTermNode();
 				Node insertionReference = fnNode.removeFromTree();
-				param.addChildAfter(insertionReference, "beta",binding.get(paramName));
+				AspectTools.addChildAfter(param, insertionReference, "beta",binding.get(paramName));
 			}
 		}
 		for(ASTNode child : node.getAbstractChildNodes())
@@ -479,7 +478,7 @@ public class AspectWeaver {
 
 			// 4) add rule body to condition at old position of skip
 			conditionASTNode.setScannerInfo(ruleBody);
-			skipParent.addChildAfter(skipInsertionReference,
+			AspectTools.addChildAfter(skipParent, skipInsertionReference,
 					ruleBody.getToken(), ruleBody);//TODO name should be as used for block of if condition
 
 			// 5) create new block rule for condition to satisfy the create method
@@ -488,7 +487,7 @@ public class AspectWeaver {
 			ASTNode conditionBlock = AspectTools.create(AspectTools.BLOCKRULE,
 					conditionList);
 			// 6) add condition to old position of the rule body
-			ruleParent.addChildAfter(ruleInsertionReference,
+			AspectTools.addChildAfter(ruleParent, ruleInsertionReference,
 					conditionBlock.getToken(), conditionBlock);
 			if(AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(advice.getFirst().getFirst().getToken()+".dot", advice);
@@ -501,7 +500,7 @@ public class AspectWeaver {
 				ASTNode ruleDefinition = getRuleDefinitionFromAdvice(advice);
 			// 3) add ruleDefinition to Program
 				ruleDefinition.setParent(ruleParent);
-				ruleParent.addChildAfter(ruleInsertionReference, ruleDefinition.getToken(), ruleDefinition);
+				AspectTools.addChildAfter(ruleParent, ruleInsertionReference, ruleDefinition.getToken(), ruleDefinition);
 
 		}else{
 			for (ASTNode child : node.getAbstractChildNodes()) {
@@ -548,10 +547,10 @@ public class AspectWeaver {
 			ASTNode body = advice.getAbstractChildNodes().get(advice.getAbstractChildNodes().size()-1);
 
 			//compose the components of the rule declaration node
-			ruleDeclaration.addChild(ruleKeyword);
-			ruleDeclaration.addChild(ruleSignature);
-			ruleDeclaration.addChild(equal);
-			ruleDeclaration.addChild(body);
+			AspectTools.addChild(ruleDeclaration, ruleKeyword);
+			AspectTools.addChild(ruleDeclaration, ruleSignature);
+			AspectTools.addChild(ruleDeclaration, equal);
+			AspectTools.addChild(ruleDeclaration, body);
 
 			return ruleDeclaration;
 	}
@@ -587,8 +586,9 @@ public class AspectWeaver {
 
 		// add new function definition as first child to the
 		// root of the parse tree
-			this.getRootnode().addChildAfter(
-			this.getRootnode().getFirst(),
+			ASTNode root = this.getRootnode();
+			AspectTools.addChildAfter(root,
+			root.getFirst(),
 			functionSignatureDeclarationNode.getToken(),
 			functionSignatureDeclarationNode);
 
@@ -661,7 +661,7 @@ public class AspectWeaver {
 			seqblockList.add(updateASTNodeEnd);
 			ASTNode seqBlockASTNode =AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
 
-			parent.addChildAfter(insertionReference, seqBlockASTNode.getToken(), seqBlockASTNode);
+			AspectTools.addChildAfter(parent, insertionReference, seqBlockASTNode.getToken(), seqBlockASTNode);
 
 			if(AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken()+".dot", parent);
@@ -706,14 +706,13 @@ public class AspectWeaver {
 
 		// add new rule definitions as first children to the
 		// root of the parse tree
-		this.getRootnode().
-			addChildAfter(capi.getParser().getRootNode().getFirst(),
+		root = this.getRootnode();
+		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
 						ruleCallASTNode.getToken(), ruleCallASTNode);
 		if (AoASMPlugin.isDebugMode())
 			AspectTools.writeParseTreeToFile(((ASTNode)ruleCallASTNode).getFirst().getFirst().getToken()+".dot", ruleCallASTNode);
 
-		this.getRootnode()
-			.addChildAfter(capi.getParser().getRootNode().getFirst(),
+		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
 						argsCheckASTNode.getToken(), argsCheckASTNode);
 		if (AoASMPlugin.isDebugMode())
 			AspectTools.writeParseTreeToFile(((ASTNode)argsCheckASTNode).getFirst().getFirst().getToken()+".dot", argsCheckASTNode);
