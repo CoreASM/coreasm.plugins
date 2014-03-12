@@ -6,7 +6,7 @@ package org.coreasm.aspects.pointcutmatching;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.coreasm.aspects.AspectTools;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
 
 /**

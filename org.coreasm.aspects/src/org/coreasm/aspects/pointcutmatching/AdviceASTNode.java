@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.coreasm.aspects.AoASMPlugin;
-import org.coreasm.aspects.AspectTools;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;

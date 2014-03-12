@@ -1,9 +1,9 @@
 package org.coreasm.aspects.pointcutmatching;
 
 import org.coreasm.aspects.AoASMPlugin;
-import org.coreasm.aspects.AspectTools;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.errorhandling.MatchingError;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;

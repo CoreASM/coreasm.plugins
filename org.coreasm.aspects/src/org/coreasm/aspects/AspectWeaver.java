@@ -4,7 +4,15 @@
  */
 package org.coreasm.aspects;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+
 import org.codehaus.jparsec.Parser;
+
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -12,6 +20,8 @@ import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
+import org.coreasm.aspects.utils.AspectTools;
+import org.coreasm.aspects.utils.TestEngineDriver;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.absstorage.RuleElement;
@@ -22,10 +32,6 @@ import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 
 /**
  * The weaver integrates the aspects in terms of new nodes into the AST of the
@@ -136,7 +142,8 @@ public class AspectWeaver {
 //					capi.error(new CoreASMError("proceed can only be used if the advice "+AspectTools.constructName(node)+" has the locator \"around\"", null, null, null, node));
 //			}
 	}
-	
+
+	//@formatter:off
 	/**
 	 * Transform the AST after the initialization process has been completed.
 	 * Afterwards, the reset method is called to prepare the next weaving
@@ -180,6 +187,7 @@ public class AspectWeaver {
 	 \enddot
 	 * @throws Throwable 
 	 */
+	//@formatter:on
 	public void weave() throws Throwable{
 
 		//HashMap with ASTNodes of the original program as key and a list of all advices having pointcuts matching this node
@@ -697,6 +705,23 @@ public class AspectWeaver {
 		parser = ruleDeclarationParser
 				.from(parserTools.getTokenizer(),
 						parserTools.getIgnored());
+		
+		File tmpfile;
+		try {
+			String tmpDir = System.getProperty("java.io.tmpdir");
+			tmpfile = new File(tmpDir + "/coreasm-spec.casm");
+			tmpfile.getParentFile().mkdirs();
+
+			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
+			output.write("CoreASM TempSpec\nuse Standard\ninit test\nrule test = print \"Hallo Welt\"\n");
+			output.write(argsCheck);
+			output.close();
+
+			TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		Node ruleCallASTNode = parser
 				.parse(ruleCallCheck);

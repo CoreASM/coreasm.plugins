@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
+
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
 import org.coreasm.aspects.pointcutmatching.AspectASTNode;
@@ -43,6 +44,7 @@ import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.NotASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.pointcutmatching.WithinASTNode;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMError;
@@ -70,50 +72,59 @@ import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject.VerbosityLevel;
 
 
+//@formatter:off
 /**
- * @mainpage Aspect-Orientation-Plugin for CoreASM
- *
- * This plug-in depends on the SignaturePlugin and extends CoreASM to
- * AspectOriented ASM programs.
- *
- * This plug-in provides the following additional ASM constructs:
- * <ol>
- * <li><b>aspect*</b></li>
- * <ol>
- * <li><b>signature*</b></li>
- * <li><b>ruleDefinition*</b>
- * <li><b>advice*</b></li>
- * <ol>
- * <li><b>locator</b></li>
- * <ol>
- * <li><b>pointcut</b></li>
- * <li><b>:</b></li>
- * <li><b>rule block</b></li>
- * </ol>
- * </ol> </ol> </ol>
- *
- * \todo	we still have some work todo!
- * \bug		and there are still some bugs :(
- * \note	dot can be used within comment via /dot digraph name{ }/enddot. Please use colorscheme = pastel19 @see http://www.graphviz.org/doc/info/colors.html
- * \attention  Should only be used by those who know what they are doing.
- * \warning    Not certified for use within mission critical or life sustaining systems.
- * Note the following example code:
- * \code
- *    Window win = new Window(parent);
- *    win.show();
- * \endcode
- *
- * \exception	StringIndexOutOfRangeException
- *             if index is not between
- *             <code>0</code> and
- *             <code>length() - 1</code>.
- * @see        NewClass
- * @see        http://java.sun.com
- * implementation of @see org.coreasm.engine.plugin.ParserPlugin,
- * @see org.coreasm.engine.plugin.VocabularyExtender and
- * @see org.coreasm.engine.plugin.ExtensionPointPlugin
- * extends @see org.coreasm.engine.plugin.Plugin
- */
+* @mainpage Aspect-Orientation-Plugin for CoreASM
+* 
+* This plug-in depends on the SignaturePlugin and extends CoreASM to
+* AspectOriented ASM programs.
+* 
+* This plug-in provides the following additional ASM constructs:
+* <ol>
+*     <li><b>aspect*</b></li>
+*     <ol>
+*         <li><b>signature*</b></li>
+*         <li><b>ruleDefinition*</b>
+*         <li><b>advice*</b></li>
+*         <ol>
+*             <li><b>locator</b></li>
+*             <ol>
+*                 <li><b>pointcut</b></li>
+*                 <li><b>:</b></li>
+*                 <li><b>rule block</b></li>
+*             </ol>
+*         </ol>
+*     </ol>
+* </ol>
+* 
+* \todo we still have some work todo!
+* \bug and there are still some bugs :(
+* \note dot can be used within comment via 
+* /dot 
+*     digraph name{}
+* /enddot. 
+* 
+* Please use colorscheme = pastel19 @see
+* http://www.graphviz.org/doc/info/colors.html
+* \attention Should only be used by those who know what they are doing.
+* \warning Not certified for use within mission critical or life sustaining systems.
+* Note the following example code:
+* \code
+*     Window win = new Window(parent);
+*     win.show();
+* \endcode
+* 
+* \exception StringIndexOutOfRangeException if index is not between
+* <code>0</code> and
+* <code>length() - 1</code>.
+* @see NewClass
+* @see http://java.sun.com implementation of 
+* @see org.coreasm.engine.plugin.ParserPlugin,
+* @see org.coreasm.engine.plugin.VocabularyExtender and
+* @see org.coreasm.engine.plugin.ExtensionPointPlugin extends 
+* @see org.coreasm.engine.plugin.Plugin
+*/
+//@formatter:on
 public class AoASMPlugin extends Plugin
 		implements
 			ParserPlugin,
@@ -197,6 +208,7 @@ public class AoASMPlugin extends Plugin
 	/**
 	 * @return	return the version info of the plugin (i.e. for the about dialog)
 	 */
+	@Override
 	public VersionInfo getVersionInfo() {
 		return VERSION_INFO;
 	}
@@ -320,6 +332,7 @@ public class AoASMPlugin extends Plugin
                             return node;
                         }
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode) {
 								if (((ASTNode) child).getGrammarRule().equals("ID")) {
@@ -365,6 +378,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode) {
 								parent.addChild("lambda", child);
@@ -421,6 +435,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -451,6 +466,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -494,6 +510,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -518,6 +535,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -544,6 +562,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -568,6 +587,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -592,6 +612,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -627,6 +648,7 @@ public class AoASMPlugin extends Plugin
 								return node;
 							}
 
+							@Override
 							public void addChild(Node parent, Node child) {
 								if (child instanceof ASTNode) {
 									if (((ASTNode) child).getGrammarRule().equals("ID")) {
@@ -691,6 +713,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -727,6 +750,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -763,6 +787,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -819,6 +844,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -851,6 +877,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -896,6 +923,7 @@ public class AoASMPlugin extends Plugin
 							return node;
 						}
 
+						@Override
 						public void addChild(Node parent, Node child) {
 							if (child instanceof ASTNode)
 								parent.addChild("lambda", child);
@@ -1073,7 +1101,7 @@ public class AoASMPlugin extends Plugin
 		AspectTools.setCapi(capi);
 
 		LinkedList<Node> list = new LinkedList<Node>();
-		AspectTools.update(AspectTools.nodes2dot(capi.getParser().getRootNode()), list);
+		AspectTools.createDotGraph(AspectTools.nodes2dot(capi.getParser().getRootNode()), list);
 
 		//AspectTools.writeParseTreeToFile("parseTree of the current program", capi.getParser().getRootNode());
 		// initialize weaver with current ControlAPI and start if weaving if initializing was successful
