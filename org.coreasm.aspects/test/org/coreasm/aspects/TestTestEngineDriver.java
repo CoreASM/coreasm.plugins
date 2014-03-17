@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import org.coreasm.aspects.utils.TestEngineDriver;
 import org.coreasm.aspects.utils.TestEngineDriver.TestEngineDriverStatus;
+import org.coreasm.engine.interpreter.ASTNode;
 
 public class TestTestEngineDriver {
 
@@ -39,18 +40,28 @@ public class TestTestEngineDriver {
 	}
 
 	@Test
-	public void Test() {
+	public void runsSpecification() {
 		Assert.assertNotNull(testFile);
 		try {
 			TestEngineDriver.newLaunch(testFile.getAbsolutePath());
-			Thread.sleep(1000);
+			Assert.assertNotNull(TestEngineDriver.getRunningInstance());
+			Thread.sleep(250);
 			Assert.assertEquals(
 					TestEngineDriverStatus.running,
 					TestEngineDriver.getRunningInstance().getStatus()
 					);
+			Thread.sleep(250);
+			ASTNode root = TestEngineDriver.getRunningInstance().getEngine().getParser().getRootNode();
+			System.out.println("The root node is " + root.toString());
+			TestEngineDriver.getRunningInstance().stop();
+			Thread.sleep(250);
+			Assert.assertNull(TestEngineDriver.getRunningInstance());
 		}
 		catch (Exception e) {
+			if (TestEngineDriver.getRunningInstance() != null)
+				TestEngineDriver.getRunningInstance().stop();
 			e.printStackTrace();
 		}
 	}
+
 }

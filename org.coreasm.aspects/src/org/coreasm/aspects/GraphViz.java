@@ -267,8 +267,8 @@ public class GraphViz {
 	 * 
 	 * @return A string to open a graph.
 	 */
-	public String start_graph() {
-		return "digraph G {";
+	public void start_graph() {
+		graph.append("graph G {");
 	}
 
 	/**
@@ -276,8 +276,8 @@ public class GraphViz {
 	 * 
 	 * @return A string to close a graph.
 	 */
-	public String end_graph() {
-		return "}";
+	public void end_graph() {
+		graph.append("}");
 	}
 
 	/**

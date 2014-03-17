@@ -3,12 +3,14 @@ package org.coreasm.aspects.eclipse;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.ui.texteditor.MarkerUtilities;
+
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.eclipse.util.Utilities;
+import org.coreasm.engine.EngineProperties;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
 import org.coreasm.util.information.InformationObserver;
-import org.eclipse.ui.texteditor.MarkerUtilities;
 
 public class AopASMEclipsePlugin implements InformationObserver {
 	
@@ -16,6 +18,7 @@ public class AopASMEclipsePlugin implements InformationObserver {
 
 	public AopASMEclipsePlugin() {
 		InformationDispatcher.addObserver(this);
+		System.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, Utilities.getAdditionalPluginsFolders());
 	}
 
 	@Override

@@ -30,6 +30,7 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
+import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
@@ -47,7 +48,7 @@ public class AspectTools {
 	public final static String RULESIGNATURE = "RuleSignature";	// from SignaturPlugin
 	///@}
 	/** ControlAPI used to reproduce text or dot output from a given AST */
-	private static ControlAPI capi = null;
+	private static volatile ControlAPI capi;
 
 	/**
 	 * set the ControlAPI used by AspectTools
@@ -55,7 +56,7 @@ public class AspectTools {
 	 * @param capi
 	 *            ControlAPI
 	 */
-	public static void setCapi(ControlAPI capi)
+	public static synchronized void setCapi(ControlAPI capi)
 	{
 		AspectTools.capi = capi;
 	}
@@ -63,9 +64,9 @@ public class AspectTools {
 	/**
 	 * get the current ControlAPI which has been set for AspectTools
 	 * 
-	 * @return the currently asigned ControlAPI
+	 * @return the currently assigned ControlAPI
 	 */
-	private static ControlAPI getCapi() {
+	public static synchronized ControlAPI getCapi() {
 		return AspectTools.capi;
 	}
 
@@ -136,13 +137,15 @@ public class AspectTools {
 
 		GraphViz gv = new GraphViz();
 		Iterator<String> it = revised.iterator();
-		gv.start_graph();
 		while (it.hasNext()) {
 			String line = it.next();
-			if (line.contains("keyword") || line.contains("operator") || line.contains("id"))
+			//			if (line.startsWith("graph") /* first line */
+			//					|| it.hasNext() == false /* last line */
+			//					|| line.contains("keyword")
+			//					|| line.contains("operator")
+			//					|| line.contains("id"))
 				gv.addln(line);
 		}
-		gv.end_graph();
 
 		// possible types are
 		// dot, fig, gif, pdf, plain, png, ps, svg
@@ -393,7 +396,7 @@ public class AspectTools {
 	 *            to start from the dot graph extraction
 	 * @return dot graph as String
 	 */
-	public static String nodes2dot(Node node) {
+	public synchronized static String nodes2dot(Node node) {
 		String dot = "";
 		java.util.Date today = new java.util.Date();
 		dot += "//" + new java.sql.Timestamp(today.getTime()) + "\n";
@@ -414,7 +417,7 @@ public class AspectTools {
 	 *            to continue the dot graph extraction
 	 * @return dot graph as String
 	 */
-	private static String nodes2dotRecursion(Node node, int depth) {
+	private synchronized static String nodes2dotRecursion(Node node, int depth) {
 		String dot = "";
 		String indent = "";
 		int localDepth = depth;
@@ -438,7 +441,7 @@ public class AspectTools {
 	 *            to get label string from
 	 * @return label string
 	 */
-	private static String getLabel(Node node) {
+	private synchronized static String getLabel(Node node) {
 		String output = "";
 		if (node instanceof ASTNode) {
 			ASTNode astn = (ASTNode) node;
@@ -466,11 +469,17 @@ public class AspectTools {
 			output += node.toString();
 		}
 		// add linenumber and indentation to dot file label
-		if (getCapi() != null) {
-			String context = node.getContext(getCapi().getParser(), getCapi().getSpec());
-			int linenumber = Integer.valueOf(context.split("[:,]")[1]);
-			int indentation = Integer.valueOf(context.split("[:,]")[2]);
-			output = "(" + linenumber + "," + indentation + ") " + output;
+		if (AspectTools.getCapi() != null) {
+			String context = node.getContext(AspectTools.getCapi().getParser(), AspectTools.getCapi().getSpec());
+			try {
+				int linenumber = Integer.valueOf(context.split("[:,]")[1]);
+				int indentation = Integer.valueOf(context.split("[:,]")[2]);
+				output = "(" + linenumber + "," + indentation + ") " + output;
+			}
+			catch (NumberFormatException e) {
+				//occurs if the specification does not match the AST, 
+				//e.g. if new nodes has been inserted by the aspect plugin
+			}
 		}
 		return "\"" + getDotNodeId(node) + "\"" + "[label=\"" + output + "\"]";
 	}
@@ -967,6 +976,17 @@ public class AspectTools {
 			}
 		}
 		return text;
+	}
+
+	public static ASTNode findRuleDeclaration(ASTNode startingPoint, String ruleName) {
+		for (ASTNode astNode : startingPoint.getAbstractChildNodes()) {
+			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) &&
+					astNode.getFirst().getFirst().getToken().equals(ruleName))
+				return astNode;
+			else if (!astNode.getAbstractChildNodes().isEmpty())
+				findRuleDeclaration(astNode, ruleName);
+		}
+		return null;
 	}
 }
 

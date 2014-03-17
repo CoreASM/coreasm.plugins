@@ -4,9 +4,6 @@
  */
 package org.coreasm.aspects;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -676,71 +673,49 @@ public class AspectWeaver {
 		}
 
 		//step 2
+		//@formatter:off
 		String ruleCallCheck =
-			//"//returns a set of rule signatures from the callStack matching the given ruleSignature\n"+
-			"rule "+MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature) =\n"+
-			"return res in\n"+
-			"{\n"+
-			"	//just looking for a rulename (i.e. call(x))\n"+
-			"	if(head(ruleSignature)!={} and tail(ruleSignature)={}) then\n"+
-			"		res := {signature | signature in callStack(self) with matches(head(signature),head(ruleSignature))}\n"+
-			"	//looking for a rule signature i.e. call(x,[p1,...,pn])\n"+
-			"	else if (tail(ruleSignature)!={}) then\n"+
-			"		res:={signature | signature in callStack(self) with signature=ruleSignature}\n"+
-			"	else res:={}\n"+
-			"}";
+				//"//returns a set of rule signatures from the callStack matching the given ruleSignature\n"+
+				"rule "+ MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature) =\n" +
+				"	return res in {\n" +
+				"		//just looking for a rulename (i.e. call(x))\n" +
+				"		if(head(ruleSignature)!={} and tail(ruleSignature)={}) then\n" +
+				"			res := {signature | signature in callStack(self) with matches(head(signature),head(ruleSignature))}\n" +
+				"			//looking for a rule signature i.e. call(x,[p1,...,pn])\n" +
+				"		else if ( tail(ruleSignature) != {} ) then\n" +
+				"			res := { signature | signature in callStack(self) with signature = ruleSignature }\n" +
+				"		else res := {}\n"+
+				"	}";
 
-		String argsCheck =
-			//"//returns a set of rule signatures from the callStack matching the given argument list\n"+
-			"rule "+MATCHING_SIGNATURE_INSIDE_CALLSTACK+"(listOfArguments) =\n"+
-			"return res in\n"+
-			"{\n"+
-			"	res:={signature | signature in callStack(self) with tail(signature)=listOfArguments}\n"+
-			"}";
-
-		Parser<Node> ruleDeclarationParser = ((ParserPlugin) capi
-				.getPlugin("Kernel")).getParser("RuleDeclaration");// using
-		parserTools = ParserTools
-				.getInstance(capi);
-		parser = ruleDeclarationParser
-				.from(parserTools.getTokenizer(),
-						parserTools.getIgnored());
 		
-		File tmpfile;
-		try {
-			String tmpDir = System.getProperty("java.io.tmpdir");
-			tmpfile = new File(tmpDir + "/coreasm-spec.casm");
-			tmpfile.getParentFile().mkdirs();
+		String argsCheck =
+				"//returns a set of rule signatures from the callStack matching the given argument list\n"
+						+ "rule "+ MATCHING_SIGNATURE_INSIDE_CALLSTACK + "(listOfArguments) =\n"
+						+ "	return res in {\n"
+						+ "		res := { signature | signature in callStack(self) with tail(signature) = listOfArguments }\n"
+						+ "	}";
+		//@formatter:on
 
-			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
-			output.write("CoreASM TempSpec\nuse Standard\ninit test\nrule test = print \"Hallo Welt\"\n");
-			output.write(argsCheck);
-			output.close();
+		ASTNode rootNode = TestEngineDriver.getRootNodeFromSpecification(ruleCallCheck + "\n" + argsCheck);
 
-			TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+		ASTNode ruleCallASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
+		String dot = AspectTools.nodes2dot(ruleCallASTNode);
+		AspectTools.createDotGraph(dot, new LinkedList<Node>());
 
-		Node ruleCallASTNode = parser
-				.parse(ruleCallCheck);
-
-		Node argsCheckASTNode = parser
-				.parse(argsCheck);
+		ASTNode argsCheckASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_SIGNATURE_INSIDE_CALLSTACK);
+		dot = AspectTools.nodes2dot(argsCheckASTNode);
+		AspectTools.createDotGraph(dot, new LinkedList<Node>());
+		//reset capi to previous one
+		AspectTools.setCapi(capi);
 
 		// add new rule definitions as first children to the
 		// root of the parse tree
 		root = this.getRootnode();
 		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
 						ruleCallASTNode.getToken(), ruleCallASTNode);
-		if (AoASMPlugin.isDebugMode())
-			AspectTools.writeParseTreeToFile(((ASTNode)ruleCallASTNode).getFirst().getFirst().getToken()+".dot", ruleCallASTNode);
 
 		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
 						argsCheckASTNode.getToken(), argsCheckASTNode);
-		if (AoASMPlugin.isDebugMode())
-			AspectTools.writeParseTreeToFile(((ASTNode)argsCheckASTNode).getFirst().getFirst().getToken()+".dot", argsCheckASTNode);
 	}
 
 	/**
@@ -751,7 +726,7 @@ public class AspectWeaver {
 	 */
 	private LinkedList<ASTNode> getRuleDefinitions(ASTNode node){
 		LinkedList<ASTNode> ruleDeclarations = new LinkedList<ASTNode>();
-		if (node.getGrammarRule().equals("RuleDeclaration"))
+		if (node.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			ruleDeclarations.add(node);
 		else if (!node.getAbstractChildNodes().isEmpty())
 			for (ASTNode astNode : node.getAbstractChildNodes()) {
@@ -769,8 +744,8 @@ public class AspectWeaver {
 	private String getRuleSignatureAsCoreASMList(ASTNode astNode){
  		String ruleSignatureAsCoreASMList="";
 		ASTNode node;
-		if(astNode.getGrammarRule().equals("RuleDeclaration") || astNode instanceof FunctionRuleTermNode){
-			if(astNode.getGrammarRule().equals("RuleDeclaration"))
+		if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) || astNode instanceof FunctionRuleTermNode) {
+			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			{
 				ruleSignatureAsCoreASMList+="[";
 			}
@@ -787,7 +762,7 @@ public class AspectWeaver {
 				//if its not the last signature element, insert a colon, too.
 			}
 
-			if(astNode.getGrammarRule().equals("RuleDeclaration"))
+			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			{
 				ruleSignatureAsCoreASMList+="]";
 			}

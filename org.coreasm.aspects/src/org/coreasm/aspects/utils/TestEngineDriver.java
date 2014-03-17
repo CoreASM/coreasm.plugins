@@ -18,25 +18,30 @@ package org.coreasm.aspects.utils;
  */
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.Date;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import org.coreasm.engine.CoreASMEngine;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMEngineFactory;
 import org.coreasm.engine.CoreASMError;
+import org.coreasm.engine.Engine;
 import org.coreasm.engine.EngineErrorEvent;
 import org.coreasm.engine.EngineErrorObserver;
 import org.coreasm.engine.EngineEvent;
+import org.coreasm.engine.EngineProperties;
 import org.coreasm.engine.EngineStepObserver;
 import org.coreasm.engine.EngineWarningObserver;
 import org.coreasm.engine.Specification;
 import org.coreasm.engine.StepFailedEvent;
 import org.coreasm.engine.absstorage.Update;
+import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.plugin.PluginServiceInterface;
 import org.coreasm.engine.plugins.debuginfo.DebugInfoPlugin.DebugInfoPSI;
 import org.coreasm.engine.plugins.io.IOPlugin.IOPluginPSI;
@@ -45,15 +50,14 @@ import org.coreasm.util.CoreASMGlobal;
 import org.coreasm.util.Logger;
 import org.coreasm.util.Tools;
 
-public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErrorObserver, EngineWarningObserver {
+public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErrorObserver,
+		EngineWarningObserver {
 
 	private static TestEngineDriver syntaxInstance = null;
 	protected static TestEngineDriver runningInstance = null;
 
-	protected CoreASMEngine engine;
+    protected Engine engine;
 	private final boolean isSyntaxEngine;
-
-	//private CoreASMEngine syntaxEngine;
 
 	public enum TestEngineDriverStatus {
 		stopped, running
@@ -80,6 +84,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private PrintStream stderr;
 	private PrintStream stddump;
 	private PrintStream systemErr;
+	private boolean shouldStop;
 	static long lastPrefChangeTime;
 
 	public static synchronized TestEngineDriver getSyntaxInstance() {
@@ -97,10 +102,16 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private TestEngineDriver(boolean isSyntaxEngine) {
 		super();
 		CoreASMGlobal.setRootFolder(Tools.getRootFolder());
-		engine = org.coreasm.engine.CoreASMEngineFactory.createEngine();
+		engine = (Engine) org.coreasm.engine.CoreASMEngineFactory.createEngine();
+		String pluginFolders = "target/";
+		if (System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY) != null)
+			pluginFolders += EngineProperties.PLUGIN_FOLDERS_DELIM
+					+ System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY);
+		engine.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, pluginFolders);
 		engine.setClassLoader(CoreASMEngineFactory.class.getClassLoader());
 		engine.initialize();
 		engine.waitWhileBusy();
+		shouldStop = false;
 		this.isSyntaxEngine = isSyntaxEngine;
 	}
 
@@ -117,8 +128,8 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		stopOnEmptyActiveAgents = true;
 		stopOnFailedUpdates = true;
 		stopOnError = true;
-		stopOnStepsLimit = true; 	// TODO this should probably be false
-		stepsLimit = 100;
+		stopOnStepsLimit = false; 	// TODO this should probably be false
+		stepsLimit = 10;
 		dumpUpdates = false;
 		dumpState = false;
 		dumpFinal = false;
@@ -127,30 +138,15 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	}
 
 
-	@Override
-	public void finalize() {
-		engine.terminate();
-		//syntaxEngine.terminate();
+	public Engine getEngine() {
+		return engine;
 	}
 
-	public static void newLaunch(String abspathname) throws Exception {
+	public static void newLaunch(String abspathname) {
 		runningInstance = new TestEngineDriver(false);
 		runningInstance.setDefaultConfig();
 		runningInstance.dolaunch(abspathname);
 	}
-
-	/*
-	 * public synchronized void launch(String abspathname) {
-	 * setDefaultConfig();
-	 * dolaunch(abspathname);
-	 * }
-	 * 
-	 * public synchronized void launch(String abspathname, ILaunchConfiguration
-	 * config) {
-	 * setConfig(config);
-	 * dolaunch(abspathname);
-	 * }
-	 */
 
 	public void dolaunch(String abspathname) {
 		this.abspathname = abspathname;
@@ -161,8 +157,18 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		catch (Throwable e) {
 			t.setName("CoreASM run of " + abspathname);
 		}
+
+		setInputOutputPhase2();
+
+		if (engine.getEngineMode() == EngineMode.emError) {
+			engine.recover();
+			engine.waitWhileBusy();
+		}
+		engine.loadSpecification(abspathname);
+		engine.waitWhileBusy();
+
 		t.start();
-		// TODO should wait until after loadSpecification (due to global abspathname);
+
 	}
 
 	protected void preExecutionCallback() {
@@ -187,14 +193,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 		try {
 
-			setInputOutputPhase2();
-
-			if (engine.getEngineMode() == EngineMode.emError) {
-				engine.recover();
-				engine.waitWhileBusy();
-			}
-			engine.loadSpecification(abspathname);
-			engine.waitWhileBusy();
 			if (engine.getEngineMode() != EngineMode.emIdle) {
 				handleError();
 				return;
@@ -207,8 +205,15 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 				engine.step();
 				step++;
 
-				while (engine.isBusy())
+				while (engine.isBusy() && !shouldStop)
 					Thread.sleep(50);
+
+				if (shouldStop) {
+					// give some time to the engine to finish
+					if (engine.isBusy())
+						Thread.sleep(200);
+					break;//stop engine => see finally
+				}
 
 				updates = engine.getUpdateSet(0);
 				if (markSteps)
@@ -231,43 +236,51 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			exception = e;
 		}
 		finally {
-			engine.removeObserver(this);
-			if (exception != null)
-				if (exception instanceof TestEngineDriverException)
-					stderr.println("[!] Run is terminated by user.");
-				else {
-					stderr.println("[!] Run is terminated with exception " + exception);
-				}
+			if (runningInstance != null && runningInstance.engine != null) {
+				runningInstance.engine.removeObserver(this);
 
-			if (dumpFinal && step > 0) {
-				stddump.println("--------------------FINISHED---------------------");
-				stddump.println("Final engine mode was " + engine.getEngineMode());
-				if (lastError != null)
-					stddump.println("Last error was " + lastError);
-				if (stepFailedMsg != null)
-					stddump.println("Step failed reason was " + stepFailedMsg);
-				stddump.println("Final state was:\n" + engine.getState());
-				//stddump.println("Output history:\n"+getOutputString());
-
-				// Repeating 
 				if (exception != null)
 					if (exception instanceof TestEngineDriverException)
 						stderr.println("[!] Run is terminated by user.");
-					else
+					else {
 						stderr.println("[!] Run is terminated with exception " + exception);
+					}
+
+				if (dumpFinal && step > 0) {
+					stddump.println("--------------------FINISHED---------------------");
+					stddump.println("Final engine mode was " + runningInstance.engine.getEngineMode());
+					if (lastError != null)
+						stddump.println("Last error was " + lastError);
+					if (stepFailedMsg != null)
+						stddump.println("Step failed reason was " + stepFailedMsg);
+					stddump.println("Final state was:\n" + runningInstance.engine.getState());
+
+					// Repeating 
+					if (exception != null)
+						if (exception instanceof TestEngineDriverException)
+							stderr.println("[!] Run is terminated by user.");
+						else
+							stderr.println("[!] Run is terminated with exception " + exception);
+				}
+				System.setErr(systemErr);
+
+				if (this == runningInstance)
+					status = TestEngineDriverStatus.stopped;
+
+				runningInstance.engine.hardInterrupt();
+
+				runningInstance = null;
+
+				postExecutionCallback();
 			}
-			System.setErr(systemErr);
-			engine.terminate();
-
-			if (this == runningInstance)
-				status = TestEngineDriverStatus.stopped;
-
-			runningInstance.engine.hardInterrupt();
-
-			runningInstance = null;
-
-			postExecutionCallback();
 		}
+	}
+
+    /**
+     * method that stops the currently running engine
+     */
+	public void stop() {
+		shouldStop = true;
 	}
 
 	private boolean terminated(int step, Set<Update> updates, Set<Update> prevupdates) {
@@ -309,41 +322,49 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		if (pi != null) {
 			((DebugInfoPSI) pi).setOutputStream(new PrintStream(System.out));
 		}
-
 	}
 
-	private String curspecname() {
-		if (engine.getSpec() != null)
-			return engine.getSpec().getName();
-		else
-			return "";
+	public static ASTNode getRootNodeFromSpecification(String body) {
+		return getRootNodeFromSpecification("", body);
 	}
 
-	/*
-	 * private String[] getOutput() {
-	 * PluginServiceInterface pi = engine.getPluginInterface("IOPlugin");
-	 * if (pi != null) {
-	 * String[] el=((IOPluginPSI)pi).getOutputHistory();
-	 * return el;
-	 * }
-	 * return null;
-	 * }
-	 * 
-	 * 
-	 * private String getOutputString() {
-	 * String[] el=getOutput();
-	 * if (el!=null) {
-	 * StringBuffer sb=new StringBuffer();
-	 * for (int i = 0; i < el.length; i++) {
-	 * sb.append(el[i]);
-	 * if (i<el.length-1)
-	 * sb.append('\n');
-	 * }
-	 * return sb.toString();
-	 * } else
-	 * return "";
-	 * }
-	 */
+	public static ASTNode getRootNodeFromSpecification(String header, String body) {
+
+		File tmpfile;
+		ASTNode rootNode = null;
+		try {
+			String tmpDir = System.getProperty("java.io.tmpdir");
+			tmpfile = new File(tmpDir + "/coreasm-spec.casm");
+			tmpfile.getParentFile().mkdirs();
+
+			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
+			if (header.isEmpty())
+				output.write("CoreASM TempSpec\nuse Standard\nuse AoASMPlugin\ninit test\nrule test = skip\n\n");
+			else
+				output.write(header);
+			output.write(body + "\n");
+			output.close();
+
+			TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
+			try {
+				Thread.sleep(500);
+			}
+			catch (InterruptedException e) {
+
+			}
+			AspectTools.setCapi(getRunningInstance().getEngine());
+			rootNode = getRunningInstance().getEngine().getParser().getRootNode();
+
+			if (TestEngineDriver.getRunningInstance() != null)
+				TestEngineDriver.getRunningInstance().stop();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (TestEngineDriver.getRunningInstance() != null)
+			TestEngineDriver.getRunningInstance().stop();
+		return rootNode;
+	}
 
 	public synchronized Specification getSpec(String text, boolean loadPlugins) {
 		if (!isSyntaxEngine)
@@ -363,61 +384,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		else
 			return engine.getSpec();
 	}
-
-	//	public synchronized Set<String> getUsedPlugins(String text) {
-	/*
-	 * if (engine.getEngineMode() != EngineMode.emIdle)
-	 * return null;
-	 * engine.loadSpecification(new StringReader(text));
-	 * engine.waitIfBusy();
-	 * if (engine.getEngineMode() == EngineMode.emError) {
-	 * engine.recover();
-	 * return null;
-	 * } else
-	 * return engine.getSpec().getPluginNames();
-	 */
-	//		HashSet<String> usedPlugins=new HashSet<String>();
-	//		RegularExpression re=new RegularExpression("^[ \t]*use[ \t]+[a-zA-Z0-9_]+[ \t]*$");		
-	//		text.replaceAll("(?s)/\\*.*?\\*/",""); // remove block comments
-	//		text.replaceAll("//.*?$",""); // remove end-of-line comments 
-	//		text.replaceAll("^#.*$",""); // remove # comments
-	//		String lines[]=text.split("\n");
-	//		usedPlugins.add("Kernel"); 
-	//		for (int i = 0; i < lines.length; i++) {
-	//			if (re.matches(lines[i])) {
-	//				String words[]=lines[i].split("[ \t]+");
-	//				for (int j = 0; j < words.length; j++) {
-	//					if (words[j].equals("use")) {
-	//						usedPlugins.add((words[j+1]));
-	//						break;
-	//					}
-	//				}
-	//			}
-	//		}
-	//		return usedPlugins;
-	//	}
-
-	//	public synchronized Set<String> getKeywords(Set<String> usedPlugins) {
-	//		return engine.getPluginsKeywords(usedPlugins);
-	//		Engine engine=(Engine)this.engine;
-	//		HashSet<String> keywords=new HashSet<String>();
-	//		for (String pn : usedPlugins) {
-	//			Plugin po=engine.getPlugin(pn);
-	//			if (po!=null)
-	//				try {
-	//					Set<String> kws=po.getKeywords();
-	//					if (kws!=null)
-	//						keywords.addAll(kws);
-	//				} catch (Exception e) {
-	//					System.err.println("While retrieving keywords for "+pn+": "+e);
-	//				}
-	//		}
-	//		return keywords;
-	//	}
-
-	//	public synchronized Set<String> getKeywords(String spec) {
-	//		return engine.getSpecKeywords(spec);
-	//	}
 
 	@Override
 	public void update(EngineEvent event) {
@@ -596,25 +562,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		stderr.println("\n" + message);
 	}
 
-	/*
-	 * private void showErrorDialog(String title, String message) {
-	 * Display d = new Display();
-	 * Shell s = new Shell(d);
-	 * MessageBox errorBox = new MessageBox(s,SWT.ICON_ERROR|SWT.OK);
-	 * errorBox.setText(title);
-	 * errorBox.setMessage(message);
-	 * errorBox.open();
-	 * 
-	 * s.dispose();
-	 * while(!s.isDisposed( )){
-	 * if(!d.readAndDispatch( ))
-	 * d.sleep( );
-	 * }
-	 * d.dispose( );
-	 * }
-	 */
-
-	
 	/**
 	 * An internal exception class.
 	 */

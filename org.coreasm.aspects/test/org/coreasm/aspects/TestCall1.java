@@ -12,10 +12,13 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import org.coreasm.aspects.utils.TestEngineDriver;
+import org.coreasm.aspects.utils.TestEngineDriver.TestEngineDriverStatus;
+
 public class TestCall1 {
 
-	static BufferedReader	resource;
-	static File				file;
+	static BufferedReader resource;
+	static File file;
 
 	@BeforeClass
 	public static void onlyOnce() {
@@ -49,8 +52,28 @@ public class TestCall1 {
 	}
 
 	@Test
-	public void initCarma() {
-		Carma c = Carma.start(new String[] { file.getAbsoluteFile().toString() });
-		Assert.assertNotNull(c);
+	public void runTestCall1() {
+		try {
+			Assert.assertNotNull(file);
+
+			TestEngineDriver.newLaunch(file.getAbsolutePath());
+			Assert.assertEquals(
+					TestEngineDriverStatus.running,
+					TestEngineDriver.getRunningInstance().getStatus()
+					);
+			TestEngineDriver.getRunningInstance().stop();
+			Thread.sleep(500);
+			Assert.assertNull(
+					TestEngineDriver.getRunningInstance()
+					);
+		}
+		catch (Exception e) {
+
+		}
+		finally {
+			if (TestEngineDriver.getRunningInstance() != null)
+				TestEngineDriver.getRunningInstance().stop();
+		}
 	}
+
 }

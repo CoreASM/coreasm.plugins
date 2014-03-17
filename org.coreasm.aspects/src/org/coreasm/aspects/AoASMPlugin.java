@@ -17,7 +17,6 @@
 
 package org.coreasm.aspects;
 
-import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1136,9 +1135,9 @@ public class AoASMPlugin extends Plugin
 				}
 
 				//DEBUG
-				Timestamp timestamp = new Timestamp(new java.util.Date().getTime());
-				AspectTools.writeProgramToFile(capi, capi.getSpec().getFileName()+"_"+timestamp, capi.getParser().getRootNode(), capi.getSpec().getAbsolutePath());
-				AspectTools.writeParseTreeToFile("program.dot", capi.getParser().getRootNode());
+				//				Timestamp timestamp = new Timestamp(new java.util.Date().getTime());
+				//				AspectTools.writeProgramToFile(capi, capi.getSpec().getFileName()+"_"+timestamp, capi.getParser().getRootNode(), capi.getSpec().getAbsolutePath());
+				//				AspectTools.writeParseTreeToFile("program.dot", capi.getParser().getRootNode());
 			}
 		}catch (CoreASMError e){
 			AspectWeaver.getInstance().reset();
