@@ -677,7 +677,7 @@ public class AspectWeaver {
 		String ruleCallCheck =
 				//"//returns a set of rule signatures from the callStack matching the given ruleSignature\n"+
 				"rule "+ MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature) =\n" +
-				"	return res in {\n" +
+				"	return res in par\n" +
 				"		//just looking for a rulename (i.e. call(x))\n" +
 				"		if(head(ruleSignature)!={} and tail(ruleSignature)={}) then\n" +
 				"			res := {signature | signature in callStack(self) with matches(head(signature),head(ruleSignature))}\n" +
@@ -685,15 +685,15 @@ public class AspectWeaver {
 				"		else if ( tail(ruleSignature) != {} ) then\n" +
 				"			res := { signature | signature in callStack(self) with signature = ruleSignature }\n" +
 				"		else res := {}\n"+
-				"	}";
+				"	endpar";
 
 		
 		String argsCheck =
 				"//returns a set of rule signatures from the callStack matching the given argument list\n"
 						+ "rule "+ MATCHING_SIGNATURE_INSIDE_CALLSTACK + "(listOfArguments) =\n"
-						+ "	return res in {\n"
+						+ "	return res in par\n"
 						+ "		res := { signature | signature in callStack(self) with tail(signature) = listOfArguments }\n"
-						+ "	}";
+						+ "	endpar";
 		//@formatter:on
 
 		ASTNode rootNode = TestEngineDriver.getRootNodeFromSpecification(ruleCallCheck + "\n" + argsCheck);

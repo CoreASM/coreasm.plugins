@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
@@ -33,6 +32,7 @@ import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
+import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 import org.coreasm.util.Tools;
@@ -113,6 +113,7 @@ public class AspectTools {
 	/** variable used for createDotGraph */
 	private static String timestamp = null;
 	private static int currentDot = 0;
+	private static final boolean CREATE_DOT_FILES = true;
 
 	///@}
 
@@ -126,6 +127,9 @@ public class AspectTools {
 	 *            nodes that should be marked as changed
 	 */
 	public static void createDotGraph(String dot, List<Node> changed) {
+		if (!CREATE_DOT_FILES)
+			return;
+		
 		currentDot++;
 
 		for (Node change : changed) {
@@ -234,54 +238,45 @@ public class AspectTools {
 		return ruleSignatureAsCoreASMList;
 	}
 
-	/**
-	 * returns the program text a part of a CoreASM program starting from the
-	 * given node of an valid ast tree
-	 * 
-	 * @param node
-	 *            from where the program text is received
-	 * @return program text as (fast and dirty) formated string
-	 */
-	private static String getCoreASMProgram(ControlAPI capi, Node node) {
-		String result = "";
-		result = getText(node, capi, new TextScope(node));
+	private static String getCoreASMProgram(Node rootNode) {
+		// First step: Break lines
+		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" universe ", "\nuniverse ");
+		result = result.replace(" aspect ", "\naspect ");
+		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n");
+		result = result.replace(" par ", "\npar\n").replace(" endpar ", "\nendpar\n");
+		result = result.replace(" then ", " then\n").replace(" else ", "\nelse\n");
+		// Second step: Add indentation
+		String[] lines = result.split("\n");
+		result = "";
+		boolean extraIndentationThen = false;
+		boolean extraIndentationElse = false;
+		int indentation = 0;
+		for (String line : lines) {
+			line = line.trim();
+			if (indentation > 0 && line.isEmpty())
+				continue;
+			if (extraIndentationThen) {
+				result += "\t";
+				extraIndentationThen = false;
+			}
+			if (extraIndentationElse) {
+				result += "\t";
+				if (!line.endsWith("then"))
+					extraIndentationElse = false;
+			}
+			if ("endseqblock".equals(line) || "endpar".equals(line))
+				indentation--;
+			for (int i = 0; i < indentation; i++)
+				result += "\t";
+			result += line + "\n";
+			if ("seqblock".equals(line) || "par".equals(line))
+				indentation++;
+			if (line.endsWith("then"))
+				extraIndentationThen = true;
+			if ("else".equals(line))
+				extraIndentationElse = true;
+		}
 		return result;
-	}
-
-	private static int indexOfCasmFilename(String context) {
-		int index;
-		if (context.contains(".coreasm"))
-			index = context.substring(0, context.indexOf(".coreasm")).lastIndexOf(' ') + 1;
-		else if (context.contains(".casm"))
-			index = context.substring(0, context.indexOf(".casm")).lastIndexOf(' ') + 1;
-		else
-			return -1;
-		if (index < 0)
-			return 0;
-		return index;
-	}
-
-	private static int parseLineNumber(String context) {
-		int beginIndex = indexOfCasmFilename(context);
-
-		if (beginIndex < 0)
-			return -1;
-
-		context = context.substring(beginIndex);
-
-		return Integer.parseInt(context.substring(context.indexOf(":") + 1, context.indexOf(",")));
-	}
-
-	private static int parseIndentation(String context) {
-		int beginIndex = indexOfCasmFilename(context);
-
-		if (beginIndex < 0)
-			return -1;
-
-		context = context.substring(beginIndex);
-
-		return Integer
-		        .parseInt(context.substring(context.indexOf(",") + 1, context.indexOf(":", context.indexOf(","))));
 	}
 
 	/**
@@ -317,7 +312,7 @@ public class AspectTools {
 			try {
 
 				PrintWriter out = new PrintWriter(new FileWriter(file));
-				out.write("// " + comment + "\n" + getCoreASMProgram(capi, node));
+				out.write("// " + comment + "\n" + getCoreASMProgram(node));
 				out.close();
 
 			}
@@ -470,16 +465,10 @@ public class AspectTools {
 		}
 		// add linenumber and indentation to dot file label
 		if (AspectTools.getCapi() != null) {
-			String context = node.getContext(AspectTools.getCapi().getParser(), AspectTools.getCapi().getSpec());
-			try {
-				int linenumber = Integer.valueOf(context.split("[:,]")[1]);
-				int indentation = Integer.valueOf(context.split("[:,]")[2]);
-				output = "(" + linenumber + "," + indentation + ") " + output;
-			}
-			catch (NumberFormatException e) {
-				//occurs if the specification does not match the AST, 
-				//e.g. if new nodes has been inserted by the aspect plugin
-			}
+			CharacterPosition pos = node.getScannerInfo().getPos(capi.getParser().getPositionMap());
+			int linenumber = capi.getSpec().getLine(pos.line).line;
+			int indentation = pos.column;
+			output = "(" + linenumber + "," + indentation + ") " + output;
 		}
 		return "\"" + getDotNodeId(node) + "\"" + "[label=\"" + output + "\"]";
 	}
@@ -893,91 +882,7 @@ public class AspectTools {
 		}
 		return (A) node;
 	}
-
-	/** used for debugging purpose within @see getText(..) */
-	public static Stack<TextScope> scopes = new Stack<TextScope>();
-
-	/**
-	 * the method reproduces the text from the AST of a specification by using
-	 * context information about each nodes which provides the linenumber and
-	 * indentation
-	 * 
-	 * @param n
-	 *            node to start/continue the text extraction from
-	 * @param capi
-	 *            current capi holding the current parser and the related
-	 *            original
-	 *            specification
-	 * @param ts
-	 *            a text scope is used to deal with node insertions which break
-	 *            the total
-	 *            order of text fragments
-	 * @return the recreated text from the ast (without) comments and tokens
-	 *         which were eliminated by the scanner/parser
-	 */
-	public static String getText(Node n, ControlAPI capi, TextScope ts) {
-
-		/* get the context information for formated text reproduction */
-		// @{
-		String context = n.getContext(capi.getParser(), capi.getSpec());
-		int linenumber = parseLineNumber(context);
-		int indentation = parseIndentation(context);
-		// @}
-
-		/* initialize output variable text */
-		String text = "";
-
-		/*
-		 * non-recursive case - node is a leaf of the AST: insert new linebreaks
-		 * before token and increase insert new spaces/tabs before token insert
-		 * token
-		 */
-		if (n.getChildNodes().isEmpty()) {
-			if (!(ts.getLineNumber() > linenumber)) {
-				while (ts.getLineNumber() < linenumber) { // missing lines are
-					                                      // inserted
-					text += ts.newLine();
-				}
-				while (ts.getIndentation() < indentation)
-					// indentation correction
-					text += ts.insertText(" ");
-				if (n.getToken() != null)
-					text += ts.insertText(n.getToken());
-			}
-		}
-		else { /* recursive case - node has children */
-
-			/*
-			 * if AST has been modified so that the current node's line number
-			 * is less then the current line number. Than, a new text scope
-			 * (c.f. @see TextScope) is created to align new tokens relatively
-			 * to the scope's line number and indentation
-			 */
-			if (ts.getLineNumber() > linenumber) {
-				ts = new TextScope(n, ts);
-				scopes.push(ts);	// for debugging
-
-				/* recursion - call getText for each child node of this node */
-				for (Node child : n.getChildNodes()) {
-					text += getText(child, capi, ts);
-				}
-
-				/*
-				 * restore the text scope used which has been used before the
-				 * recursion
-				 */
-				ts = ts.getPreviousScope();
-				scopes.pop();	// for debugging
-			}
-			else { /* recursion for unmodified ASTs */
-				for (Node child : n.getChildNodes()) {
-					text += getText(child, capi, ts);
-				}
-			}
-		}
-		return text;
-	}
-
+	
 	public static ASTNode findRuleDeclaration(ASTNode startingPoint, String ruleName) {
 		for (ASTNode astNode : startingPoint.getAbstractChildNodes()) {
 			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) &&
@@ -988,116 +893,4 @@ public class AspectTools {
 		}
 		return null;
 	}
-}
-
-/**
- * the class TextScope is used to store the information about the current
- * alignment context used to @see getText from an AST
- * 
- * @author Marcel Dausend
- */
-class TextScope {
-
-	TextScope previousTextScope;
-	int lineNumber;
-	int indentation;
-	/* additional information which may be useful during debugging */
-	Node beginOfScope;
-
-	/**
-	 * a text scope has a node where it has been create and maybe a previous
-	 * scope
-	 * 
-	 * @param n
-	 *            node where the text scope starts
-	 * @param scope
-	 *            preceeding text scope
-	 */
-	public TextScope(Node n, TextScope scope) {
-		this(n);
-		this.previousTextScope = scope;
-	}
-
-	/**
-	 * the first text scope starts with an initail node n
-	 * 
-	 * @param n
-	 *            node where the text scope starts
-	 */
-	public TextScope(Node n) {
-		this.beginOfScope = n;
-		this.lineNumber = 1;
-		this.indentation = 1;
-		this.previousTextScope = null;
-	}
-
-	/**
-	 * return a line break and increments the indentation
-	 * 
-	 * @return "\n"
-	 */
-	public String newLine() {
-		indentation = 1;
-		lineNumber++;
-		return "\n";
-	}
-
-	/**
-	 * the current text scope with its information as String
-	 * 
-	 * @return information about the text scope (without the previous scope)
-	 */
-	@Override
-	public String toString() {
-		return this.beginOfScope.toString() + " ( " + this.lineNumber + ", " + this.indentation + ") ";
-	}
-
-	/**
-	 * return the given text and increases the indentation
-	 * 
-	 * @param text
-	 * @return text
-	 */
-	public String insertText(String text) {
-		indentation += text.length();
-		return text;
-	}
-
-	/**
-	 * 
-	 * @return current indentation of this text scope
-	 */
-	public int getIndentation() {
-		return indentation;
-	}
-
-	/**
-	 * 
-	 * @return current line number of this text scope
-	 */
-	public int getLineNumber() {
-		return lineNumber;
-	}
-
-	/**
-	 * returns true if the given node is the node where the text scope has been
-	 * initialized
-	 * 
-	 * @param n
-	 *            node to compare against
-	 * @return true if the text scope start with Node n, else false
-	 */
-	public boolean isBeginOfScope(Node n) {
-		return n.equals(beginOfScope);
-	}
-
-	/**
-	 * returns the previous text scope or null, if no previous text scope exists
-	 * 
-	 * @return previous text scope
-	 */
-	public TextScope getPreviousScope() {
-		return previousTextScope;
-	}
-
 }
