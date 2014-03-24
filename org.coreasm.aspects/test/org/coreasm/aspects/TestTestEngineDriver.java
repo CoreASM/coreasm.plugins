@@ -42,24 +42,25 @@ public class TestTestEngineDriver {
 	@Test
 	public void runsSpecification() {
 		Assert.assertNotNull(testFile);
+		TestEngineDriver td = null;
 		try {
-			TestEngineDriver.newLaunch(testFile.getAbsolutePath());
-			Assert.assertNotNull(TestEngineDriver.getRunningInstance());
-			Thread.sleep(250);
+			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
+			Assert.assertNotNull(td);
+			Thread.sleep(500);
 			Assert.assertEquals(
 					TestEngineDriverStatus.running,
-					TestEngineDriver.getRunningInstance().getStatus()
+					td.getStatus()
 					);
-			Thread.sleep(250);
-			ASTNode root = TestEngineDriver.getRunningInstance().getEngine().getParser().getRootNode();
+			Thread.sleep(500);
+			ASTNode root = td.getEngine().getParser().getRootNode();
 			System.out.println("The root node is " + root.toString());
-			TestEngineDriver.getRunningInstance().stop();
-			Thread.sleep(250);
-			Assert.assertNull(TestEngineDriver.getRunningInstance());
+			td.stop();
+			Thread.sleep(500);
+			Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
 		}
 		catch (Exception e) {
-			if (TestEngineDriver.getRunningInstance() != null)
-				TestEngineDriver.getRunningInstance().stop();
+			if (TestEngineDriver.getRunningInstances().contains(td))
+				td.stop();
 			e.printStackTrace();
 		}
 	}

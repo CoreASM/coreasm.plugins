@@ -2,6 +2,7 @@ package org.coreasm.aspects;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,16 +10,19 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.coreasm.aspects.utils.TestEngineDriver;
 import org.coreasm.aspects.utils.TestEngineDriver.TestEngineDriverStatus;
+import org.coreasm.engine.interpreter.ASTNode;
 
 public class TestCall1 {
 
 	static BufferedReader resource;
-	static File file;
+	static File file = null;
+	TestEngineDriver td = null;
 
 	@BeforeClass
 	public static void onlyOnce() {
@@ -35,45 +39,81 @@ public class TestCall1 {
 		resource = new BufferedReader(new InputStreamReader(fileStream));
 	}
 
-	@Test
-	public void testResourceNotEmpty() {
-		String data = "";
+	/**
+	 * Fetch the entire contents of a text file, and return it in a String.
+	 * This style of implementation does not throw Exceptions to the caller.
+	 * 
+	 * @param aFile
+	 *            is a file which already exists and can be read.
+	 */
+	static public String getContents(File aFile) {
+		//...checks on aFile are elided
+		StringBuilder contents = new StringBuilder();
+
 		try {
-			while (resource.readLine() != null) {
-				data += resource.readLine() + "\n";
+			//use buffering, reading one line at a time
+			//FileReader always assumes default encoding is OK!
+			BufferedReader input = new BufferedReader(new FileReader(aFile));
+			try {
+				String line = null; //not declared within while loop
+				/*
+				 * readLine is a bit quirky :
+				 * it returns the content of a line MINUS the newline.
+				 * it returns null only for the END of the stream.
+				 * it returns an empty String if two newlines appear in a row.
+				 */
+				while ((line = input.readLine()) != null) {
+					contents.append(line);
+					contents.append(System.getProperty("line.separator"));
+				}
+			}
+			finally {
+				input.close();
 			}
 		}
-		catch (IOException e) {
-			e.printStackTrace();
+		catch (IOException ex) {
+			ex.printStackTrace();
 		}
+		return contents.toString();
+	}
 
-		System.out.println(data);
+	@Before
+	public void testResourceNotEmpty() {
+		String data = getContents(file);
+		System.out.println("running test of " + file.getName() + ":\n" + data);
 		Assert.assertTrue(!data.isEmpty());
 	}
 
 	@Test
-	public void runTestCall1() {
+	public void runsSpecification() {
+		Assert.assertNotNull(file);
 		try {
-			Assert.assertNotNull(file);
-
-			TestEngineDriver.newLaunch(file.getAbsolutePath());
+			td = TestEngineDriver.newLaunch(file.getAbsolutePath());
+			Assert.assertNotNull(td);
+			Thread.sleep(1000);
 			Assert.assertEquals(
 					TestEngineDriverStatus.running,
-					TestEngineDriver.getRunningInstance().getStatus()
+					td.getStatus()
 					);
-			TestEngineDriver.getRunningInstance().stop();
 			Thread.sleep(500);
-			Assert.assertNull(
-					TestEngineDriver.getRunningInstance()
-					);
+			ASTNode root = td.getEngine().getParser().getRootNode();
+			System.out.println("The root node is " + root.toString());
 		}
 		catch (Exception e) {
-
+			e.printStackTrace();
 		}
 		finally {
-			if (TestEngineDriver.getRunningInstance() != null)
-				TestEngineDriver.getRunningInstance().stop();
+			if (td != null && TestEngineDriver.getRunningInstances().contains(td))
+				td.stop();
+			try {
+				Thread.sleep(500);
+			}
+			catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
 	}
 
 }

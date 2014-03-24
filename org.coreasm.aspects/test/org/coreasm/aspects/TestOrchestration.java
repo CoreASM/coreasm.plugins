@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import org.coreasm.aspects.utils.AspectTools;
@@ -14,6 +16,8 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 
 public class TestOrchestration {
+
+	TestEngineDriver td = null;
 
 	@Test
 	public void TestOrchestration() {
@@ -65,28 +69,29 @@ public class TestOrchestration {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
+		td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(500);
 		}
 		catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		ASTNode rootNode = TestEngineDriver.getRunningInstance().getEngine().getParser().getRootNode();
+
+		ASTNode rootNode = td.getEngine().getParser().getRootNode();
 		ASTNode ruleDelaration = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
 		String dot = AspectTools.nodes2dot(ruleDelaration);
 		AspectTools.createDotGraph(dot, new LinkedList<Node>());
-		if (TestEngineDriver.getRunningInstance() != null)
-			TestEngineDriver.getRunningInstance().stop();
-		//		}
-		//		catch (Exception e) {
-		//			e.printStackTrace();
-		//		}
-		//		finally {
-		if (TestEngineDriver.getRunningInstance() != null)
-			TestEngineDriver.getRunningInstance().stop();
-		//		}
+
+		if (td != null && TestEngineDriver.getRunningInstances().contains(td))
+			td.stop();
+		try {
+			Thread.sleep(500);
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
 	}
 
 }

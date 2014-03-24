@@ -23,11 +23,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.Date;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
 
+import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMEngineFactory;
 import org.coreasm.engine.CoreASMError;
@@ -53,10 +58,9 @@ import org.coreasm.util.Tools;
 public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErrorObserver,
 		EngineWarningObserver {
 
-	private static TestEngineDriver syntaxInstance = null;
-	protected static TestEngineDriver runningInstance = null;
+	protected static List<TestEngineDriver> runningInstances = null;
 
-    protected Engine engine;
+	protected Engine engine;
 	private final boolean isSyntaxEngine;
 
 	public enum TestEngineDriverStatus {
@@ -87,34 +91,87 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private boolean shouldStop;
 	static long lastPrefChangeTime;
 
-	public static synchronized TestEngineDriver getSyntaxInstance() {
-		if (syntaxInstance == null ) {
-			syntaxInstance = new TestEngineDriver(true);
-			lastPrefChangeTime = (new Date()).getTime();
-		}
-		return syntaxInstance;
-	}
-
-	public static TestEngineDriver getRunningInstance() {
-		return runningInstance;
+	public static List<TestEngineDriver> getRunningInstances() {
+		return runningInstances;
 	}
 
 	private TestEngineDriver(boolean isSyntaxEngine) {
-		super();
+		//super();
 		CoreASMGlobal.setRootFolder(Tools.getRootFolder());
 		engine = (Engine) org.coreasm.engine.CoreASMEngineFactory.createEngine();
-		String pluginFolders = "target/";
+		shouldStop = false;
+		this.isSyntaxEngine = isSyntaxEngine;
+
+		String pluginFolders = Tools.getRootFolder(AoASMPlugin.class).split("target")[0] + "target/";
 		if (System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY) != null)
 			pluginFolders += EngineProperties.PLUGIN_FOLDERS_DELIM
 					+ System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY);
+		//		JOptionPane.showMessageDialog(null, "additional plugin folders: " + pluginFolders, "TestEngineDriver("
+		//				+ isSyntaxEngine + ")", JOptionPane.INFORMATION_MESSAGE);
 		engine.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, pluginFolders);
 		engine.setClassLoader(CoreASMEngineFactory.class.getClassLoader());
 		engine.initialize();
 		engine.waitWhileBusy();
-		shouldStop = false;
-		this.isSyntaxEngine = isSyntaxEngine;
 	}
 
+	/**
+	 * Detects and returns the root folder of the running application.
+	 */
+	public static String getRootFolder(Class<?> mainClass) {
+		if (mainClass == null)
+			mainClass = Tools.class;
+
+		final String baseErrorMsg = "Cannot locate root folder.";
+
+		final String classFile = mainClass.getName().replaceAll("\\.", "/") + ".class";
+		final URL classURL = ClassLoader.getSystemResource(classFile);
+
+		String fullPath = "";
+		String sampleClassFile = "/org/coreasm/util/tools.class";
+		if (classURL == null) {
+			Tools tempObject = new Tools();
+			fullPath = tempObject.getClass().getResource(sampleClassFile).toString();
+			File file = new File(".");
+			return ".";
+		}
+		else {
+			fullPath = classURL.toString();
+		}
+
+		try {
+			fullPath = URLDecoder.decode(fullPath, "UTF-8");
+		}
+		catch (UnsupportedEncodingException e) {
+			return ".";
+		}
+
+		if (fullPath.indexOf("file:") > -1) {
+			fullPath = fullPath.replaceFirst("file:", "").replaceFirst(classFile, "");
+			fullPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
+		}
+		if (fullPath.indexOf("jar:") > -1) {
+			fullPath = fullPath.replaceFirst("jar:", "").replaceFirst("!" + classFile, "");
+			fullPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
+		}
+		if (fullPath.indexOf("bundleresource:") > -1) {
+			fullPath = fullPath.substring(0, fullPath.indexOf(sampleClassFile));
+		}
+
+		// replace the java separator with the 
+		fullPath = fullPath.replace('/', File.separatorChar);
+
+		// remove leading backslash
+		if (fullPath.startsWith("\\")) {
+			fullPath = fullPath.substring(1);
+		}
+
+		// remove the final 'bin'
+		final int binIndex = fullPath.indexOf(File.separator + "bin");
+		if (binIndex == fullPath.length() - 4)
+			fullPath = fullPath.substring(0, binIndex);
+
+		return fullPath;
+	}
 
 	public TestEngineDriverStatus getStatus() {
 		return status;
@@ -122,12 +179,12 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 	public void setDefaultConfig()
 	{
-		Logger.verbosityLevel = Logger.WARNING;
+		Logger.verbosityLevel = Logger.ERROR;
 		stopOnEmptyUpdates = false;
 		stopOnStableUpdates = false;
 		stopOnEmptyActiveAgents = true;
-		stopOnFailedUpdates = true;
-		stopOnError = true;
+		stopOnFailedUpdates = false;
+		stopOnError = false;
 		stopOnStepsLimit = false; 	// TODO this should probably be false
 		stepsLimit = 10;
 		dumpUpdates = false;
@@ -137,38 +194,44 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		printAgents = false;
 	}
 
-
 	public Engine getEngine() {
 		return engine;
 	}
 
-	public static void newLaunch(String abspathname) {
-		runningInstance = new TestEngineDriver(false);
-		runningInstance.setDefaultConfig();
-		runningInstance.dolaunch(abspathname);
+
+	public static TestEngineDriver newLaunch(String abspathname) {
+		TestEngineDriver td = new TestEngineDriver(false);
+		if (runningInstances == null)
+			runningInstances = new LinkedList<TestEngineDriver>();
+		runningInstances.add(td);
+		td.setDefaultConfig();
+		td.dolaunch(abspathname);
+		System.out.println(td.getEngine().getPlugins().toString());
+		return td;
 	}
 
 	public void dolaunch(String abspathname) {
 		this.abspathname = abspathname;
 		Thread t = new Thread(this);
+
 		try {
-			t.setName("CoreASM run of " + abspathname.substring(abspathname.lastIndexOf(File.separator)));
+			t.setName("CoreASM run of " +
+					abspathname.substring(abspathname.lastIndexOf(File.separator)));
 		}
 		catch (Throwable e) {
 			t.setName("CoreASM run of " + abspathname);
 		}
-
 		setInputOutputPhase2();
 
 		if (engine.getEngineMode() == EngineMode.emError) {
 			engine.recover();
 			engine.waitWhileBusy();
 		}
+
 		engine.loadSpecification(abspathname);
 		engine.waitWhileBusy();
 
 		t.start();
-
 	}
 
 	protected void preExecutionCallback() {
@@ -182,7 +245,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	@Override
 	public void run()
 	{
-		if (this == runningInstance)
+		if (runningInstances.contains(this))
 			status = TestEngineDriverStatus.running;
 
 		int step = 0;
@@ -236,8 +299,8 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			exception = e;
 		}
 		finally {
-			if (runningInstance != null && runningInstance.engine != null) {
-				runningInstance.engine.removeObserver(this);
+			if (runningInstances != null && runningInstances.contains(this)) {
+				this.engine.removeObserver(this);
 
 				if (exception != null)
 					if (exception instanceof TestEngineDriverException)
@@ -248,12 +311,12 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 				if (dumpFinal && step > 0) {
 					stddump.println("--------------------FINISHED---------------------");
-					stddump.println("Final engine mode was " + runningInstance.engine.getEngineMode());
+					stddump.println("Final engine mode was " + this.engine.getEngineMode());
 					if (lastError != null)
 						stddump.println("Last error was " + lastError);
 					if (stepFailedMsg != null)
 						stddump.println("Step failed reason was " + stepFailedMsg);
-					stddump.println("Final state was:\n" + runningInstance.engine.getState());
+					stddump.println("Final state was:\n" + this.engine.getState());
 
 					// Repeating 
 					if (exception != null)
@@ -264,12 +327,13 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 				}
 				System.setErr(systemErr);
 
-				if (this == runningInstance)
+				if (this == runningInstances)
 					status = TestEngineDriverStatus.stopped;
 
-				runningInstance.engine.hardInterrupt();
+				this.engine.terminate();
+				this.engine.hardInterrupt();
 
-				runningInstance = null;
+				runningInstances.remove(this);
 
 				postExecutionCallback();
 			}
@@ -332,10 +396,12 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 		File tmpfile;
 		ASTNode rootNode = null;
+		TestEngineDriver td = null;
 		try {
 			String tmpDir = System.getProperty("java.io.tmpdir");
 			tmpfile = new File(tmpDir + "/coreasm-spec.casm");
 			tmpfile.getParentFile().mkdirs();
+			tmpfile.deleteOnExit();
 
 			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
 			if (header.isEmpty())
@@ -345,24 +411,23 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			output.write(body + "\n");
 			output.close();
 
-			TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
+			td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
 			try {
-				Thread.sleep(500);
+				Thread.sleep(1000);
 			}
 			catch (InterruptedException e) {
 
 			}
-			AspectTools.setCapi(getRunningInstance().getEngine());
-			rootNode = getRunningInstance().getEngine().getParser().getRootNode();
-
-			if (TestEngineDriver.getRunningInstance() != null)
-				TestEngineDriver.getRunningInstance().stop();
+			AspectTools.setCapi(td.getEngine());
+			rootNode = td.engine.getParser().getRootNode();
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
-		if (TestEngineDriver.getRunningInstance() != null)
-			TestEngineDriver.getRunningInstance().stop();
+		finally {
+			if (td != null && TestEngineDriver.runningInstances.contains(td))
+				td.stop();
+		}
 		return rootNode;
 	}
 
@@ -545,12 +610,17 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		String message = "";
 		if (lastError != null)
 			message = message + lastError.showError();
-		else
-			message = message + " unknown.";
-
+		else {
+			if (engine != null)
+				message = TestEngineDriver.class.getSimpleName() + " " + engine + "\n"
+						+ "engine mode " + engine.getEngineMode();
+			else
+				message = TestEngineDriver.class.getSimpleName() + ": " + message + " unknown.";
+		}
 		//		JOptionPane.showMessageDialog(null, message, "CoreASM Engine Error", JOptionPane.ERROR_MESSAGE);
 		showErrorDialog("CoreASM Engine Error", message);
-
+		Exception e = new Exception(message);
+		e.printStackTrace();
 		lastError = null;
 		stepFailedMsg = null;
 		engine.recover();

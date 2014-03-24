@@ -1,11 +1,14 @@
+
+
+
+
+
 CoreASM ParserTest
 
 use Standard
 use AoASMPlugin
 
 init TestCallPointcut
-
-rule Start = skip
 
 aspect ParserTest {
 
@@ -15,16 +18,15 @@ aspect ParserTest {
 
 	pointcut a(a1, a2) : b(a1, a2)
 
-	pointcut b(fn, nmb) : call("X" as fn, "[0-9]*" as nmb) by agent without return
+	pointcut b(fn, nmb) : call("X" as fn, "[0-9]*" as nmb) without return
 
-	advice test(nmb) before : a(fn, nmb) { print "test( "+ nmb +" )"}
+	advice test(fn, nmb) before : a(fn, nmb) { print "test( "+ nmb +" )"}
 
 }
 
-rule X(a) =
+rule X(a) = {
 	print a
-
-rule test(a,b) = skip//X(a(asd))
+}
 
 rule TestCallPointcut = {
 	X(4)
