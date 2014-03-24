@@ -77,7 +77,7 @@ public class Binding {
 
 	//return true if a binding exists for the given compareToNode
 	public boolean exists(){
-		return ( binding != null && ! binding.isEmpty() )? true : false;
+		return (binding != null);
 	}
 
 	public boolean addBinding(String parameterOfArgsASTNode, ASTNode parameterOfCompareToNode){
@@ -112,6 +112,7 @@ public class Binding {
 		return this.astNode;
 	}
 
+	@Override
 	public String toString(){
 		return "Match between "+ getPointcutASTNode().toString() +" and "+AspectTools.constructName(getCompareToNode())+"\n"+
 				binding.toString();

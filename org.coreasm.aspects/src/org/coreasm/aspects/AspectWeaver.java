@@ -267,8 +267,8 @@ public class AspectWeaver {
 					Binding binding = advice.getBinding(candidate);
 					AdviceASTNode boundAdvice;
 					/** \note Binding binding holds the first binding from the valid bindings, and thereby determines the precedence of bindings in pointcuts from left to right */
-				    //...clone the current node and insert the binding depending for the current candidate
-				    boundAdvice = advice.cloneWithBinding(binding);
+					//...clone the current node and insert the binding depending for the current candidate
+					boundAdvice = advice.cloneWithBinding(binding);
 
 					// create adviceMacroCallRules and add each to its
 					// collection
@@ -378,7 +378,7 @@ public class AspectWeaver {
 						//pointcut.setParent(parent);//TODO add surrounding round brackets
 						AspectTools.addChildAfter(parent, positionToInsert, definition.getName(), pointcut);
 						substituted.add(definition.getName());
-						substituteNamedPointcuts(parent, substituted);						
+						substituteNamedPointcuts(parent, substituted);
 					}
 				}
 			}
@@ -803,7 +803,7 @@ public class AspectWeaver {
 					// if an advice matches the current astnode
 					// it is added to the hashmap of candidates for weaving
 					Binding binding = ((AdviceASTNode) advice).matches(macroCall);
-					if (binding.exists()){
+					if (binding.exists() && !binding.getBinding().isEmpty()) {
 						//create marker	
 						AoASMPlugin.createMarker(capi, macroCall, binding);
 						if (weavingCandidates.get(macroCall) == null) {
