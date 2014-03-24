@@ -63,7 +63,7 @@ public class AdviceASTNode extends ASTNode {
 		
 		//real name cannot be set, when e.g. using cloneTree, because children do not exist at this time
 		if (! this.getAbstractChildNodes().isEmpty()){
-			this.realName = this.getFirst().getFirst().getToken();
+			this.realName = this.getName();
 			this.getFirst().getFirst().setToken(adviceId);
 		}
 		
@@ -192,6 +192,23 @@ public class AdviceASTNode extends ASTNode {
 	 */
 	public Binding getBinding(ASTNode candidate){
 		return this.bindings.get(candidate);
+	}
+
+	/**
+	 * returns the name of the advice
+	 * 
+	 * @return name of the advice
+	 */
+	public String getName() {
+		return this.getFirst().getFirst().getToken();
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public String getRealName() {
+		return realName;
 	}
 
 	/**
