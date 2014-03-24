@@ -218,7 +218,7 @@ public class CallASTNode extends PointCutASTNode {
 		{
 			if ( !condition.isEmpty())
 				condition += " and ";
-			condition += "self = "+callByAgent;
+			condition += "matches ( toString( self ) , \"" + callByAgent + "\" )";
 		}
 		if (condition.isEmpty())
 			return "true";
