@@ -200,29 +200,34 @@ public class AspectWeaver {
 			/** Preprocessing **/
 			//substitute all named pointcuts by referenced pointcut expressions (transitively)
 			LinkedList<ASTNode> nPtcList = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
-			for(ASTNode nptc : nPtcList){
-				if (nptc instanceof NamedPointCutDefinitionASTNode){
-					/* the set substituted keeps track of the named pointcuts that have already
-					 *  taken into account for during the substitution.
-					 *  If a named pointcut would be taken into account twice,
-					 *  the definition of named pointcuts is cyclic!
-					 */
-					HashSet<String> substituted = new HashSet<String>();
-					NamedPointCutDefinitionASTNode nptcdef = (NamedPointCutDefinitionASTNode) nptc;
-					substituted.add(nptcdef.getName());
-					//perfomr the substutution recursively
-					substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
+			if (nPtcList != null)
+				for (ASTNode nptc : nPtcList) {
+					if (nptc instanceof NamedPointCutDefinitionASTNode) {
+						/*
+						 * the set substituted keeps track of the named
+						 * pointcuts that have already
+						 * taken into account for during the substitution.
+						 * If a named pointcut would be taken into account
+						 * twice,
+						 * the definition of named pointcuts is cyclic!
+						 */
+						HashSet<String> substituted = new HashSet<String>();
+						NamedPointCutDefinitionASTNode nptcdef = (NamedPointCutDefinitionASTNode) nptc;
+						substituted.add(nptcdef.getName());
+						//perfomr the substutution recursively
+						substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
+					}
 				}
-			}
 			
 			//substitute the named pointcuts used inside an advices
 			//there can be no cyclic definitions if the substitution of the named pointcuts (above) was successful
 			LinkedList<ASTNode> adviceAstNode = AspectWeaver.getInstance().getAstNodes().get(AdviceASTNode.NODE_TYPE);
-			for(ASTNode advDef : adviceAstNode){
-				if (advDef instanceof AdviceASTNode){
-					substituteNamedPointcuts(((AdviceASTNode)advDef).getPointCut(), new HashSet<String>());
+			if (adviceAstNode != null)
+				for (ASTNode advDef : adviceAstNode) {
+					if (advDef instanceof AdviceASTNode) {
+						substituteNamedPointcuts(((AdviceASTNode) advDef).getPointCut(), new HashSet<String>());
+					}
 				}
-			}
 			///@}
 			
 			/** pointcut matching **/
