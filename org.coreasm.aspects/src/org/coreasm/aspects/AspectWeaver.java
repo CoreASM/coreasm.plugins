@@ -1,6 +1,11 @@
 /**
-/**
- *
+ * AoASM CoreASM Plugin
+ * 
+ * The weaver integrates the aspects in terms of new nodes into the AST of the
+ * current CoreASM program. First, the weaver has to be initialized with the
+ * current ControlAPI capi and afterwards the weaving can be started.
+ * 
+ * @author Marcel Dausend
  */
 package org.coreasm.aspects;
 
@@ -11,6 +16,7 @@ import java.util.LinkedList;
 import org.codehaus.jparsec.Parser;
 
 import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
@@ -30,14 +36,6 @@ import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 
-/**
- * The weaver integrates the aspects in terms of new nodes into the AST of the
- * current CoreASM program. First, the weaver has to be initialized with the
- * current ControlAPI capi and afterwards the weaving can be started.
- *
- * @author Marcel Dausend
- *
- */
 public class AspectWeaver {
 
 	/**singletonWeaver hold the singleton instance of this class */
