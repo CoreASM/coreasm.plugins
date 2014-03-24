@@ -183,7 +183,13 @@ public class AspectWeaver {
 	 * @throws Throwable 
 	 */
 	//@formatter:on
-	public void weave() throws Throwable{
+
+	/**
+	 * 
+	 * @throws AspectException
+	 * @throws Throwable
+	 */
+	public void weave() throws AspectException {
 
 		//HashMap with ASTNodes of the original program as key and a list of all advices having pointcuts matching this node
 		HashMap<ASTNode, LinkedList<AdviceASTNode>> weavingCandidates = new HashMap<ASTNode, LinkedList<AdviceASTNode>>();
@@ -355,7 +361,7 @@ public class AspectWeaver {
 		reset();
 	}
 
-	private static void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws Throwable {
+	private static void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws BindingException {
 		if (astnode instanceof NamedPointCutASTNode) {
 			NamedPointCutASTNode nptc = ((NamedPointCutASTNode) astnode);
 			if (substituted.contains(nptc.getName()))
@@ -389,13 +395,16 @@ public class AspectWeaver {
 	 * @return	pointcut from def with exchanged variables according to the here constructed binding
 	 * @throws Exception
 	 */
-	private static Node cloneWithBinding(NamedPointCutDefinitionASTNode def, NamedPointCutASTNode nptc) throws Exception {
+	private static Node cloneWithBinding(NamedPointCutDefinitionASTNode def, NamedPointCutASTNode nptc)
+			throws BindingException {
 		//binding between variables from def as key and nptc variables as value
 		HashMap<String, FunctionRuleTermNode> binding = new HashMap<String, FunctionRuleTermNode>();
 		for(int i = 0; i < def.getPointCutParameters().size(); i++){
 			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc.getPointCutParameters().get(i));
 			if (value != null && ! value.getName().equals(nptc.getPointCutParameters().get(i).getToken()))
-				throw new CoreASMError("Binding inconsistent!", nptc.getPointCutParameters().get(i));
+				throw new BindingException("Binding inconsistent!", nptc.getPointCutParameters().get(i),
+						value == null ? new NullPointerException("value is null!") : new Exception(
+								"Binding inconsistent!"));
 		}
 		ASTNode pointcut = (ASTNode)def.getPointCut().cloneTree();
 		//replacement of the variables within pointcut according to the binding
