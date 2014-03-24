@@ -37,17 +37,24 @@ public class PointCutParameterNode extends ASTNode {
 	 * @return regex pattern, e.g. for matching
 	 */
 	public String getPattern() {
-		if (this.getFirst().getGrammarRule().equals("ID")) {
-			ASTNode astNode = this;
+		ASTNode patternNode;
+		if (this.getFirst().getGrammarRule().equals("StringTerm"))
+			return this.getFirst().getToken();
+		else //is ID node
+		{
+			patternNode = this.getFirst().getFirst();
+
 			// ascend up to aspect node
+			ASTNode astNode = this;
 			while (!(astNode instanceof AspectASTNode))
 				astNode = astNode.getParent();
 			// iterate over signatures to find the initial string value of the
 			// used id
+			astNode = astNode.getFirst();//first child of aspect ast node
 			while ((astNode = astNode.getNext()) != null)
 				if (astNode.getGrammarRule().equals("Signature")) {
-					FunctionNode fn = (FunctionNode) astNode;
-					if (fn.getName().equals(this.getFirst().getToken())) {
+					FunctionNode fn = (FunctionNode) astNode.getFirst();
+					if (fn.getName().equals(patternNode.getToken())) {
 						// error: initial value of the variable is not a string
 						// term
 						if (!(fn.getRange().equals("STRING") && fn.getInitNode() != null && fn.getInitNode()
@@ -65,10 +72,8 @@ public class PointCutParameterNode extends ASTNode {
 						return fn.getInitNode().getToken();
 					}
 				}
-			throw new CoreASMError(this.getFirst().getToken() + " is not a static string function.", this);
-		} else
-			// the pattern is a string value
-			return this.getFirst().getToken();
+			throw new CoreASMError(patternNode.getToken() + " is not a static string function.", this);
+		}
 	}
 
 	/**

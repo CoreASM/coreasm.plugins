@@ -1,22 +1,25 @@
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
+import org.coreasm.engine.CoreASMWarning;
+import org.coreasm.engine.absstorage.FunctionElement.FunctionClass;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import org.coreasm.engine.plugins.signature.FunctionNode;
 
 /**
  * @author Marcel Dausend
@@ -120,6 +123,46 @@ public class CallASTNode extends PointCutASTNode {
 				}else
 					return new Binding(compareToNode, this);
 			}
+			if (node.getConcreteNodeType().equals("keyword") && node.getToken().equals("by")) {
+				ASTNode agentPattern = (ASTNode) node.getNextCSTNode();
+				if (agentPattern.getGrammarRule().equals("StringTerm")) {
+					callByAgent = node.getNextCSTNode().getToken();
+				}
+				else //must be id node, so get the initial value from the definition of the static value 
+				{
+					ASTNode astNode;
+					if (!node.getConcreteNodeType().equals("ID"))
+						throw new CoreASMError("node must be an id node", node);
+					else
+						astNode = (ASTNode) node;
+					// ascend up to aspect node
+					while (!(astNode instanceof AspectASTNode))
+						astNode = astNode.getParent();
+					// iterate over signatures to find the initial string value of the
+					// used id
+					astNode = astNode.getFirst();//first child of aspect ast node
+					if (astNode.getGrammarRule().equals("Signature")) {
+						FunctionNode fn = (FunctionNode) astNode.getFirst();
+						if (fn.getName().equals(node.getToken())) {
+							// error: initial value of the variable is not a string
+							// term
+							if (!(fn.getRange().equals("STRING") && fn.getInitNode() != null && fn.getInitNode()
+									.getGrammarRule().equals("StringTerm")))
+								throw new CoreASMError("Value of function " + fn.getName()
+										+ " is not a string but is used as pointcut pattern.", fn);
+							// warning: function is not static what is against the
+							// intention of the expected (final) static string
+							// declaration
+							if (fn.getFunctionClass() != FunctionClass.fcStatic) {
+								CoreASMWarning warn = new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "Function "
+										+ fn.getName() + " is not static but used as pointcut pattern.", fn);
+								AspectWeaver.getInstance().getControlAPI().warning(warn);
+							}
+							callByAgent = fn.getInitNode().getToken();
+						}
+					}
+				}
+			}
 			node = node.getNextCSTNode();
 		}
 		return resultingBinding;
@@ -129,11 +172,11 @@ public class CallASTNode extends PointCutASTNode {
 	 * this method should lookup if the found rule returns any value and check if this corresponds to the this pointcut expression
 	 *
 	 * @param compareToNodeToken token is used to find matching rule declaration
-	 * @param returnRequired states if a return value is required or has to be absent
+	 * @param returnOrResultRequired states if a return value is required or has to be absent
 	 * @param returnOrResult if a node with the same token is found in the rule declaration a return statement has been found in rule pointCutToken
 	 * @return returns true if the rule definition of the rule which name pointcut for return matches the rule's return value, if exists
 	 */
-	boolean checkRuleReturn(String compareToNodeToken, boolean returnRequired, Node returnOrResult){
+	boolean checkRuleReturn(String compareToNodeToken, boolean returnOrResultRequired, Node returnOrResult){
 		String ruleDeclarationName;
 		for(ASTNode astn : AspectWeaver.getInstance().getAstNodes().get("RuleDeclaration")){
 			ruleDeclarationName = astn.getFirst().getFirst().getToken();
@@ -143,7 +186,7 @@ public class CallASTNode extends PointCutASTNode {
 				//collect all nodes inside the rule definition which have the same token as the returnOrResult node
 				LinkedList<Node> children = AspectTools.getNodesWithName(astn, returnOrResult.getToken());
 					//return xor of returnRequired and children.isEmpty()
-					return returnRequired ^ children.isEmpty();
+					return returnOrResultRequired ^ children.isEmpty();
 			}
 		}
 		//no rule declaration found - should not occur, because its  has already been tested if compareToNodeToken exists inside the matches(..) method
