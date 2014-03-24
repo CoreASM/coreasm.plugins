@@ -1,20 +1,19 @@
 /**
-
- * @file AopASMPlugin.java 	1.0
- *
- *
+ * 
+ * @file AoASMPlugin.java
+ * 
+ * 
  * @author Copyright (C) 2012 Marcel Dausend
- *
- * @date Last modified by $Author: Macel Dausend $ on $Date: 2012-09-05 $.
- *
- * @version 0.0.1 (alpha)
- *
- * Licensed under the Academic Free License version 3.0
- *   http://www.opensource.org/licenses/afl-3.0.php
- *   http://www.coreasm.org/afl-3.0.php
- *
+ * 
+ * @date Last modified by $Author: Marcel Dausend $ on $Date: 2014-03-18 $.
+ * 
+ * @version 0.0.2 (alpha)
+ * 
+ *          Licensed under the Academic Free License version 3.0
+ *          http://www.opensource.org/licenses/afl-3.0.php
+ *          http://www.coreasm.org/afl-3.0.php
+ * 
  */
-
 package org.coreasm.aspects;
 
 import java.util.Collections;
@@ -70,14 +69,13 @@ import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject.VerbosityLevel;
 
-
 //@formatter:off
 /**
 * @mainpage Aspect-Orientation-Plugin for CoreASM
-* 
+*
 * This plug-in depends on the SignaturePlugin and extends CoreASM to
 * AspectOriented ASM programs.
-* 
+*
 * This plug-in provides the following additional ASM constructs:
 * <ol>
 *     <li><b>aspect*</b></li>
@@ -95,14 +93,14 @@ import org.coreasm.util.information.InformationObject.VerbosityLevel;
 *         </ol>
 *     </ol>
 * </ol>
-* 
+*
 * \todo we still have some work todo!
 * \bug and there are still some bugs :(
 * \note dot can be used within comment via 
 * /dot 
 *     digraph name{}
 * /enddot. 
-* 
+*
 * Please use colorscheme = pastel19 @see
 * http://www.graphviz.org/doc/info/colors.html
 * \attention Should only be used by those who know what they are doing.
@@ -112,7 +110,7 @@ import org.coreasm.util.information.InformationObject.VerbosityLevel;
 *     Window win = new Window(parent);
 *     win.show();
 * \endcode
-* 
+*
 * \exception StringIndexOutOfRangeException if index is not between
 * <code>0</code> and
 * <code>length() - 1</code>.
@@ -136,7 +134,7 @@ public class AoASMPlugin extends Plugin
 	public static boolean isDebugMode(){return debug;};
 
 	/** version of the aspect-oriented CoreASM-Plugin*/
-	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1,
+	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 2,
 			"alpha");
 	/** name of the aspect-oriented CoreASM-Plugin*/
 	public static final String PLUGIN_NAME = AoASMPlugin.class
