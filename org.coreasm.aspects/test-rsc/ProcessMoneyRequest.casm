@@ -1,0 +1,33 @@
+CoreASM ProcessMoneyRequest
+
+use TabBlocks
+
+function MoneyLeft: -> NUMBER
+function CurrCard: -> STRING
+
+derived allowed(a,b) = true
+
+use Standard
+use AoASM
+
+aspect {
+advice CommunicateMoneyRequestToFinanceAuthority(currIn) 
+after : call(".*", ".*" as currIn) and within("ProcessMoneyRequest"){
+	if currIn >= 10.000 then
+		InformFinanceAuthority(accountHolder, currIn, date)
+}
+}
+
+init Money
+
+rule Money = ProcessMoneyRequest(500)
+
+rule ProcessMoneyRequest(In) =
+	if allowed(In, CurrCard) then
+		GrantMoney(In)
+		MoneyLeft := MoneyLeft - In
+	else Out := {NotAllowedMsg, CurrCard}
+
+rule InformFinanceAuthority(accountHolder, currIn, date) = abstract "InformFinanceAuthority"
+
+rule GrantMoney(a) = skip
