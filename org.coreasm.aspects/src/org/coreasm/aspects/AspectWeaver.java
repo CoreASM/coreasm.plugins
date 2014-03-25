@@ -23,7 +23,6 @@ import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.utils.AspectTools;
-import org.coreasm.aspects.utils.TestEngineDriver;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.absstorage.RuleElement;
@@ -720,13 +719,25 @@ public class AspectWeaver {
 						+ "	endpar";
 		//@formatter:on
 
-		ASTNode rootNode = TestEngineDriver.getRootNodeFromSpecification(ruleCallCheck + "\n" + argsCheck);
+		Parser<Node> ruleDeclarationParser = ((ParserPlugin) capi
+				.getPlugin("Kernel")).getParser("RuleDeclaration");// using
+		parserTools = ParserTools
+				.getInstance(capi);
+		parser = ruleDeclarationParser
+				.from(parserTools.getTokenizer(),
+						parserTools.getIgnored());
+		Node ruleCallASTNode = parser
+				.parse(ruleCallCheck);
+		Node argsCheckASTNode = parser
+				.parse(argsCheck);
 
-		ASTNode ruleCallASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
+		//ASTNode rootNode = TestEngineDriver.getRootNodeFromSpecification(ruleCallCheck + "\n" + argsCheck);
+
+		//ASTNode ruleCallASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
 		String dot = AspectTools.nodes2dot(ruleCallASTNode);
 		AspectTools.createDotGraph(dot, new LinkedList<Node>());
 
-		ASTNode argsCheckASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_SIGNATURE_INSIDE_CALLSTACK);
+		//ASTNode argsCheckASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_SIGNATURE_INSIDE_CALLSTACK);
 		dot = AspectTools.nodes2dot(argsCheckASTNode);
 		AspectTools.createDotGraph(dot, new LinkedList<Node>());
 		//reset capi to previous one
@@ -736,10 +747,10 @@ public class AspectWeaver {
 		// root of the parse tree
 		root = this.getRootnode();
 		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
-						ruleCallASTNode.getToken(), ruleCallASTNode);
+				Node.DEFAULT_NAME, ruleCallASTNode);
 
 		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
-						argsCheckASTNode.getToken(), argsCheckASTNode);
+				Node.DEFAULT_NAME, argsCheckASTNode);
 	}
 
 	/**
