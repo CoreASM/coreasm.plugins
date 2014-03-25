@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.codehaus.jparsec.Parser;
+
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.errorhandling.MatchingError;
@@ -393,7 +394,7 @@ public class AspectWeaver {
 					// null, if it is the first child.
 					if (insertionReference != null)
 						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
-								rootNodeOfSeqBlockSequence.getToken(),
+								Node.DEFAULT_NAME,
 								rootNodeOfSeqBlockSequence);
 					else
 						AspectTools.addChild(parentOfInsertionContext, rootNodeOfSeqBlockSequence);
@@ -536,49 +537,16 @@ public class AspectWeaver {
 			// condition node (is an ASTNode)
 			conditionASTNode = (ASTNode) parser.parse(ifThenConstruct);
 
-			if (AoASMPlugin.isDebugMode())
-				AspectTools.writeParseTreeToFile(advice.getFirst().getFirst().getToken()+"_condition.dot", conditionASTNode);
-
-			// 2) remove skip rule from new condition
 			ASTNode skip = conditionASTNode.getAbstractChildNodes().get(1);
-			ASTNode skipParent = skip.getParent();
-			Node skipInsertionReference = skip.removeFromTree();
-
-			// 3) remove rule body from advice node
-			ASTNode ruleBody;
-			Node ruleParent, ruleInsertionReference;
-
-			ruleBody = advice.getPointCut().getNextASTNode();
-			ruleParent = ruleBody.getParent();
-			ruleInsertionReference = ruleBody.removeFromTree();
-
-			// 4) add rule body to condition at old position of skip
-			conditionASTNode.setScannerInfo(ruleBody);
-			AspectTools.addChildAfter(skipParent, skipInsertionReference,
-					ruleBody.getToken(), ruleBody);//TODO name should be as used for block of if condition
-
-			// 5) create new block rule for condition to satisfy the create method
-			LinkedList<ASTNode> conditionList = new LinkedList<ASTNode>();
-			conditionList.add(conditionASTNode);
-			ASTNode conditionBlock = AspectTools.create(AspectTools.BLOCKRULE,
-					conditionList);
-			// 6) add condition to old position of the rule body
-			AspectTools.addChildAfter(ruleParent, ruleInsertionReference,
-					conditionBlock.getToken(), conditionBlock);
-			if(AoASMPlugin.isDebugMode())
-				AspectTools.writeParseTreeToFile(advice.getFirst().getFirst().getToken()+".dot", advice);
-			/// covert advice node into rule declaration
-
-			// 1) save insertion reference
-				ruleParent = advice.getParent();
-				ruleInsertionReference = advice.removeFromTree();//TODO wrong parent - named pointcut instead of advice
-			// 2) transform advice into rule definition
-				ASTNode ruleDefinition = getRuleDefinitionFromAdvice(advice);
-			// 3) add ruleDefinition to Program
-				ruleDefinition.setParent(ruleParent);
-				AspectTools.addChildAfter(ruleParent, ruleInsertionReference, ruleDefinition.getToken(), ruleDefinition);
-
-		}else{
+			ASTNode ruleBlock = advice.getRuleBlock();
+			// 2) replace ruleBlock in advice by condition rule
+			ruleBlock.replaceWith(conditionASTNode);
+			// 3) replace skip in condition rule by ruleBlock
+			skip.replaceWith(ruleBlock);
+			// 4) replace advice definition by corresponding rule declaration
+			advice.replaceWith(advice.makeRuleDeclaration());
+		}
+		else {
 			for (ASTNode child : node.getAbstractChildNodes()) {
 				orchestrate(child);
 			}
@@ -586,50 +554,6 @@ public class AspectWeaver {
 	}
 
 	/**
-	 * transform the given advice ASTNode into a rule declaration ASTNode
-	 *
-	 * @param advice given for transformation into a rule declaration
-	 * @return rule declaration ASTNode
-	 *
-	 */
-	private ASTNode getRuleDefinitionFromAdvice(AdviceASTNode advice){
-
-		//create components for the rule declaration node
-		ASTNode ruleDeclaration;
-			//see method RuleDeclarationParseMap in class ParserTools
-			ruleDeclaration = new ASTNode(
-					null,
-					ASTNode.DECLARATION_CLASS,
-					Kernel.GR_RULEDECLARATION,
-					null,
-					advice.getScannerInfo()
-					);
-			Node ruleKeyword = new Node(
-					null,
-					"rule",
-					advice.getScannerInfo(),
-					Node.KEYWORD_NODE
-				);
-			//the signature of the rule declaration has to be the one from the advice
-			ASTNode ruleSignature = advice.getFirst();
-			Node equal = new Node(
-					"Kernel",
-					"=",
-					//get ScannerInfo from locator node
-					advice.getChildNodes().get(2).getScannerInfo(),
-					Node.OPERATOR_NODE
-					);
-			//the body of the rule declaration is the body of the advice
-			ASTNode body = advice.getAbstractChildNodes().get(advice.getAbstractChildNodes().size()-1);
-
-			//compose the components of the rule declaration node
-			AspectTools.addChild(ruleDeclaration, ruleKeyword);
-			AspectTools.addChild(ruleDeclaration, ruleSignature);
-			AspectTools.addChild(ruleDeclaration, equal);
-			AspectTools.addChild(ruleDeclaration, body);
-
-			return ruleDeclaration;
-	}
 	 * implement call stack into all rule bodies:
 	 * 0) declare the function callStack(agent) and initialize it (for every
 	 * agent?!)
@@ -665,14 +589,11 @@ public class AspectWeaver {
 
 		// add new function definition as first child to the
 		// root of the parse tree
-			ASTNode root = this.getRootnode();
-			AspectTools.addChildAfter(root,
-			root.getFirst(),
-			functionSignatureDeclarationNode.getToken(),
-			functionSignatureDeclarationNode);
-
-		if (AoASMPlugin.isDebugMode())
-			AspectTools.writeParseTreeToFile("callStack.dot", functionSignatureDeclarationNode);
+		ASTNode root = this.getRootnode();
+		AspectTools.addChildAfter(root,
+				root.getFirst(),
+				Node.DEFAULT_NAME,
+				functionSignatureDeclarationNode);
 
 		//step 1
 		LinkedList<ASTNode> ruleDeclarations = getRuleDefinitions(this.getRootnode());
@@ -742,7 +663,7 @@ public class AspectWeaver {
 			seqblockList.add(updateASTNodeEnd);
 			ASTNode seqBlockASTNode = AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
 
-			AspectTools.addChildAfter(parent, insertionReference, seqBlockASTNode.getToken(), seqBlockASTNode);
+			AspectTools.addChildAfter(parent, insertionReference, Node.DEFAULT_NAME, seqBlockASTNode);
 
 			if (AoASMPlugin.isDebugMode())
 				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken() + ".dot", parent);

@@ -854,7 +854,7 @@ public class AspectTools {
 	@SuppressWarnings("unchecked")
 	public static <A extends ASTNode> A insert(ASTNode node, ASTNode insertion) {
 		if (node.getGrammarRule().equals(BLOCKRULE)) {
-			AspectTools.addChildAfter(node, node.getFirstCSTNode(), insertion.getToken(), insertion);
+			AspectTools.addChildAfter(node, node.getFirstCSTNode(), Node.DEFAULT_NAME, insertion);
 		}
 		else if (node.getGrammarRule().equals(SEQBLOCKRULE)) {
 			if (node instanceof SeqBlockRuleNode)

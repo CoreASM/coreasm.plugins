@@ -13,6 +13,7 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
+import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 
 
@@ -133,6 +134,53 @@ public class AdviceASTNode extends ASTNode {
 				return child;
 		}
 		return null;
+	}
+
+	/**
+	 * transform the given advice ASTNode into a rule declaration ASTNode
+	 * 
+	 * @param advice
+	 *            given for transformation into a rule declaration
+	 * @return rule declaration ASTNode
+	 * 
+	 */
+	public ASTNode makeRuleDeclaration() {
+
+		//create components for the rule declaration node
+		ASTNode ruleDeclaration;
+		//see method RuleDeclarationParseMap in class ParserTools
+		ruleDeclaration = new ASTNode(
+				null,
+				ASTNode.DECLARATION_CLASS,
+				Kernel.GR_RULEDECLARATION,
+				null,
+				this.getScannerInfo()
+				);
+		Node ruleKeyword = new Node(
+				null,
+				"rule",
+				this.getScannerInfo(),
+				Node.KEYWORD_NODE
+				);
+		//the signature of the rule declaration has to be the one from the advice
+		ASTNode ruleSignature = this.getFirst();
+		Node equal = new Node(
+				"Kernel",
+				"=",
+				//get ScannerInfo from locator node
+				this.getChildNodes().get(2).getScannerInfo(),
+				Node.OPERATOR_NODE
+				);
+		//the body of the rule declaration is the body of the advice
+		ASTNode body = this.getAbstractChildNodes().get(this.getAbstractChildNodes().size() - 1);
+
+		//compose the components of the rule declaration node
+		AspectTools.addChild(ruleDeclaration, ruleKeyword);
+		AspectTools.addChild(ruleDeclaration, ruleSignature);
+		AspectTools.addChild(ruleDeclaration, equal);
+		AspectTools.addChild(ruleDeclaration, body);
+
+		return ruleDeclaration;
 	}
 
 	/**
