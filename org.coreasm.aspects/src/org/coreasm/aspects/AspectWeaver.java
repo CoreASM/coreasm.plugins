@@ -39,48 +39,61 @@ import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 
 public class AspectWeaver {
 
-	/**singletonWeaver hold the singleton instance of this class */
+	/** singletonWeaver hold the singleton instance of this class */
 	private static AspectWeaver singletonWeaver = null;
 
-	/** stores the current value of the ControlAPI capi and ASTNode rootnode which is changed during initialization()
-	 * @see {initialize(ControlAPI capi, ASTNode rootnode)} */
+	/**
+	 * stores the current value of the ControlAPI capi and ASTNode rootnode
+	 * which is changed during initialization()
+	 * 
+	 * @see {initialize(ControlAPI capi, ASTNode rootnode)}
+	 */
 	///@{
 	private ControlAPI capi;
 	private ASTNode rootnode;
 	///@}
 
-	/** collections which are used to ease access to astnodes (sorted by grammar and advice rules) */
+	/**
+	 * collections which are used to ease access to astnodes (sorted by grammar
+	 * and advice rules)
+	 */
 	///@{
 	private static HashMap<String, LinkedList<ASTNode>> astNodes = new HashMap<String, LinkedList<ASTNode>>();
 	private HashMap<String, RuleElement> adviceRules = new HashMap<String, RuleElement>();
 	///@}
 
-	/** status of the initialization of the current instance of the weaver, initialized with false*/
+	/**
+	 * status of the initialization of the current instance of the weaver,
+	 * initialized with false
+	 */
 	private boolean initialize;
 
 	/** name for rules which are introduced by orchestration */
 	///@{
-	public static final String MATCHING_RULE_INSIDE_CALLSTACK ="matchingRuleCallsInsideCallstack";
+	public static final String MATCHING_RULE_INSIDE_CALLSTACK = "matchingRuleCallsInsideCallstack";
 	public static final String MATCHING_SIGNATURE_INSIDE_CALLSTACK = "matchingParameterSignatureInsideCallstack";
+
 	///@}
 
-	/** private constructor used by singleton pattern*/
+	/** private constructor used by singleton pattern */
 	private AspectWeaver() {
 		this.initialize = false;
 	}
 
 	/**
 	 * implements singleton pattern for AspectWeaver
+	 * 
 	 * @return singleton instance of class AspectWeaver
 	 */
-	public static AspectWeaver getInstance(){
-		if ( singletonWeaver == null )
+	public static AspectWeaver getInstance() {
+		if (singletonWeaver == null)
 			singletonWeaver = new AspectWeaver();
 		return singletonWeaver;
 	}
 
 	/**
 	 * returns a hashmap of astnodes of the current specification
+	 * 
 	 * @return hashmap of astnodes @see astNodes
 	 */
 	public HashMap<String, LinkedList<ASTNode>> getAstNodes() {
@@ -92,10 +105,14 @@ public class AspectWeaver {
 	 * collecting all relevant ASTNodes from the AST, and setting initialize to
 	 * true if their are any relevant MacroCallRules which have aspects and the
 	 * specification has no problems in respect to weaving.
-	 *
-	 * @param capi	current control api used for parsing and/or execution
-	 * @param rootnode	current specification is given by the current rootnode and its children
-	 * @return if the specification is ready for weaving true is returned otherwise false
+	 * 
+	 * @param capi
+	 *            current control api used for parsing and/or execution
+	 * @param rootnode
+	 *            current specification is given by the current rootnode and its
+	 *            children
+	 * @return if the specification is ready for weaving true is returned
+	 *         otherwise false
 	 */
 	public boolean initialize(ControlAPI capi, ASTNode rootnode) {
 
@@ -112,7 +129,8 @@ public class AspectWeaver {
 					&& astNodes.get(AdviceASTNode.NODE_TYPE) != null) {
 				this.initialize = true;
 				return true;
-			} else {
+			}
+			else {
 				return false;
 			}
 		}
@@ -121,6 +139,7 @@ public class AspectWeaver {
 
 	/**
 	 * statically check the specification for errors
+	 * 
 	 * @throws AspectException
 	 */
 	private void PerformStaticChecks() throws AspectException{
@@ -206,7 +225,8 @@ public class AspectWeaver {
 			///@{
 			/** Preprocessing **/
 			//substitute all named pointcuts by referenced pointcut expressions (transitively)
-			LinkedList<ASTNode> nPtcList = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
+			LinkedList<ASTNode> nPtcList = AspectWeaver.getInstance().getAstNodes()
+					.get(NamedPointCutDefinitionASTNode.NODE_TYPE);
 			if (nPtcList != null)
 				for (ASTNode nptc : nPtcList) {
 					if (nptc instanceof NamedPointCutDefinitionASTNode) {
@@ -240,7 +260,8 @@ public class AspectWeaver {
 			/** pointcut matching **/
 			try {
 				weavingCandidates = pointCutMatching(getAstNodes());
-			}catch (MatchingError e){
+			}
+			catch (MatchingError e) {
 				e.generateCapiError(capi);
 			}
 			catch (Exception e) {
@@ -264,10 +285,17 @@ public class AspectWeaver {
 				for (AdviceASTNode advice : weavingCandidates.get(candidate)) {
 
 					//if there exist matching arg expressions in the pointcut of the advice...
-					/**\note LinkedList<ArgsASTNode> argsList holds the list of valid bindings for the given advice and candidate*/
+					/**
+					 * \note LinkedList<ArgsASTNode> argsList holds the list of
+					 * valid bindings for the given advice and candidate
+					 */
 					Binding binding = advice.getBinding(candidate);
 					AdviceASTNode boundAdvice;
-					/** \note Binding binding holds the first binding from the valid bindings, and thereby determines the precedence of bindings in pointcuts from left to right */
+					/**
+					 * \note Binding binding holds the first binding from the
+					 * valid bindings, and thereby determines the precedence of
+					 * bindings in pointcuts from left to right
+					 */
 					//...clone the current node and insert the binding depending for the current candidate
 					boundAdvice = advice.cloneWithBinding(binding);
 
@@ -275,18 +303,21 @@ public class AspectWeaver {
 					// collection
 					if (boundAdvice.getLocator().equals("before")) {
 						beforeNodes.add(AspectTools.create(
-							AspectTools.MACROCALLRULE, boundAdvice));
+								AspectTools.MACROCALLRULE, boundAdvice));
 						//break;
-					}else if (boundAdvice.getLocator().equals("after")) {
-							afterNodes.add(AspectTools.create(
-									AspectTools.MACROCALLRULE, boundAdvice));
-							//break;
-					}else if (boundAdvice.getLocator().equals("around")) {
-							aroundNodes.add(AspectTools.create(
-									AspectTools.MACROCALLRULE, boundAdvice));
-							//break;
-					}else{
-							//break;
+					}
+					else if (boundAdvice.getLocator().equals("after")) {
+						afterNodes.add(AspectTools.create(
+								AspectTools.MACROCALLRULE, boundAdvice));
+						//break;
+					}
+					else if (boundAdvice.getLocator().equals("around")) {
+						aroundNodes.add(AspectTools.create(
+								AspectTools.MACROCALLRULE, boundAdvice));
+						//break;
+					}
+					else {
+						//break;
 					}
 				}
 
@@ -324,7 +355,8 @@ public class AspectWeaver {
 								aroundNodes.getFirst());
 					else
 						AspectTools.addChild(parentOfInsertionContext, aroundNodes.getFirst());
-				} else {
+				}
+				else {
 					// add before nodes
 					if (!beforeNodes.isEmpty()) {
 						ASTNode beforeRuleBlock = AspectTools.create(
@@ -336,7 +368,8 @@ public class AspectWeaver {
 					if (aroundNodes.isEmpty()) {
 						seqBlockNode = AspectTools.insert(seqBlockNode,
 								candidate);
-					} else {
+					}
+					else {
 						ASTNode aroundRuleBlock = AspectTools.create(
 								AspectTools.BLOCKRULE, aroundNodes);
 						seqBlockNode = AspectTools.insert(seqBlockNode,
@@ -366,7 +399,10 @@ public class AspectWeaver {
 						AspectTools.addChild(parentOfInsertionContext, rootNodeOfSeqBlockSequence);
 				}
 			}
-			/** \todo remove non matching advices and shift all definitions to the main context of the program @see orchestrate(ASTNode node) */
+			/**
+			 * \todo remove non matching advices and shift all definitions to
+			 * the main context of the program @see orchestrate(ASTNode node)
+			 */
 		}
 		// prepare next weaving (new initialization required)
 		reset();
@@ -378,11 +414,12 @@ public class AspectWeaver {
 			if (substituted.contains(nptc.getName()))
 				throw new CoreASMError("cycle in pointcut defintion!", astnode);
 			//exchange
-			LinkedList<ASTNode> nptcdefs = AspectWeaver.getInstance().getAstNodes().get(NamedPointCutDefinitionASTNode.NODE_TYPE);
-			for(ASTNode nptcdef : nptcdefs){
+			LinkedList<ASTNode> nptcdefs = AspectWeaver.getInstance().getAstNodes()
+					.get(NamedPointCutDefinitionASTNode.NODE_TYPE);
+			for (ASTNode nptcdef : nptcdefs) {
 				if (nptcdef instanceof NamedPointCutDefinitionASTNode) {
 					NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
-					if ( definition.isDefinitionOf(nptc) ){
+					if (definition.isDefinitionOf(nptc)) {
 						ASTNode parent = nptc.getParent();
 						Node positionToInsert = nptc.removeFromTree();
 						Node pointcut = cloneWithBinding(definition, nptc);
@@ -393,60 +430,71 @@ public class AspectWeaver {
 					}
 				}
 			}
-		} else
-			for(ASTNode child : astnode.getAbstractChildNodes())
+		}
+		else
+			for (ASTNode child : astnode.getAbstractChildNodes())
 				substituteNamedPointcuts(child, substituted);
 	}
 
 	/**
-	 * replace variables in pointcut expressions which will replace a namedpointcut with the corresponding ids used in this namedpointcut
-	 *
-	 * @param def 	definition form which the pointcut that is used to replace the namedpointcut is extracted
-	 * @param nptc	named pointcut that has to be replaced
-	 * @return	pointcut from def with exchanged variables according to the here constructed binding
+	 * replace variables in pointcut expressions which will replace a
+	 * namedpointcut with the corresponding ids used in this namedpointcut
+	 * 
+	 * @param def
+	 *            definition form which the pointcut that is used to replace the
+	 *            namedpointcut is extracted
+	 * @param nptc
+	 *            named pointcut that has to be replaced
+	 * @return pointcut from def with exchanged variables according to the here
+	 *         constructed binding
 	 * @throws Exception
 	 */
 	private static Node cloneWithBinding(NamedPointCutDefinitionASTNode def, NamedPointCutASTNode nptc)
 			throws BindingException {
 		//binding between variables from def as key and nptc variables as value
 		HashMap<String, FunctionRuleTermNode> binding = new HashMap<String, FunctionRuleTermNode>();
-		for(int i = 0; i < def.getPointCutParameters().size(); i++){
-			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc.getPointCutParameters().get(i));
-			if (value != null && ! value.getName().equals(nptc.getPointCutParameters().get(i).getToken()))
+		for (int i = 0; i < def.getPointCutParameters().size(); i++) {
+			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc
+					.getPointCutParameters().get(i));
+			if (value != null && !value.getName().equals(nptc.getPointCutParameters().get(i).getToken()))
 				throw new BindingException("Binding inconsistent!", nptc.getPointCutParameters().get(i),
 						value == null ? new NullPointerException("value is null!") : new Exception(
 								"Binding inconsistent!"));
 		}
-		ASTNode pointcut = (ASTNode)def.getPointCut().cloneTree();
+		ASTNode pointcut = (ASTNode) def.getPointCut().cloneTree();
 		//replacement of the variables within pointcut according to the binding
 		cloneWithBinding(pointcut, binding);
 		return pointcut;
 	}
 
 	/**
-	 * replace id nodes in pointcut parameternodes with ASTNodes from the given binding if their name is a key of that binding
+	 * replace id nodes in pointcut parameternodes with ASTNodes from the given
+	 * binding if their name is a key of that binding
+	 * 
 	 * @param node
 	 * @param binding
 	 */
-	private static void cloneWithBinding(ASTNode node, HashMap<String, FunctionRuleTermNode> binding){
+	private static void cloneWithBinding(ASTNode node, HashMap<String, FunctionRuleTermNode> binding) {
 		if (node instanceof PointCutParameterNode) {
-			PointCutParameterNode param = (PointCutParameterNode)node;
-			if (param.getFuntionRuleTermNode() != null && binding.containsKey(param.getName())){
-				String paramName =  param.getName();
+			PointCutParameterNode param = (PointCutParameterNode) node;
+			if (param.getFuntionRuleTermNode() != null && binding.containsKey(param.getName())) {
+				String paramName = param.getName();
 				FunctionRuleTermNode fnNode = param.getFuntionRuleTermNode();
 				Node insertionReference = fnNode.removeFromTree();
-				AspectTools.addChildAfter(param, insertionReference, "beta",binding.get(paramName));
+				AspectTools.addChildAfter(param, insertionReference, "beta", binding.get(paramName));
 			}
 		}
-		for(ASTNode child : node.getAbstractChildNodes())
+		for (ASTNode child : node.getAbstractChildNodes())
 			cloneWithBinding(child, binding);
 	}
 
 	/**
-	 * inserts recursively a runtime condition to every advice rule inside its rule block
+	 * inserts recursively a runtime condition to every advice rule inside its
+	 * rule block
+	 * 
 	 * @param node
 	 */
-	private void orchestrate(ASTNode node){
+	private void orchestrate(ASTNode node) {
 
 		/**
 		 * modify advice nodes:
@@ -468,7 +516,7 @@ public class AspectWeaver {
 		 \enddot
 		 */
 		if (node instanceof AdviceASTNode) {
-			AdviceASTNode advice = (AdviceASTNode)node;
+			AdviceASTNode advice = (AdviceASTNode) node;
 
 			//a) add runtime condition of pointcuts to advice body
 			// 1) create condition ASTNode with runtime expressions from
@@ -582,17 +630,20 @@ public class AspectWeaver {
 
 			return ruleDeclaration;
 	}
-
-	/**
 	 * implement call stack into all rule bodies:
-	 * 0) declare the function callStack(agent) and initialize it (for every agent?!)
-	 * 1) define statements for the a seqblock which embeds the original ruleblock
-	 * 	a) add rule signature of every rule to the call stack of the agent self at runtime (first statement of the seqblock)
-	 * 	b) remove rule signature from the call stack of agent self (last statement of the seqblock)
-	 * 	c) embed original rule block into a new seqblock
-	 * 2) define auxiliary rules for the runtime checks of cflow and args conditions
+	 * 0) declare the function callStack(agent) and initialize it (for every
+	 * agent?!)
+	 * 1) define statements for the a seqblock which embeds the original
+	 * ruleblock
+	 * a) add rule signature of every rule to the call stack of the agent self
+	 * at runtime (first statement of the seqblock)
+	 * b) remove rule signature from the call stack of agent self (last
+	 * statement of the seqblock)
+	 * c) embed original rule block into a new seqblock
+	 * 2) define auxiliary rules for the runtime checks of cflow and args
+	 * conditions
 	 */
-	private void orchestrate(){
+	private void orchestrate() {
 
 		//insert runtime conditions at the beginning of each advice block rule
 		orchestrate(this.getRootnode());
@@ -630,7 +681,8 @@ public class AspectWeaver {
 		Node insertionReference;
 		for (ASTNode ruleDeclarationASTNode : ruleDeclarations) {
 			sigantureList = getRuleSignatureAsCoreASMList(ruleDeclarationASTNode);
-			updateRuleStart = "if callStack(self) = undef then callStack(self) := "+sigantureList+" else callStack(self) := cons("+sigantureList+", callStack(self))";//condition for initialization case callStack(self)=undef
+			updateRuleStart = "if callStack(self) = undef then callStack(self) := " + sigantureList
+					+ " else callStack(self) := cons(" + sigantureList + ", callStack(self))";//condition for initialization case callStack(self)=undef
 			updateRuleEnd = "callStack(self) := tail(callStack(self))";
 
 			//set default rule respectively block as scope for the orchestration
@@ -639,8 +691,8 @@ public class AspectWeaver {
 			//if the ruleBody is either a local rule or a return rule,
 			//reassign ruleBody with the rule or block its child
 			//until this block is no local rule or return rule
-			while(ruleBody.getGrammarRule().equals(AspectTools.LOCALRULE) ||
-					ruleBody.getGrammarRule().equals(AspectTools.RETURNRULE)){
+			while (ruleBody.getGrammarRule().equals(AspectTools.LOCALRULE) ||
+					ruleBody.getGrammarRule().equals(AspectTools.RETURNRULE)) {
 				ruleBody = ruleBody.getAbstractChildNodes().get(1);
 			}
 
@@ -651,8 +703,8 @@ public class AspectWeaver {
 			//if the rule body is not a block rule then pack it into a new par-block
 			//that is necessary, because otherwise weaving would generate unrelated seqblocks within a rule's body
 			ASTNode parBlock;
-			if ( !ruleBody.getGrammarRule().equals(AspectTools.SEQBLOCKRULE) ||
-					!ruleBody.getGrammarRule().equals(AspectTools.BLOCKRULE) )
+			if (!ruleBody.getGrammarRule().equals(AspectTools.SEQBLOCKRULE) ||
+					!ruleBody.getGrammarRule().equals(AspectTools.BLOCKRULE))
 			{
 				LinkedList<ASTNode> ruleBodyList = new LinkedList<ASTNode>();
 				ruleBodyList.add(ruleBody);
@@ -663,11 +715,12 @@ public class AspectWeaver {
 
 			//initiate conditional rule parser
 			//condition ensures that every callStack is initialized with the first element as new list if undef
-			Parser<Node> conditionalRuleParser = ((ParserPlugin)capi.getPlugin("ConditionalRulePlugin")).getParsers().get("Rule").parser;
-			parser = conditionalRuleParser.from(parserTools.getTokenizer(),parserTools.getIgnored());
+			Parser<Node> conditionalRuleParser = ((ParserPlugin) capi.getPlugin("ConditionalRulePlugin")).getParsers()
+					.get("Rule").parser;
+			parser = conditionalRuleParser.from(parserTools.getTokenizer(), parserTools.getIgnored());
 
 			//update rule elements (are of type ASTNodes)
-			updateASTNodeStart = (ASTNode)parser.parse(updateRuleStart);
+			updateASTNodeStart = (ASTNode) parser.parse(updateRuleStart);
 			updateASTNodeStart.setScannerInfo(parBlock);
 
 			//initiate update rule parser
@@ -679,7 +732,7 @@ public class AspectWeaver {
 					parserTools.getIgnored());
 
 			//update rule elements (are of type ASTNodes)
-			updateASTNodeEnd = (ASTNode)parser.parse(updateRuleEnd);
+			updateASTNodeEnd = (ASTNode) parser.parse(updateRuleEnd);
 			updateASTNodeEnd.setScannerInfo(parBlock);
 
 			//create new seqblock
@@ -687,12 +740,12 @@ public class AspectWeaver {
 			seqblockList.add(updateASTNodeStart);
 			seqblockList.add(parBlock);
 			seqblockList.add(updateASTNodeEnd);
-			ASTNode seqBlockASTNode =AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
+			ASTNode seqBlockASTNode = AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
 
 			AspectTools.addChildAfter(parent, insertionReference, seqBlockASTNode.getToken(), seqBlockASTNode);
 
-			if(AoASMPlugin.isDebugMode())
-				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken()+".dot", parent);
+			if (AoASMPlugin.isDebugMode())
+				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken() + ".dot", parent);
 		}
 
 		//step 2
@@ -754,12 +807,14 @@ public class AspectWeaver {
 	}
 
 	/**
-	 * collects all rule definitions of the given specification to ease orchestration
-	 *
-	 * @param node  should be the root node of the specification
+	 * collects all rule definitions of the given specification to ease
+	 * orchestration
+	 * 
+	 * @param node
+	 *            should be the root node of the specification
 	 * @return list of rule declaration ASTNodes
 	 */
-	private LinkedList<ASTNode> getRuleDefinitions(ASTNode node){
+	private LinkedList<ASTNode> getRuleDefinitions(ASTNode node) {
 		LinkedList<ASTNode> ruleDeclarations = new LinkedList<ASTNode>();
 		if (node.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			ruleDeclarations.add(node);
@@ -772,36 +827,39 @@ public class AspectWeaver {
 
 	/**
 	 * return a rule or function signature as coreasm string
-	 *
-	 * @param astNode should be a rule definition or function rule term
-	 * @return  string in coreasm syntax representing the signature of the given node
+	 * 
+	 * @param astNode
+	 *            should be a rule definition or function rule term
+	 * @return string in coreasm syntax representing the signature of the given
+	 *         node
 	 */
-	private String getRuleSignatureAsCoreASMList(ASTNode astNode){
- 		String ruleSignatureAsCoreASMList="";
+	private String getRuleSignatureAsCoreASMList(ASTNode astNode) {
+		String ruleSignatureAsCoreASMList = "";
 		ASTNode node;
 		if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) || astNode instanceof FunctionRuleTermNode) {
 			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			{
-				ruleSignatureAsCoreASMList+="[";
+				ruleSignatureAsCoreASMList += "[";
 			}
-				//signature node
-			node=astNode.getFirst();
+			//signature node
+			node = astNode.getFirst();
 			ASTNode signatureElement;
 			//add name of rule/function surrounded by quotes
-			ruleSignatureAsCoreASMList += "\""+node.getFirst().getToken()+"\"";
+			ruleSignatureAsCoreASMList += "\"" + node.getFirst().getToken() + "\"";
 			//add parameters
-			for (int i = 1; i < node.getAbstractChildNodes().size();i++) {
-				signatureElement=node.getAbstractChildNodes().get(i);
-				ruleSignatureAsCoreASMList+= ", ";
+			for (int i = 1; i < node.getAbstractChildNodes().size(); i++) {
+				signatureElement = node.getAbstractChildNodes().get(i);
+				ruleSignatureAsCoreASMList += ", ";
 				ruleSignatureAsCoreASMList += getRuleSignatureAsCoreASMList(signatureElement);
 				//if its not the last signature element, insert a colon, too.
 			}
 
 			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
 			{
-				ruleSignatureAsCoreASMList+="]";
+				ruleSignatureAsCoreASMList += "]";
 			}
-		}else //ID, NUMBER, BOOLEAN, StringTerm, BooleanTerm, KernelTerms
+		}
+		else //ID, NUMBER, BOOLEAN, StringTerm, BooleanTerm, KernelTerms
 		{
 			ruleSignatureAsCoreASMList = astNode.getToken();
 		}
@@ -812,12 +870,13 @@ public class AspectWeaver {
 	 * This method returns a hash-map of with weaving candidates and their
 	 * advices for all macrocallrules which are not used in blocks inside any
 	 * advice.
-	 *
+	 * 
 	 * @param astNodes
 	 * @return
 	 * @throws Exception
 	 */
-	private HashMap<ASTNode, LinkedList<AdviceASTNode>> pointCutMatching(HashMap<String, LinkedList<ASTNode>> astNodes) throws Exception {
+	private HashMap<ASTNode, LinkedList<AdviceASTNode>> pointCutMatching(HashMap<String, LinkedList<ASTNode>> astNodes)
+			throws Exception {
 		HashMap<ASTNode, LinkedList<AdviceASTNode>> weavingCandidates = new HashMap<ASTNode, LinkedList<AdviceASTNode>>();
 		LinkedList<ASTNode> candidates = new LinkedList<ASTNode>();
 		for (ASTNode functionRuleTerm : astNodes.get("FunctionRuleTerm")) {
@@ -834,7 +893,8 @@ public class AspectWeaver {
 							LinkedList<AdviceASTNode> newAdviceList = new LinkedList<AdviceASTNode>();
 							newAdviceList.add((AdviceASTNode) advice);
 							weavingCandidates.put(functionRuleTerm, newAdviceList);
-						} else {
+						}
+						else {
 							LinkedList<AdviceASTNode> oldAdviceList = weavingCandidates
 									.get(functionRuleTerm);
 							oldAdviceList.add((AdviceASTNode) advice);
@@ -849,7 +909,7 @@ public class AspectWeaver {
 	/**
 	 * if the given macro call is defined inside an advice block then true is
 	 * returned
-	 *
+	 * 
 	 * @param macroCall
 	 * @return
 	 */
@@ -865,7 +925,7 @@ public class AspectWeaver {
 
 	/**
 	 * Add an adviceRule to <code>adviceRules</code>
-	 *
+	 * 
 	 * @param name
 	 *            name of the adviceRule
 	 * @param adviceRule
@@ -898,16 +958,18 @@ public class AspectWeaver {
 	}
 
 	/**
-	 * @param rootnode the rootnode to set
+	 * @param rootnode
+	 *            the rootnode to set
 	 */
 	public void setRootnode(ASTNode rootnode) {
 		this.rootnode = rootnode;
 	}
+
 	/**
 	 * 
 	 * @return currently used control api
 	 */
-	public ControlAPI getControlAPI(){
+	public ControlAPI getControlAPI() {
 		return capi;
 	}
 
