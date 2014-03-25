@@ -54,8 +54,9 @@ public class CallASTNode extends PointCutASTNode {
 	/** \TODO init rule is a problem!!! */
 	@Override
 	public Binding matches(ASTNode compareToNode) throws Exception {
-        if ( !(compareToNode instanceof MacroCallRuleNode) )
-            return new Binding(compareToNode, this);
+        if ( !(compareToNode.getParent() instanceof MacroCallRuleNode) )
+			return new Binding(compareToNode.getParent(), this);
+		compareToNode = compareToNode.getParent();
 
         //name of the macro call rule node
         FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode.getFirst();

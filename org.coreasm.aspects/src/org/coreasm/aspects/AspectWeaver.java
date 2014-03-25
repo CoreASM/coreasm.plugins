@@ -796,25 +796,26 @@ public class AspectWeaver {
 	 */
 	private HashMap<ASTNode, LinkedList<AdviceASTNode>> pointCutMatching(HashMap<String, LinkedList<ASTNode>> astNodes) throws Exception {
 		HashMap<ASTNode, LinkedList<AdviceASTNode>> weavingCandidates = new HashMap<ASTNode, LinkedList<AdviceASTNode>>();
-		for (ASTNode macroCall : astNodes.get("MacroCallRule")) {
-			if (!insideAdviceRule(macroCall))
+		LinkedList<ASTNode> candidates = new LinkedList<ASTNode>();
+		for (ASTNode functionRuleTerm : astNodes.get("FunctionRuleTerm")) {
+			if (!insideAdviceRule(functionRuleTerm))
 				for (ASTNode advice : astNodes
 						.get(AdviceASTNode.NODE_TYPE)) {
 					// if an advice matches the current astnode
 					// it is added to the hashmap of candidates for weaving
-					Binding binding = ((AdviceASTNode) advice).matches(macroCall);
+					Binding binding = ((AdviceASTNode) advice).matches(functionRuleTerm);
 					if (binding.exists() && !binding.getBinding().isEmpty()) {
 						//create marker	
-						AoASMPlugin.createMarker(capi, macroCall, binding);
-						if (weavingCandidates.get(macroCall) == null) {
+						AoASMPlugin.createMarker(capi, functionRuleTerm, binding);
+						if (weavingCandidates.get(functionRuleTerm) == null) {
 							LinkedList<AdviceASTNode> newAdviceList = new LinkedList<AdviceASTNode>();
 							newAdviceList.add((AdviceASTNode) advice);
-							weavingCandidates.put(macroCall, newAdviceList);
+							weavingCandidates.put(functionRuleTerm, newAdviceList);
 						} else {
 							LinkedList<AdviceASTNode> oldAdviceList = weavingCandidates
-									.get(macroCall);
+									.get(functionRuleTerm);
 							oldAdviceList.add((AdviceASTNode) advice);
-							weavingCandidates.put(macroCall, oldAdviceList);
+							weavingCandidates.put(functionRuleTerm, oldAdviceList);
 						}
 					}
 				}

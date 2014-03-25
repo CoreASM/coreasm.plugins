@@ -1115,14 +1115,17 @@ public class AoASMPlugin extends Plugin
 //				data.put("name","marcel");
 //				info.createInformation("hallo", VerbosityLevel.COMMUNICATION, data);
 				//create marker for all aspects and submit them via IInformation to Observers
-				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi.getParser().getRootNode());
+				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi
+						.getParser().getRootNode());
 				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());
 
 				//weave with cloned tree to get warnings for current CoreASM specification
-				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
-//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode().cloneTree()))) {
+				//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
+				ASTNode rootnode = (ASTNode) capi.getParser().getRootNode().cloneTree();
+				if (AspectWeaver.getInstance().initialize(capi, rootnode)) {
 					AspectWeaver.getInstance().weave();
 				}
+				AspectTools.writeProgramToFile(capi, "after weaving", rootnode, capi.getSpec().getAbsolutePath());
 				
 			}
 			else if (source == EngineMode.emParsingSpec && target != EngineMode.emIdle)//running the spec
@@ -1131,11 +1134,6 @@ public class AoASMPlugin extends Plugin
 				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getSpec().getRootNode()))) {
 					AspectWeaver.getInstance().weave();
 				}
-
-				//DEBUG
-				//				Timestamp timestamp = new Timestamp(new java.util.Date().getTime());
-				//				AspectTools.writeProgramToFile(capi, capi.getSpec().getFileName()+"_"+timestamp, capi.getParser().getRootNode(), capi.getSpec().getAbsolutePath());
-				//				AspectTools.writeParseTreeToFile("program.dot", capi.getParser().getRootNode());
 			}
 		}catch (CoreASMError e){
 			AspectWeaver.getInstance().reset();
@@ -1147,14 +1145,14 @@ public class AoASMPlugin extends Plugin
 		}
 	}
 	
-	public static void createMarker(ControlAPI capi, ASTNode astNode, Binding binding) {
+	public static void createMarker(ControlAPI capi, ASTNode functionRuleTermNode, Binding binding) {
 		Map<String, String> data = new HashMap<String, String>();
 		Specification spec = capi.getSpec();
-		CharacterPosition charPos = astNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
+		CharacterPosition charPos = functionRuleTermNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
 		data.put("file", spec.getAbsolutePath());
 		data.put("line", "" + spec.getLine(charPos.line).line);
 		data.put("column", "" + charPos.column);
-		data.put("length", "" + astNode.getFirst().getFirst().getToken().length());
+		data.put("length", "" + functionRuleTermNode.getFirst().getToken().length());
 		data.put("name", binding.toString());
 		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
