@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.codehaus.jparsec.Parser;
-
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.errorhandling.MatchingError;
@@ -34,6 +33,9 @@ import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ParserPlugin;
+import org.coreasm.engine.plugins.letrule.LetRuleNode;
+import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
+import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 
 public class AspectWeaver {
@@ -300,19 +302,29 @@ public class AspectWeaver {
 				// get the parent of candidate and remove the candidate from its
 				// parent but store its insertion reference for the replacement
 				// action
-				ASTNode grandParentOfCandiate = candidate.getParent().getParent();
-				Node insertionReference = candidate.getParent().removeFromTree();
+				// TODO complete this list according pointcut constructs
+				ASTNode insertionContext = candidate;
+				while (insertionContext != null
+						&& !(insertionContext.getParent() instanceof SeqBlockRuleNode)
+						&& !(insertionContext.getParent() instanceof LetRuleNode)
+						&& !(insertionContext.getParent() instanceof ReturnRuleNode)
+						&& !(insertionContext.getParent() instanceof LocalRuleNode)
+						&& !("BlockRule".equals(insertionContext.getParent().getGrammarRule())))
+					insertionContext = insertionContext.getParent();
+				
+				ASTNode parentOfInsertionContext = insertionContext.getParent();
+				Node insertionReference = insertionContext.removeFromTree();
 
 				// change macroCallRule if there is exactly one around advice,
 				// else insert nodes into seqblockrule
 				if (aroundNodes.size() == 1 && beforeNodes.isEmpty()
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
-						AspectTools.addChildAfter(grandParentOfCandiate, insertionReference,
+						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
 								aroundNodes.getFirst().getToken(),
 								aroundNodes.getFirst());
 					else
-						AspectTools.addChild(grandParentOfCandiate, aroundNodes.getFirst());
+						AspectTools.addChild(parentOfInsertionContext, aroundNodes.getFirst());
 				} else {
 					// add before nodes
 					if (!beforeNodes.isEmpty()) {
@@ -348,11 +360,11 @@ public class AspectWeaver {
 					// the position is indicated by its previous sibling node or
 					// null, if it is the first child.
 					if (insertionReference != null)
-						AspectTools.addChildAfter(grandParentOfCandiate, insertionReference,
+						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
 								rootNodeOfSeqBlockSequence.getToken(),
 								rootNodeOfSeqBlockSequence);
 					else
-						AspectTools.addChild(grandParentOfCandiate, rootNodeOfSeqBlockSequence);
+						AspectTools.addChild(parentOfInsertionContext, rootNodeOfSeqBlockSequence);
 				}
 			}
 			/** \todo remove non matching advices and shift all definitions to the main context of the program @see orchestrate(ASTNode node) */
