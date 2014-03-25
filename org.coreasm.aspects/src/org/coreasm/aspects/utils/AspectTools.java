@@ -315,7 +315,7 @@ public class AspectTools {
 		if (pathOfSpecification.contains("-woven."))
 			return;
 		
-		file = new File(pathOfSpecification.replace(".casm", "-woven.casm"));
+		file = new File(pathOfSpecification.substring(0, pathOfSpecification.lastIndexOf('.') - 1) + "-woven.casm");
 		lastChoosenFile = file;
 		try {
 

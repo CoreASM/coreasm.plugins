@@ -1107,13 +1107,6 @@ public class AoASMPlugin extends Plugin
 			{
 
 				info.clearInformation("clear now!");
-//				Map<String, String> data = new HashMap<String, String>();
-//				data.put("file",capi.getSpec().getAbsolutePath());
-//				data.put("line", "1");
-//				data.put("column","9");
-//				data.put("length", "10");
-//				data.put("name","marcel");
-//				info.createInformation("hallo", VerbosityLevel.COMMUNICATION, data);
 				//create marker for all aspects and submit them via IInformation to Observers
 				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi
 						.getParser().getRootNode());
@@ -1139,9 +1132,9 @@ public class AoASMPlugin extends Plugin
 			AspectWeaver.getInstance().reset();
 			capi.error(e);
 		}		
-		catch (Throwable e){
+		catch (Exception e){
 			AspectWeaver.getInstance().reset();
-			capi.error(e);
+			e.printStackTrace();
 		}
 	}
 	
