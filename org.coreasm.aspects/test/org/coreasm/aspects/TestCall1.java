@@ -15,7 +15,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.coreasm.aspects.utils.TestEngineDriver;
-import org.coreasm.aspects.utils.TestEngineDriver.TestEngineDriverStatus;
 import org.coreasm.engine.interpreter.ASTNode;
 
 public class TestCall1 {
@@ -90,12 +89,7 @@ public class TestCall1 {
 		try {
 			td = TestEngineDriver.newLaunch(file.getAbsolutePath());
 			Assert.assertNotNull(td);
-			Thread.sleep(1000);
-			Assert.assertEquals(
-					TestEngineDriverStatus.running,
-					td.getStatus()
-					);
-			Thread.sleep(500);
+			td.executeSteps(3);
 			ASTNode root = td.getEngine().getParser().getRootNode();
 			System.out.println("The root node is " + root.toString());
 		}
@@ -103,17 +97,9 @@ public class TestCall1 {
 			e.printStackTrace();
 		}
 		finally {
-			if (td != null && TestEngineDriver.getRunningInstances().contains(td))
-				td.stop();
-			try {
-				Thread.sleep(500);
-			}
-			catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			td.stop();
 		}
-		Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
+		Assert.assertFalse(TestEngineDriver.getRunningInstances().contains(td));
 	}
 
 }

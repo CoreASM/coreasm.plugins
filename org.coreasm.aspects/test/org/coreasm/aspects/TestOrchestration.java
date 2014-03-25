@@ -70,27 +70,11 @@ public class TestOrchestration {
 			e1.printStackTrace();
 		}
 		td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
-		try {
-			Thread.sleep(500);
-		}
-		catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 		ASTNode rootNode = td.getEngine().getParser().getRootNode();
 		ASTNode ruleDelaration = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
 		String dot = AspectTools.nodes2dot(ruleDelaration);
 		AspectTools.createDotGraph(dot, new LinkedList<Node>());
-
-		if (td != null && TestEngineDriver.getRunningInstances().contains(td))
-			td.stop();
-		try {
-			Thread.sleep(500);
-		}
-		catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		td.stop();
 		Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
 	}
 

@@ -1,0 +1,8 @@
+CoreASM TestEngineDriver
+
+use Standard
+
+init StartRule
+
+rule StartRule = 
+	print "Test of TestEngineDriver"

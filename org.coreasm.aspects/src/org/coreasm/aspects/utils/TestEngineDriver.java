@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -64,7 +61,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private final boolean isSyntaxEngine;
 
 	public enum TestEngineDriverStatus {
-		stopped, running
+		stopped, running, paused
 	};
 
 	private TestEngineDriverStatus status = TestEngineDriverStatus.stopped;
@@ -89,6 +86,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private PrintStream stddump;
 	private PrintStream systemErr;
 	private boolean shouldStop;
+	private boolean shouldPause;
 	static long lastPrefChangeTime;
 
 	public static List<TestEngineDriver> getRunningInstances() {
@@ -100,6 +98,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		CoreASMGlobal.setRootFolder(Tools.getRootFolder());
 		engine = (Engine) org.coreasm.engine.CoreASMEngineFactory.createEngine();
 		shouldStop = false;
+		shouldPause = true;
 		this.isSyntaxEngine = isSyntaxEngine;
 
 		String pluginFolders = Tools.getRootFolder(AoASMPlugin.class).split("target")[0] + "target/";
@@ -112,65 +111,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		engine.setClassLoader(CoreASMEngineFactory.class.getClassLoader());
 		engine.initialize();
 		engine.waitWhileBusy();
-	}
-
-	/**
-	 * Detects and returns the root folder of the running application.
-	 */
-	public static String getRootFolder(Class<?> mainClass) {
-		if (mainClass == null)
-			mainClass = Tools.class;
-
-		final String baseErrorMsg = "Cannot locate root folder.";
-
-		final String classFile = mainClass.getName().replaceAll("\\.", "/") + ".class";
-		final URL classURL = ClassLoader.getSystemResource(classFile);
-
-		String fullPath = "";
-		String sampleClassFile = "/org/coreasm/util/tools.class";
-		if (classURL == null) {
-			Tools tempObject = new Tools();
-			fullPath = tempObject.getClass().getResource(sampleClassFile).toString();
-			File file = new File(".");
-			return ".";
-		}
-		else {
-			fullPath = classURL.toString();
-		}
-
-		try {
-			fullPath = URLDecoder.decode(fullPath, "UTF-8");
-		}
-		catch (UnsupportedEncodingException e) {
-			return ".";
-		}
-
-		if (fullPath.indexOf("file:") > -1) {
-			fullPath = fullPath.replaceFirst("file:", "").replaceFirst(classFile, "");
-			fullPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
-		}
-		if (fullPath.indexOf("jar:") > -1) {
-			fullPath = fullPath.replaceFirst("jar:", "").replaceFirst("!" + classFile, "");
-			fullPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
-		}
-		if (fullPath.indexOf("bundleresource:") > -1) {
-			fullPath = fullPath.substring(0, fullPath.indexOf(sampleClassFile));
-		}
-
-		// replace the java separator with the 
-		fullPath = fullPath.replace('/', File.separatorChar);
-
-		// remove leading backslash
-		if (fullPath.startsWith("\\")) {
-			fullPath = fullPath.substring(1);
-		}
-
-		// remove the final 'bin'
-		final int binIndex = fullPath.indexOf(File.separator + "bin");
-		if (binIndex == fullPath.length() - 4)
-			fullPath = fullPath.substring(0, binIndex);
-
-		return fullPath;
 	}
 
 	public TestEngineDriverStatus getStatus() {
@@ -186,7 +126,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		stopOnFailedUpdates = false;
 		stopOnError = false;
 		stopOnStepsLimit = false; 	// TODO this should probably be false
-		stepsLimit = 10;
+		stepsLimit = -1; //means infinite steps
 		dumpUpdates = false;
 		dumpState = false;
 		dumpFinal = false;
@@ -206,7 +146,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		runningInstances.add(td);
 		td.setDefaultConfig();
 		td.dolaunch(abspathname);
-		System.out.println(td.getEngine().getPlugins().toString());
 		return td;
 	}
 
@@ -245,9 +184,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	@Override
 	public void run()
 	{
-		if (runningInstances.contains(this))
-			status = TestEngineDriverStatus.running;
-
 		int step = 0;
 		Exception exception = null;
 
@@ -265,31 +201,39 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 			while (engine.getEngineMode() == EngineMode.emIdle) {
 
-				engine.step();
-				step++;
-
-				while (engine.isBusy() && !shouldStop)
-					Thread.sleep(50);
-
-				if (shouldStop) {
-					// give some time to the engine to finish
-					if (engine.isBusy())
-						Thread.sleep(200);
-					break;//stop engine => see finally
-				}
-
-				updates = engine.getUpdateSet(0);
-				if (markSteps)
-					stddump.println("#--- end of step " + step);
-				if (dumpUpdates)
-					stddump.println("Updates at step " + step + ": " + updates);
-				if (dumpState)
-					stddump.println("State at step " + step + ":\n" + engine.getState());
-				if (printAgents)
-					stddump.println("Last selected agents: " + engine.getLastSelectedAgents());
-				if (terminated(step, updates, prevupdates))
+				//set current mode
+				if (shouldStop && stepsLimit <= 0) {
+					engine.waitWhileBusy();
 					break;
-				prevupdates = updates;
+				}
+				else if (shouldPause || stepsLimit == 0) {
+					status = TestEngineDriverStatus.paused;
+					Thread.sleep(100);
+				}
+				else
+				{
+					status = TestEngineDriverStatus.running;
+
+					//execute a step
+					engine.waitWhileBusy();
+					engine.step();
+					step++;
+					engine.waitWhileBusy();
+
+					updates = engine.getUpdateSet(0);
+					if (markSteps)
+						stddump.println("#--- end of step " + step);
+					if (dumpUpdates)
+						stddump.println("Updates at step " + step + ": " + updates);
+					if (dumpState)
+						stddump.println("State at step " + step + ":\n" + engine.getState());
+					if (printAgents)
+						stddump.println("Last selected agents: " + engine.getLastSelectedAgents());
+					if (terminated(step, updates, prevupdates))
+						break;
+					prevupdates = updates;
+					stepsLimit--;
+				}
 
 			}
 			if (engine.getEngineMode() != EngineMode.emIdle)
@@ -297,6 +241,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		}
 		catch (Exception e) {
 			exception = e;
+			e.printStackTrace();
 		}
 		finally {
 			if (runningInstances != null && runningInstances.contains(this)) {
@@ -327,25 +272,89 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 				}
 				System.setErr(systemErr);
 
-				if (this == runningInstances)
-					status = TestEngineDriverStatus.stopped;
-
 				this.engine.terminate();
 				this.engine.hardInterrupt();
 
 				runningInstances.remove(this);
+				status = TestEngineDriverStatus.stopped;
 
 				postExecutionCallback();
 			}
 		}
 	}
 
-    /**
-     * method that stops the currently running engine
-     */
-	public void stop() {
-		shouldStop = true;
+	/**
+	 * starts the engine and resets
+	 */
+	public synchronized void start() {
+		shouldPause = false;
+		shouldStop = false;
+		stopOnStepsLimit = false;
+		resume();
 	}
+
+	public synchronized void restart() {
+		shouldPause = false;
+		shouldStop = false;
+		stopOnStepsLimit = false;
+		stepsLimit = -1;
+		while (getStatus() != TestEngineDriverStatus.running)
+			try {
+				Thread.sleep(50);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	}
+
+	public synchronized void resume() {
+		if (stepsLimit == 0)
+			stepsLimit = -1;
+		shouldPause = false;
+		while (getStatus() != TestEngineDriverStatus.running)
+			try {
+				Thread.sleep(50);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	}
+
+	public synchronized void stop() {
+		shouldStop = true;
+		while (getStatus() != TestEngineDriverStatus.stopped)
+			try {
+				Thread.sleep(50);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	}
+
+	public synchronized void pause() {
+		shouldPause = true;
+		while (getStatus() != TestEngineDriverStatus.paused)
+			try {
+				Thread.sleep(50);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	}
+
+	public synchronized void executeSteps(int numberOfSteps) {
+		stepsLimit = numberOfSteps;
+		stopOnStepsLimit = true;
+		resume();
+		while (stepsLimit > 0)
+			try {
+				Thread.sleep(50);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	}
+
 
 	private boolean terminated(int step, Set<Update> updates, Set<Update> prevupdates) {
 		if (stopOnEmptyUpdates && updates.isEmpty())
@@ -358,7 +367,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			return true;
 		if (stopOnError && lastError != null)
 			return true;
-		if (stopOnStepsLimit && step > stepsLimit)
+		if (stopOnStepsLimit && stepsLimit <= 0 && shouldStop)
 			return true;
 		return false;
 	}
@@ -405,19 +414,13 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
 			if (header.isEmpty())
-				output.write("CoreASM TempSpec\nuse Standard\nuse AoASMPlugin\ninit test\nrule test = skip\n\n");
+				output.write("CoreASM TempSpec\nuse Standard\nuse AoASMPlugin\ninit test\nrule test = print \"Step\"\n\n");
 			else
 				output.write(header);
 			output.write(body + "\n");
 			output.close();
 
 			td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
-			try {
-				Thread.sleep(1000);
-			}
-			catch (InterruptedException e) {
-
-			}
 			AspectTools.setCapi(td.getEngine());
 			rootNode = td.engine.getParser().getRootNode();
 		}
@@ -425,8 +428,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			e.printStackTrace();
 		}
 		finally {
-			if (td != null && TestEngineDriver.runningInstances.contains(td))
-				td.stop();
+			td.stop();
 		}
 		return rootNode;
 	}
@@ -623,7 +625,8 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		e.printStackTrace();
 		lastError = null;
 		stepFailedMsg = null;
-		engine.recover();
+		engine.terminate();
+		engine.hardInterrupt();
 		engine.waitWhileBusy();
 	}
 
