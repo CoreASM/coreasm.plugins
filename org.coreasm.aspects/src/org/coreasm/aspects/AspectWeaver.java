@@ -300,19 +300,19 @@ public class AspectWeaver {
 				// get the parent of candidate and remove the candidate from its
 				// parent but store its insertion reference for the replacement
 				// action
-				ASTNode parentOfCandiate = candidate.getParent();
-				Node insertionReference = candidate.removeFromTree();
+				ASTNode grandParentOfCandiate = candidate.getParent().getParent();
+				Node insertionReference = candidate.getParent().removeFromTree();
 
 				// change macroCallRule if there is exactly one around advice,
 				// else insert nodes into seqblockrule
 				if (aroundNodes.size() == 1 && beforeNodes.isEmpty()
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
-						AspectTools.addChildAfter(parentOfCandiate, insertionReference,
+						AspectTools.addChildAfter(grandParentOfCandiate, insertionReference,
 								aroundNodes.getFirst().getToken(),
 								aroundNodes.getFirst());
 					else
-						AspectTools.addChild(parentOfCandiate, aroundNodes.getFirst());
+						AspectTools.addChild(grandParentOfCandiate, aroundNodes.getFirst());
 				} else {
 					// add before nodes
 					if (!beforeNodes.isEmpty()) {
@@ -348,11 +348,11 @@ public class AspectWeaver {
 					// the position is indicated by its previous sibling node or
 					// null, if it is the first child.
 					if (insertionReference != null)
-						AspectTools.addChildAfter(parentOfCandiate, insertionReference,
+						AspectTools.addChildAfter(grandParentOfCandiate, insertionReference,
 								rootNodeOfSeqBlockSequence.getToken(),
 								rootNodeOfSeqBlockSequence);
 					else
-						AspectTools.addChild(parentOfCandiate, rootNodeOfSeqBlockSequence);
+						AspectTools.addChild(grandParentOfCandiate, rootNodeOfSeqBlockSequence);
 				}
 			}
 			/** \todo remove non matching advices and shift all definitions to the main context of the program @see orchestrate(ASTNode node) */
