@@ -240,7 +240,7 @@ public class AspectTools {
 
 	private static String getCoreASMProgram(Node rootNode) {
 		// First step: Break lines
-		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" universe ", "\nuniverse ");
+		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
 		result = result.replace(" aspect ", "\naspect ");
 		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n");
 		result = result.replace(" par ", "\npar\n").replace(" endpar ", "\nendpar\n");
@@ -252,8 +252,11 @@ public class AspectTools {
 		boolean extraIndentationElse = false;
 		int indentation = 0;
 		for (String line : lines) {
+			line = line.replace("  ", " ").replace("( ", "(").replace(" )", ")").replace(",", ", ").replace(":=", " := ");
 			line = line.trim();
 			if (indentation > 0 && line.isEmpty())
+				continue;
+			if (line.startsWith("use") && line.contains("TabBlocks"))
 				continue;
 			if (extraIndentationThen) {
 				result += "\t";
@@ -296,35 +299,40 @@ public class AspectTools {
 
 		File file;
 
-		JFileChooser chooser = new JFileChooser();
-		chooser.setToolTipText("Select a file to store the CoreASM code for " + node.toString() + "\n" + comment);
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("CoreASM", "casm", "coreasm");
-		chooser.setFileFilter(filter);
-		chooser.setDialogTitle("Store generated CoreASM program from node " + node.toString());
-		if (lastChoosenFile != null)
-			chooser.setCurrentDirectory(lastChoosenFile);
-		else
-			chooser.setCurrentDirectory(new File(pathOfSpecification));
-		int returnVal = chooser.showSaveDialog(null);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			file = chooser.getSelectedFile();
-			lastChoosenFile = file;
-			try {
+//		JFileChooser chooser = new JFileChooser();
+//		chooser.setToolTipText("Select a file to store the CoreASM code for " + node.toString() + "\n" + comment);
+//		FileNameExtensionFilter filter = new FileNameExtensionFilter("CoreASM", "casm", "coreasm");
+//		chooser.setFileFilter(filter);
+//		chooser.setDialogTitle("Store generated CoreASM program from node " + node.toString());
+//		if (lastChoosenFile != null)
+//			chooser.setCurrentDirectory(lastChoosenFile);
+//		else
+//			chooser.setCurrentDirectory(new File(pathOfSpecification));
+//		int returnVal = chooser.showSaveDialog(null);
+//		if (returnVal == JFileChooser.APPROVE_OPTION) {
+//			file = chooser.getSelectedFile();
+		
+		if (pathOfSpecification.contains("-woven."))
+			return;
+		
+		file = new File(pathOfSpecification.replace(".casm", "-woven.casm"));
+		lastChoosenFile = file;
+		try {
 
-				PrintWriter out = new PrintWriter(new FileWriter(file));
-				out.write("// " + comment + "\n" + getCoreASMProgram(node));
-				out.close();
+			PrintWriter out = new PrintWriter(new FileWriter(file));
+			out.write("// " + comment + "\n" + getCoreASMProgram(node));
+			out.close();
 
-			}
-			catch (FileNotFoundException e) {
-				throw new CoreASMIssue("writeParseTreeToFile can not find file for writing!\n"
-				        + e.getStackTrace().toString());
-			}
-			catch (IOException e) {
-				throw new CoreASMIssue("writeParseTreeToFile can not access file for writing!\n"
-				        + e.getStackTrace().toString());
-			}
 		}
+		catch (FileNotFoundException e) {
+			throw new CoreASMIssue("writeParseTreeToFile can not find file for writing!\n"
+			        + e.getStackTrace().toString());
+		}
+		catch (IOException e) {
+			throw new CoreASMIssue("writeParseTreeToFile can not access file for writing!\n"
+			        + e.getStackTrace().toString());
+		}
+//		}
 	}
 
 	/**
