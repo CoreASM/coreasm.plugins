@@ -144,6 +144,19 @@ public class AspectWeaver {
 	 * @throws AspectException
 	 */
 	private void PerformStaticChecks() throws AspectException{
+
+		/**
+		 * check if all named pointcut parameters are used on the righthandside
+		 */
+		for (ASTNode nptcdef : astNodes.get("NamedPointCutDefinitionASTNode")) {
+			NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
+			List<ASTNode> parameters;
+			if (!((parameters = definition.requiredParametersContained()).isEmpty()))
+				for (ASTNode param : parameters) {
+					throw new CoreASMError(definition.getName() + " requires parameters"
+							+ parameters.toString(), param);
+				}
+		}
 //		//searching for errors of proceed nodes
 //		if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) // \todo modularity plugin nicht zum reinen Parsen verfügbar
 //		for (ASTNode node : astNodes.get(AdviceASTNode.NODE_TYPE))
@@ -497,6 +510,7 @@ public class AspectWeaver {
 	 */
 	private void orchestrate(ASTNode node) {
 
+		//@formatter:off
 		/**
 		 * modify advice nodes:
 		 * a) add runtime condition of pointcuts to advice body
@@ -516,6 +530,7 @@ public class AspectWeaver {
 		 	}
 		 \enddot
 		 */
+		//@formatter:on
 		if (node instanceof AdviceASTNode) {
 			AdviceASTNode advice = (AdviceASTNode) node;
 

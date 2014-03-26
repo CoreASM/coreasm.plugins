@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -83,6 +84,55 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 				return (BinOrASTNode)child;
 		//\todo exception no pointcut (BinOrASTNode) defined by this NamedPointCutASTNode
 		return null;
+	}
+
+	/**
+	 * return the parameter node of a parameter from the signature that is not
+	 * used on the righthand side of the named pointcut definition
+	 * 
+	 * TODO consider that a parameter definition should appear on both sides of
+	 * an or-expression
+	 * 
+	 * @return
+	 */
+	public List<ASTNode> requiredParametersContained() {
+		List<ASTNode> parameters = this.getPointCutParameters();
+		for (ASTNode child : this.getAbstractChildNodes()) {
+			parameters = checkIsRequiredParameterExists(parameters, child);
+			//param from signature has been found on right side
+			if (parameters.isEmpty())
+				break;
+			}
+		return parameters;
+	}
+
+	/**
+	 * check if the node's token matches one of the parameters and if remove it
+	 * from the parameter list
+	 * 
+	 * @param parameters
+	 * @param node
+	 * @return
+	 */
+	private List<ASTNode> checkIsRequiredParameterExists(List<ASTNode> parameters, ASTNode node) {
+		List<ASTNode> parametersOutput = new LinkedList<ASTNode>(parameters);
+		for (ASTNode astNode : parameters) {
+			if (node instanceof PointCutParameterNode)
+				if (astNode.getToken().equals(((PointCutParameterNode) node).getName())) {
+					parametersOutput.remove(astNode);
+					break;
+				}
+			if (node.getParent() instanceof NamedPointCutASTNode)
+				if (astNode.getToken().equals(((FunctionRuleTermNode) node).getName()))
+					parametersOutput.remove(astNode);
+			for (ASTNode child : node.getAbstractChildNodes()) {
+				if (parametersOutput.isEmpty())
+					break;
+				else
+					parametersOutput = checkIsRequiredParameterExists(parametersOutput, child);
+			}
+		}
+		return parametersOutput;
 	}
 
 }
