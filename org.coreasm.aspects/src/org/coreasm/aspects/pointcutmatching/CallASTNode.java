@@ -132,8 +132,8 @@ public class CallASTNode extends PointCutASTNode {
 				else //must be id node, so get the initial value from the definition of the static value 
 				{
 					ASTNode astNode;
-					if (!node.getConcreteNodeType().equals("ID"))
-						throw new CoreASMError("node must be an id node", node);
+					if (!agentPattern.getGrammarRule().equals(Kernel.GR_ID))
+						throw new CoreASMError("node must be an id node", agentPattern);
 					else
 						astNode = (ASTNode) node;
 					// ascend up to aspect node
