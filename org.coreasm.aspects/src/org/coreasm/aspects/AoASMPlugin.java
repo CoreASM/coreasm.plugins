@@ -397,7 +397,7 @@ public class AoASMPlugin extends Plugin
 						pTools.star(
 							Parsers.array(
 								pTools.getOprParser(","),
-								pointCutParameterParser.optional()
+								pointCutParameterParser
 							)
 						),
 						pTools.getOprParser(")"),						
@@ -442,14 +442,35 @@ public class AoASMPlugin extends Plugin
 					});
 
 			/* Parser for within expression */
-			Parser<Node> withinParser = // within(id)
+			Parser<Node> withinParser = // 'within' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
 			Parsers.array(pTools.getKeywParser(KW_WITHIN, PLUGIN_NAME),
 					pTools.getOprParser("("),
-					Parsers.or(
-							pTools.getIdParser(),
+					pointCutParameterParser.optional(),
+					pTools.star(
+						Parsers.array(
+							pTools.getOprParser(","),
+							pointCutParameterParser
+						)
+					),
+					pTools.getOprParser(")"),
+					Parsers.array(
+						pTools.getKeywParser(KW_BY, PLUGIN_NAME),
+						Parsers.or(
+							idParser,
 							stringParser
+						)
+					).optional(),
+					Parsers.array(
+						Parsers.or(
+								pTools.getKeywParser("with", PLUGIN_NAME),
+								pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
 						),
-					pTools.getOprParser(")")).map(
+						Parsers.or(
+								pTools.getKeywParser("result", PLUGIN_NAME),
+								pTools.getKeywParser("return", PLUGIN_NAME)
+						)
+					).optional()
+					).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
@@ -1107,10 +1128,7 @@ public class AoASMPlugin extends Plugin
 			{
 
 				info.clearInformation("clear now!");
-				//create marker for all aspects and submit them via IInformation to Observers
-				HashMap<String, LinkedList<ASTNode>> astNodesByGrammar = AspectTools.collectASTNodesByGrammar(capi
-						.getParser().getRootNode());
-				LinkedList<ASTNode> aspectNodes = astNodesByGrammar.get(AspectASTNode.class.getSimpleName());
+				// TODO create marker for all aspects and submit them via IInformation to Observers
 
 				//weave with cloned tree to get warnings for current CoreASM specification
 				//				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getParser().getRootNode()))) {
