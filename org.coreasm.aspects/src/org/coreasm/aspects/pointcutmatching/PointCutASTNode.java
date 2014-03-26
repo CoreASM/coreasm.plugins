@@ -71,6 +71,19 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 		}
 		return null;
 	}
+	
+	public LinkedList<PointCutParameterNode> getParameters() {
+		LinkedList<PointCutParameterNode> parameters = new LinkedList<PointCutParameterNode>();
+		collectParameters(this, parameters);
+		return parameters;
+	}
+	
+	private static void collectParameters(ASTNode node, LinkedList<PointCutParameterNode> parameters) {
+		if (node instanceof PointCutParameterNode)
+			parameters.add((PointCutParameterNode)node);
+		for (ASTNode child : node.getAbstractChildNodes())
+			collectParameters(child, parameters);
+	}
 
 	/**
 	 *  returns null, because this node holds no expression

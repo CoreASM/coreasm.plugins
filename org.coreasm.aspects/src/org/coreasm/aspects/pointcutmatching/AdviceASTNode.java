@@ -65,7 +65,7 @@ public class AdviceASTNode extends ASTNode {
 		super.addChild(name, node);
 		
 		//real name cannot be set, when e.g. using cloneTree, because children do not exist at this time
-		if (! this.getAbstractChildNodes().isEmpty()){
+		if (realName == null){
 			this.realName = this.getName();
 			this.getFirst().getFirst().setToken(adviceId);
 		}
@@ -137,6 +137,13 @@ public class AdviceASTNode extends ASTNode {
 		}
 		return null;
 	}
+	
+	public List<ASTNode> getParameters() {
+		List<ASTNode> parameters = new LinkedList<ASTNode>();
+		for (ASTNode param = getFirst().getFirst().getNext(); param != null; param = param.getNext())
+			parameters.add(param);
+		return parameters;
+	}
 
 	/**
 	 * transform the given advice ASTNode into a rule declaration ASTNode
@@ -199,6 +206,10 @@ public class AdviceASTNode extends ASTNode {
 		else
 		//clone this object taking into account the given binding
 		{
+			for (ASTNode param : getParameters()) {
+				if (binding.getBindingPartner(param.getToken()) == null)
+					throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
+			}
 			AdviceASTNode cloneWithBinding;
 			cloneWithBinding = (AdviceASTNode)this.cloneTree();
 			
