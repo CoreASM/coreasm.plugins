@@ -9,6 +9,7 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.plugins.signature.FunctionNode;
+import org.coreasm.engine.plugins.string.StringBackgroundElement;
 
 public class PointCutParameterNode extends ASTNode {
 
@@ -51,13 +52,14 @@ public class PointCutParameterNode extends ASTNode {
 			// iterate over signatures to find the initial string value of the
 			// used id
 			astNode = astNode.getFirst();//first child of aspect ast node
-			while ((astNode = astNode.getNext()) != null)
-				if (astNode.getGrammarRule().equals("Signature")) {
+			do {
+				if (astNode.getGrammarRule().equals("Signature") && astNode.getFirst() instanceof FunctionNode) {
 					FunctionNode fn = (FunctionNode) astNode.getFirst();
 					if (fn.getName().equals(patternNode.getToken())) {
 						// error: initial value of the variable is not a string
 						// term
-						if (!(fn.getRange().equals("STRING") && fn.getInitNode() != null && fn.getInitNode()
+						if (!(fn.getRange().equals(StringBackgroundElement.STRING_BACKGROUND_NAME)
+								&& fn.getInitNode() != null && fn.getInitNode()
 								.getGrammarRule().equals("StringTerm")))
 							throw new CoreASMError("Value of function " + fn.getName()
 									+ " is not a string but is used as pointcut pattern.", fn);
@@ -72,6 +74,7 @@ public class PointCutParameterNode extends ASTNode {
 						return fn.getInitNode().getToken();
 					}
 				}
+			} while ((astNode = astNode.getNext()) != null);
 			throw new CoreASMError(patternNode.getToken() + " is not a static string function.", this);
 		}
 	}
