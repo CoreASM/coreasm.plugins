@@ -115,6 +115,6 @@ public class Binding {
 	@Override
 	public String toString(){
 		return "Match between "+ getPointcutASTNode().toString() +" and "+AspectTools.constructName(getCompareToNode())+"\n"+
-				binding.toString();
+				binding;
 	}
 }

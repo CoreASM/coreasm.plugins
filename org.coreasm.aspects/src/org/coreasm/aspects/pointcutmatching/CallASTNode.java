@@ -84,20 +84,28 @@ public class CallASTNode extends PointCutASTNode {
 					if ( Pattern.compile(pointCutToken) != null ){
 						if (!Pattern.matches(pointCutToken, (astn instanceof FunctionRuleTermNode ? astn.getFirst().getToken() : astn.getToken())))
 							return new Binding(compareToNode, this);
-						else {
-							String name = parameterNode.getName();
-							if (name == null)
+						
+						String name = parameterNode.getName();
+						if (name == null) {
+							if (resultingBinding == null)
 								resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+						}
+						else {
+							if (resultingBinding == null)
+								resultingBinding = new Binding(compareToNode, this);
+							if (astn == fnNode.getFirst()) {	// IdNode for the rule name
+								RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
+								AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn.cloneTree());
+								if ( ! resultingBinding.addBinding(name, ruleOrFuncElemNode))
+									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+							}
 							else {
-								if (resultingBinding == null)
-									resultingBinding = new Binding(compareToNode, this);
-								if (astn == fnNode.getFirst()) {
-									RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
-									AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn);
-									if ( ! resultingBinding.addBinding(name, ruleOrFuncElemNode))
-										throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+								if (Kernel.GR_ID.equals(astn.getGrammarRule())) {
+									FunctionRuleTermNode functionRuleTermNode = new FunctionRuleTermNode(astn.getScannerInfo());
+									AspectTools.addChild(functionRuleTermNode, "alpha", astn.cloneTree());
+									astn = functionRuleTermNode;
 								}
-								else if ( ! resultingBinding.addBinding(name, astn))
+								if ( ! resultingBinding.addBinding(name, astn))
 									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
 							}
 						}
