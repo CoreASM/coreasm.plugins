@@ -3,12 +3,13 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.ArrayList;
+
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
-
-import java.util.ArrayList;
 
 /**
  * @author Marcel Dausend
@@ -36,7 +37,7 @@ public class ExpressionASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public Binding matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws AspectException {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//just one node which must be a BinAndASTNode according to the grammar;
 		//return the result of the child node.

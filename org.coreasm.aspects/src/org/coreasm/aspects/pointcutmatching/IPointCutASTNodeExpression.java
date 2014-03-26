@@ -3,10 +3,11 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.engine.interpreter.ASTNode;
-
 import java.util.HashMap;
 import java.util.LinkedList;
+
+import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.engine.interpreter.ASTNode;
 
 /**
  * @author Marcel Dausend
@@ -40,7 +41,7 @@ public interface IPointCutASTNodeExpression {
 	 */
 	public String generateExpressionString();
 
-	Binding matches(ASTNode compareToNode) throws Exception;
+	Binding matches(ASTNode compareToNode) throws AspectException;
 	
 	
 }

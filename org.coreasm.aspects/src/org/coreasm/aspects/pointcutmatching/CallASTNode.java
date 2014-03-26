@@ -8,6 +8,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
+import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
@@ -51,11 +52,11 @@ public class CallASTNode extends PointCutASTNode {
 	 * the return condition mean, that the rule has a return <var> in or a result node in its rule definition body.
 	 *
 	 * @param compareToNode joint point to compare against
-	 * @throws Exception
+	 * @throws AspectException
 	 */
 	/** \TODO init rule is a problem!!! */
 	@Override
-	public Binding matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws AspectException {
         if ( !(compareToNode.getParent() instanceof MacroCallRuleNode) )
 			return new Binding(compareToNode.getParent(), this);
 		compareToNode = compareToNode.getParent();
@@ -104,7 +105,7 @@ public class CallASTNode extends PointCutASTNode {
 				}
 				catch (PatternSyntaxException e){
 					//if the pointcut token is no regular expression throw an exception towards the weaver
-					throw new MatchingError(pointCutToken, this, e.getMessage(), e);
+					throw new MatchingError(pointCutToken, this, e.getMessage());
 				}
 				astn = (argIterator.hasNext() ? argIterator.next() : null);
 			}

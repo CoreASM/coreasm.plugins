@@ -1,20 +1,20 @@
 package org.coreasm.aspects.errorhandling;
 
-import org.coreasm.engine.interpreter.FunctionRuleTermNode;
+import org.coreasm.engine.interpreter.ASTNode;
 
 public class BindingException extends AspectException {
 
 	/** serialization id */
 	private static final long serialVersionUID = 1L;
-	private FunctionRuleTermNode pointCutParameter = null;
+	private ASTNode parameterNode = null;
 
-	public BindingException(String string, FunctionRuleTermNode functionRuleTermNode, Exception cause) {
-		super(functionRuleTermNode, string, cause);
-		pointCutParameter = functionRuleTermNode;
+	public BindingException(String string, ASTNode node) {
+		super(node, string);
+		parameterNode = node;
 	}
 
-	public FunctionRuleTermNode getParameterNode() {
-		return pointCutParameter;
+	public ASTNode getParameterNode() {
+		return parameterNode;
 	}
 
 }

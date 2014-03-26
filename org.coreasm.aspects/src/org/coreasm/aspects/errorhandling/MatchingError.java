@@ -21,10 +21,9 @@ public class MatchingError extends AspectException {
 	 * @param pattern
 	 * @param node
 	 * @param message
-	 * @param cause
 	 */
-	public MatchingError(String pattern, ASTNode node, String message, Throwable cause) {
-		super(node, "Wrong syntax of pattern "+pattern+"\n"+message, cause);
+	public MatchingError(String pattern, ASTNode node, String message) {
+		super(node, "Wrong syntax of pattern "+pattern+"\n"+message);
 		this.pattern = pattern;
 	}
 	

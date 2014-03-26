@@ -18,7 +18,6 @@ import org.codehaus.jparsec.Parser;
 
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
-import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
@@ -276,8 +275,8 @@ public class AspectWeaver {
 			try {
 				weavingCandidates = pointCutMatching(getAstNodes());
 			}
-			catch (MatchingError e) {
-				e.generateCapiError(capi);
+			catch (CoreASMError e) {
+				capi.error(e);
 			}
 			catch (Exception e) {
 				capi.error(e);
@@ -462,7 +461,7 @@ public class AspectWeaver {
 	 *            named pointcut that has to be replaced
 	 * @return pointcut from def with exchanged variables according to the here
 	 *         constructed binding
-	 * @throws Exception
+	 * @throws AspectException
 	 */
 	private static Node cloneWithBinding(NamedPointCutDefinitionASTNode def, NamedPointCutASTNode nptc)
 			throws BindingException {
@@ -472,13 +471,12 @@ public class AspectWeaver {
 			FunctionRuleTermNode value = binding.put(def.getPointCutParameters().get(i).getToken(), nptc
 					.getPointCutParameters().get(i));
 			if (value != null && !value.getName().equals(nptc.getPointCutParameters().get(i).getToken()))
-				throw new BindingException("Binding inconsistent!", nptc.getPointCutParameters().get(i),
-						value == null ? new NullPointerException("value is null!") : new Exception(
-								"Binding inconsistent!"));
+				throw new BindingException("Binding inconsistent!", nptc.getPointCutParameters().get(i));
 		}
 		ASTNode pointcut = (ASTNode) def.getPointCut().cloneTree();
 		//replacement of the variables within pointcut according to the binding
 		cloneWithBinding(pointcut, binding);
+				
 		return pointcut;
 	}
 
@@ -810,12 +808,11 @@ public class AspectWeaver {
 	 * 
 	 * @param astNodes
 	 * @return
-	 * @throws Exception
+	 * @throws AspectException
 	 */
 	private HashMap<ASTNode, LinkedList<AdviceASTNode>> pointCutMatching(HashMap<String, LinkedList<ASTNode>> astNodes)
-			throws Exception {
+			throws AspectException {
 		HashMap<ASTNode, LinkedList<AdviceASTNode>> weavingCandidates = new HashMap<ASTNode, LinkedList<AdviceASTNode>>();
-		LinkedList<ASTNode> candidates = new LinkedList<ASTNode>();
 		for (ASTNode functionRuleTerm : astNodes.get("FunctionRuleTerm")) {
 			if (!insideAdviceRule(functionRuleTerm))
 				for (ASTNode advice : astNodes

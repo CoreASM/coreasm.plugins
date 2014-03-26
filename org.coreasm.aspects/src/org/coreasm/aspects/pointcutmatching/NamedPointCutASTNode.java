@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -56,8 +57,8 @@ public class NamedPointCutASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public Binding matches(ASTNode compareToNode) throws Exception {
-		throw new MatchingError("no pattern for matching", this, "NamedPointcut should not occcur during matching",null);
+	public Binding matches(ASTNode compareToNode) throws AspectException {
+		throw new MatchingError("no pattern for matching", this, "NamedPointcut should not occcur during matching");
 	}
 	
 	@Override

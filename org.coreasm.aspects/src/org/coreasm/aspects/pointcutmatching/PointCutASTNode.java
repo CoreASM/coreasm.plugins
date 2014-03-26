@@ -3,11 +3,12 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.ScannerInfo;
-
 import java.util.HashMap;
 import java.util.LinkedList;
+
+import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.ScannerInfo;
 
 /**
  * @author Marcel Dausend
@@ -43,9 +44,9 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 *
      * @param compareToNode
      * @return
-	 * @throws Exception 
+	 * @throws AspectException 
 	 */
-	public abstract Binding matches(ASTNode compareToNode) throws Exception;
+	public abstract Binding matches(ASTNode compareToNode) throws AspectException;
 	
 	/**
 	 * @return

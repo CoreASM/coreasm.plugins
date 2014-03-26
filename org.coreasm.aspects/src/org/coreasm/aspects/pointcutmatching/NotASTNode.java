@@ -3,11 +3,12 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.HashMap;
+
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
-
-import java.util.HashMap;
 
 /**
  * @author Marcel Dausend
@@ -36,10 +37,10 @@ public class NotASTNode extends PointCutASTNode {
 	
 	/**
 	 * returns the inverted boolean value of its subexpression node
-	 * @throws Exception 
+	 * @throws AspectException 
 	 */
 	@Override
-	public Binding matches(ASTNode compareToNode) throws Exception {
+	public Binding matches(ASTNode compareToNode) throws AspectException {
 		Binding result = this.getFirstChild().matches(compareToNode);
 		//TODO not for args nodes - what is an inverted return value of args list?!
 		//\attention argslist not yet inverted!!!

@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
@@ -99,14 +101,14 @@ public class AdviceASTNode extends ASTNode {
 	 * 
 	 * @param candidate given pointcut of the advice
 	 * @return result of the matching
-	 * @throws Exception 
+	 * @throws AspectException 
 	 */
-	public Binding matches(ASTNode candidate) throws Exception{
+	public Binding matches(ASTNode candidate) throws AspectException{
 		//pointcut cannot be null (which is assured by parsing)
 		Binding binding = getPointCut().matches(candidate);
 		/*	stores the binding in the bindings HashMap
 			where the key is the node that successfully matches this advice */
-		if ( binding != null )
+		if (binding.exists())
 			bindings.put(candidate, binding);
 		return  binding;
 	}
