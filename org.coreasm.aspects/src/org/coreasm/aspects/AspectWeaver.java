@@ -15,13 +15,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
-
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.ControlAPI;
@@ -148,14 +148,17 @@ public class AspectWeaver {
 		/**
 		 * check if all named pointcut parameters are used on the righthandside
 		 */
-		for (ASTNode nptcdef : astNodes.get("NamedPointCutDefinitionASTNode")) {
-			NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
-			List<ASTNode> parameters;
-			if (!((parameters = definition.requiredParametersContained()).isEmpty()))
-				for (ASTNode param : parameters) {
-					throw new CoreASMError(definition.getName() + " requires parameters"
-							+ parameters.toString(), param);
-				}
+		LinkedList<ASTNode> namedPointCutDefinitions = astNodes.get("NamedPointCutDefinitionASTNode");
+		if (namedPointCutDefinitions != null) {
+			for (ASTNode nptcdef : astNodes.get("NamedPointCutDefinitionASTNode")) {
+				NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
+				List<ASTNode> parameters;
+				if (!((parameters = definition.requiredParametersContained()).isEmpty()))
+					for (ASTNode param : parameters) {
+						throw new CoreASMError(definition.getName() + " requires parameters"
+								+ parameters.toString(), param);
+					}
+			}
 		}
 //		//searching for errors of proceed nodes
 //		if ( astNodes.get(AdviceASTNode.NODE_TYPE) != null ) // \todo modularity plugin nicht zum reinen Parsen verfügbar
