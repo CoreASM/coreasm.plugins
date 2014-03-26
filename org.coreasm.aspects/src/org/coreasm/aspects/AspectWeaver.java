@@ -807,7 +807,7 @@ public class AspectWeaver {
 					// if an advice matches the current astnode
 					// it is added to the hashmap of candidates for weaving
 					Binding binding = ((AdviceASTNode) advice).matches(functionRuleTerm);
-					if (binding.exists() && !binding.getBinding().isEmpty()) {
+					if (binding.exists()) {
 						//create marker	
 						AoASMPlugin.createMarker(capi, functionRuleTerm, binding);
 						if (weavingCandidates.get(functionRuleTerm) == null) {
