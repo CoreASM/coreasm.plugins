@@ -1,0 +1,20 @@
+CoreASM TestCall2
+
+use Standard
+use AoASMPlugin
+
+init TestCallPointcut
+
+aspect ParserTest {
+
+	advice test1 before : call("myRuleCall") { print "test1"}
+
+}
+
+rule TestCallPointcut = {
+	myRuleCall("Hallo Welt!", 42)
+	print "TestCallPointcut"
+}
+
+rule myRuleCall(a, b) =
+	skip
