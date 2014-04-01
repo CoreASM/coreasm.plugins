@@ -97,7 +97,7 @@ public class CallASTNode extends PointCutASTNode {
 								RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
 								AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn.cloneTree());
 								if ( ! resultingBinding.addBinding(name, ruleOrFuncElemNode))
-									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+compareToNode.unparseTree()+" and "+this.getFirst().getToken(), this); 
 							}
 							else {
 								if (Kernel.GR_ID.equals(astn.getGrammarRule())) {
@@ -106,7 +106,7 @@ public class CallASTNode extends PointCutASTNode {
 									astn = functionRuleTermNode;
 								}
 								if ( ! resultingBinding.addBinding(name, astn))
-									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+AspectTools.constructName(compareToNode)+" and "+this.getFirst().getToken(), this); 
+									throw new CoreASMError("Name "+name+ " already bound to a different construct during pointcut matching between "+compareToNode.unparseTree()+" and "+this.getFirst().getToken(), this); 
 							}
 						}
 					}

@@ -85,10 +85,11 @@ public class AdviceASTNode extends ASTNode {
 					proceedNodes.add(proceedNode);
 					parent = proceedNode.getParent();
 					insertionReference = proceedNode.removeFromTree();
+					// TODO check node names
 					if (proceedNode instanceof FunctionRuleTermNode)
-						AspectTools.addChildAfter(parent,insertionReference, AspectTools.constructName(proceedNode), (FunctionRuleTermNode)proceedNode.cloneTree());
+						AspectTools.addChildAfter(parent,insertionReference, Node.DEFAULT_NAME, (FunctionRuleTermNode)proceedNode.cloneTree());
 					else if (proceedNode instanceof MacroCallRuleNode)
-						AspectTools.addChildAfter(parent,insertionReference, AspectTools.constructName(proceedNode), (MacroCallRuleNode)proceedNode.cloneTree());
+						AspectTools.addChildAfter(parent,insertionReference, Node.DEFAULT_NAME, (MacroCallRuleNode)proceedNode.cloneTree());
 				}
 			}
 			

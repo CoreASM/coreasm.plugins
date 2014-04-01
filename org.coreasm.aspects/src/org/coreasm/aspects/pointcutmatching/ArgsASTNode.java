@@ -101,7 +101,7 @@ public class ArgsASTNode extends PointCutASTNode {
 		if (one.getAbstractChildNodes().size()== two.getAbstractChildNodes().size())
 		{
 			//bind function name of one to function name of two
-			if (! parameterBinding.addBinding(AspectTools.constructName(one),two))
+			if (! parameterBinding.addBinding(one.getName(),two))
 			{
 				parameterBinding.clear();
 				return false;
@@ -140,8 +140,8 @@ public class ArgsASTNode extends PointCutASTNode {
 	
 	private boolean areASTNodesBindable(ASTNode one, ASTNode two){
 		
-		String nameOfOne = AspectTools.constructName(one);
-		String nameOfTwo = AspectTools.constructName(two);
+		String nameOfOne = one.unparseTree();
+		String nameOfTwo = two.unparseTree();
 		
 		/**
 		 * define cases when binding is not possible

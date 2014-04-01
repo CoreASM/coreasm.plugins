@@ -481,24 +481,6 @@ public class AspectTools {
 		return "\"" + getDotNodeId(node) + "\"" + "[label=\"" + output + "\"]";
 	}
 
-	/**
-	 * this method return the name of the given ASTNode depending on its kind
-	 * 
-	 * @param node
-	 *            ASTNode to retrieve the name from
-	 * @return name of the given ASTNode
-	 */
-	public static String constructName(ASTNode node) {
-		String token = "";
-		if (node instanceof MacroCallRuleNode || node instanceof FunctionRuleTermNode)
-			token = constructName(node.getFirstASTNode());
-		else if (node.getToken() != null)
-			token = node.getToken();
-		else
-			throw new CoreASMError("no token can be returnd for node" + node.toString());
-		return token;
-	}
-
 	// public helper rules
 	/**
 	 * Recursively, finds all Nodes which are part of an aspect and returns them

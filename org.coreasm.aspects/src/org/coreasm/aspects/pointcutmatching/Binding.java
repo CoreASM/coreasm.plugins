@@ -92,7 +92,7 @@ public class Binding {
 			//if token of the already bound ASTNode is not equal to the current AstNode
 			//no unique, consistent binding for the given parameterOfArgsASTNode is possible
 			return parameterOfArgsASTNode.equals("_") ||
-					AspectTools.constructName(binding.get(parameterOfArgsASTNode)).equals(AspectTools.constructName(parameterOfCompareToNode));
+					binding.get(parameterOfArgsASTNode).unparseTree().equals(parameterOfCompareToNode.unparseTree());
 		}
 	}
 
@@ -114,7 +114,6 @@ public class Binding {
 
 	@Override
 	public String toString(){
-		return "Match between "+ getPointcutASTNode().toString() +" and "+AspectTools.constructName(getCompareToNode())+"\n"+
-				binding;
+		return "Match between " + getPointcutASTNode() + " and " + getCompareToNode() + "\n" + binding;
 	}
 }
