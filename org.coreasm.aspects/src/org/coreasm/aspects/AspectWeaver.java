@@ -21,7 +21,6 @@ import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.Binding;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
-import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.ControlAPI;
@@ -123,10 +122,11 @@ public class AspectWeaver {
 			this.setRootnode(rootnode);
 
 			// collect all ASTNodes from aspects from the capi
-			astNodes = AspectTools.collectASTNodesByGrammar(rootnode);
+			astNodes = new HashMap<String, LinkedList<ASTNode>>();
+			AspectTools.collectASTNodesByGrammar(astNodes, rootnode);
 
 			//continue initialization
-			if (astNodes.get("MacroCallRule") != null
+			if (astNodes.get("FunctionRuleTerm") != null
 					&& astNodes.get(AdviceASTNode.NODE_TYPE) != null) {
 				this.initialize = true;
 				return true;

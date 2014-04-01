@@ -513,39 +513,21 @@ public class AspectTools {
 	 *            is used to start the search
 	 * @return a hashmap of all ASTNodes of the current program
 	 */
-	public static HashMap<String, LinkedList<ASTNode>> collectASTNodesByGrammar(ASTNode currentNode) {
-
-		// recursive call for all children to add their elements to the HashMap astNodes
-		// key: GrammarRule, value List of ASTNodes
-		HashMap<String, LinkedList<ASTNode>> astNodes = new HashMap<String, LinkedList<ASTNode>>();
-		for (ASTNode child : currentNode.getAbstractChildNodes()) {
-			HashMap<String, LinkedList<ASTNode>> tmpHash = collectASTNodesByGrammar(child);
-			for (String key : tmpHash.keySet()) {
-				if (astNodes.containsKey(key))
-					astNodes.get(key).addAll(tmpHash.get(key));
-				else
-					astNodes.put(key, tmpHash.get(key));
-			}
-		}
-
+	public static void collectASTNodesByGrammar(HashMap<String, LinkedList<ASTNode>> astNodes, ASTNode currentNode) {
 		// add all ASTNodes by default to the list of ASTNodes in the HashMap
 		// astNodes:
-		/**
-		 * \TODO {restrict to a relevant subset of nodes by specializing the
-		 * switch-case statement for <code>GrammarRule</code>
-		 */
-		LinkedList<ASTNode> tmpList = new LinkedList<ASTNode>();
-		if (currentNode.getGrammarRule().equals("MacroCallRule") || true) {
-			// if its the first entry, put it to the hashmap
-			if (astNodes.get(currentNode.getGrammarRule()) != null) {
-				tmpList.addAll(astNodes.get(currentNode.getGrammarRule()));
-			}
-			tmpList.add(currentNode);
-			// if its not the first entry, replace the existing entry (necessary
-			// to extend the list of ASTNodes for an existing key)
-			astNodes.put(currentNode.getGrammarRule(), tmpList);
+		LinkedList<ASTNode> list = astNodes.get(currentNode.getGrammarRule());
+		if (list == null) {
+			list = new LinkedList<ASTNode>();
+			astNodes.put(currentNode.getGrammarRule(), list);
 		}
-		return astNodes;
+		// extend the list of ASTNodes for an existing key
+		list.add(currentNode);
+		
+		// recursive call for all children to add their elements to the HashMap astNodes
+		// key: GrammarRule, value List of ASTNodes
+		for (ASTNode child : currentNode.getAbstractChildNodes())
+			collectASTNodesByGrammar(astNodes, child);
 	}
 
 	/**
