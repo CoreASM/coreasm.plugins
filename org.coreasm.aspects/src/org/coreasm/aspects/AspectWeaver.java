@@ -384,7 +384,7 @@ public class AspectWeaver {
 					// add around nodes if existing or insert candidate again
 					if (aroundNodes.isEmpty()) {
 						seqBlockNode = AspectTools.insert(seqBlockNode,
-								candidate);
+								insertionContext);
 					}
 					else {
 						ASTNode aroundRuleBlock = AspectTools.create(
