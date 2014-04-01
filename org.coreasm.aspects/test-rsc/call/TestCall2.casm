@@ -7,13 +7,16 @@ init TestCallPointcut
 
 aspect ParserTest {
 
+	//@requires "before_test1"
 	advice test1 before : call("myRuleCall", ".*",".*") { print "before_test1"}
 	
-	advice test1 before : call("myRuleCall", ".*",".*") { print "after_test1"}
+	// @requires "after_test1"
+	advice test1 after : call("myRuleCall", ".*",".*") { print "after_test1"}
 
 }
 
 rule TestCallPointcut = {
+	//@requires "Hallo Welt!"
 	myRuleCall("Hallo Welt!", 42)
 	print "TestCallPointcut"
 }

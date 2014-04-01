@@ -20,14 +20,11 @@ package org.coreasm.aspects.utils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import javax.swing.JOptionPane;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
@@ -44,10 +41,6 @@ import org.coreasm.engine.Specification;
 import org.coreasm.engine.StepFailedEvent;
 import org.coreasm.engine.absstorage.Update;
 import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.plugin.PluginServiceInterface;
-import org.coreasm.engine.plugins.debuginfo.DebugInfoPlugin.DebugInfoPSI;
-import org.coreasm.engine.plugins.io.IOPlugin.IOPluginPSI;
-import org.coreasm.engine.plugins.io.InputProvider;
 import org.coreasm.util.CoreASMGlobal;
 import org.coreasm.util.Logger;
 import org.coreasm.util.Tools;
@@ -66,7 +59,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 	private TestEngineDriverStatus status = TestEngineDriverStatus.stopped;
 
-	private String abspathname;
 	private boolean updateFailed;
 	private String stepFailedMsg;
 	protected CoreASMError lastError;
@@ -82,23 +74,21 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private boolean dumpFinal;
 	private boolean markSteps;
 	private boolean printAgents;
-	private PrintStream stderr;
-	private PrintStream stddump;
-	private PrintStream systemErr;
 	private boolean shouldStop;
 	private boolean shouldPause;
 	static long lastPrefChangeTime;
 
-	public static List<TestEngineDriver> getRunningInstances() {
-		return runningInstances;
-	}
-
 	private TestEngineDriver(boolean isSyntaxEngine) {
 		//super();
+		if (runningInstances == null)
+			runningInstances = new LinkedList<TestEngineDriver>();
+		runningInstances.add(this);
 		CoreASMGlobal.setRootFolder(Tools.getRootFolder());
 		engine = (Engine) org.coreasm.engine.CoreASMEngineFactory.createEngine();
+		engine.addObserver(this);
 		shouldStop = false;
 		shouldPause = true;
+		status = TestEngineDriverStatus.paused;
 		this.isSyntaxEngine = isSyntaxEngine;
 
 		String pluginFolders = Tools.getRootFolder(AoASMPlugin.class).split("target")[0] + "target/";
@@ -138,19 +128,18 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		return engine;
 	}
 
+	public boolean isRunning() {
+		return runningInstances.contains(this);
+	}
 
 	public static TestEngineDriver newLaunch(String abspathname) {
 		TestEngineDriver td = new TestEngineDriver(false);
-		if (runningInstances == null)
-			runningInstances = new LinkedList<TestEngineDriver>();
-		runningInstances.add(td);
 		td.setDefaultConfig();
 		td.dolaunch(abspathname);
 		return td;
 	}
 
 	public void dolaunch(String abspathname) {
-		this.abspathname = abspathname;
 		Thread t = new Thread(this);
 
 		try {
@@ -160,7 +149,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		catch (Throwable e) {
 			t.setName("CoreASM run of " + abspathname);
 		}
-		setInputOutputPhase2();
 
 		if (engine.getEngineMode() == EngineMode.emError) {
 			engine.recover();
@@ -187,7 +175,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		int step = 0;
 		Exception exception = null;
 
-		engine.addObserver(this); // TODO this too prevents more than a single syntaxInstance being run at the same time...
 		Set<Update> updates, prevupdates = null;
 
 		try {
@@ -222,13 +209,13 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 					updates = engine.getUpdateSet(0);
 					if (markSteps)
-						stddump.println("#--- end of step " + step);
+						System.out.println("#--- end of step " + step);
 					if (dumpUpdates)
-						stddump.println("Updates at step " + step + ": " + updates);
+						System.out.println("Updates at step " + step + ": " + updates);
 					if (dumpState)
-						stddump.println("State at step " + step + ":\n" + engine.getState());
+						System.out.println("State at step " + step + ":\n" + engine.getState());
 					if (printAgents)
-						stddump.println("Last selected agents: " + engine.getLastSelectedAgents());
+						System.out.println("Last selected agents: " + engine.getLastSelectedAgents());
 					if (terminated(step, updates, prevupdates))
 						break;
 					prevupdates = updates;
@@ -245,40 +232,31 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		}
 		finally {
 			if (runningInstances != null && runningInstances.contains(this)) {
+				runningInstances.remove(this);
 				this.engine.removeObserver(this);
 
 				if (exception != null)
-					if (exception instanceof TestEngineDriverException)
-						stderr.println("[!] Run is terminated by user.");
-					else {
-						stderr.println("[!] Run is terminated with exception " + exception);
-					}
+					System.err.println("[!] Run is terminated with exception " + exception);
 
 				if (dumpFinal && step > 0) {
-					stddump.println("--------------------FINISHED---------------------");
-					stddump.println("Final engine mode was " + this.engine.getEngineMode());
+					System.out.println("--------------------FINISHED---------------------");
+					System.out.println("Final engine mode was " + this.engine.getEngineMode());
 					if (lastError != null)
-						stddump.println("Last error was " + lastError);
+						System.out.println("Last error was " + lastError);
 					if (stepFailedMsg != null)
-						stddump.println("Step failed reason was " + stepFailedMsg);
-					stddump.println("Final state was:\n" + this.engine.getState());
+						System.out.println("Step failed reason was " + stepFailedMsg);
+					System.out.println("Final state was:\n" + this.engine.getState());
 
 					// Repeating 
 					if (exception != null)
-						if (exception instanceof TestEngineDriverException)
-							stderr.println("[!] Run is terminated by user.");
-						else
-							stderr.println("[!] Run is terminated with exception " + exception);
+						System.err.println("[!] Run is terminated with exception " + exception);
 				}
-				System.setErr(systemErr);
 
 				this.engine.terminate();
 				this.engine.hardInterrupt();
 
-				runningInstances.remove(this);
-				status = TestEngineDriverStatus.stopped;
-
 				postExecutionCallback();
+				status = TestEngineDriverStatus.stopped;
 			}
 		}
 	}
@@ -298,7 +276,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		shouldStop = false;
 		stopOnStepsLimit = false;
 		stepsLimit = -1;
-		while (getStatus() != TestEngineDriverStatus.running)
+		while (getStatus() == TestEngineDriverStatus.running)
 			try {
 				Thread.sleep(50);
 			}
@@ -311,7 +289,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		if (stepsLimit == 0)
 			stepsLimit = -1;
 		shouldPause = false;
-		while (getStatus() != TestEngineDriverStatus.running)
+		while (getStatus() == TestEngineDriverStatus.paused)
 			try {
 				Thread.sleep(50);
 			}
@@ -333,7 +311,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 	public synchronized void pause() {
 		shouldPause = true;
-		while (getStatus() != TestEngineDriverStatus.paused)
+		while (getStatus() == TestEngineDriverStatus.running)
 			try {
 				Thread.sleep(50);
 			}
@@ -346,7 +324,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		stepsLimit = numberOfSteps;
 		stopOnStepsLimit = true;
 		resume();
-		while (stepsLimit > 0)
+		while (stepsLimit > 0 && getStatus() != TestEngineDriverStatus.stopped)
 			try {
 				Thread.sleep(50);
 			}
@@ -370,31 +348,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		if (stopOnStepsLimit && stepsLimit <= 0 && shouldStop)
 			return true;
 		return false;
-	}
-
-	private void setInputOutputPhase2() {
-
-		stderr = System.err;
-		stddump = System.out;
-		// Setting input/output channels of the IO Plugin
-		PluginServiceInterface pi = engine.getPluginInterface("IOPlugin");
-		if (pi != null) {
-			((IOPluginPSI) pi).setInputProvider(new InputProvider() {
-				@Override
-				public String getValue(String message) {
-					String input = JOptionPane.showInputDialog(null, message, "");
-					return input;
-				}
-			});
-
-			((IOPluginPSI) pi).setOutputStream(new PrintStream(System.out));
-		}
-
-		// Setting input/output channels of the IO Plugin
-		pi = engine.getPluginInterface("DebugInfoPlugin");
-		if (pi != null) {
-			((DebugInfoPSI) pi).setOutputStream(new PrintStream(System.out));
-		}
 	}
 
 	public static ASTNode getRootNodeFromSpecification(String body) {
@@ -469,7 +422,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			synchronized (this) {
 				lastError = ((EngineErrorEvent) event).getError();
 			}
-			System.out.println(lastError);
 		}
 
 	}
@@ -612,38 +564,21 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		String message = "";
 		if (lastError != null)
 			message = message + lastError.showError();
-		else {
-			if (engine != null)
-				message = TestEngineDriver.class.getSimpleName() + " " + engine + "\n"
-						+ "engine mode " + engine.getEngineMode();
-			else
-				message = TestEngineDriver.class.getSimpleName() + ": " + message + " unknown.";
-		}
+		else
+			message = message + " unknown.";
+
 		//		JOptionPane.showMessageDialog(null, message, "CoreASM Engine Error", JOptionPane.ERROR_MESSAGE);
 		showErrorDialog("CoreASM Engine Error", message);
-		Exception e = new Exception(message);
-		e.printStackTrace();
+
 		lastError = null;
 		stepFailedMsg = null;
-		engine.terminate();
-		engine.hardInterrupt();
+		engine.recover();
 		engine.waitWhileBusy();
 	}
 
 	private void showErrorDialog(String title, String message) {
 		//MessageDialog.openError(shell, title, message);
-		stderr.println("\n" + message);
-	}
-
-	/**
-	 * An internal exception class.
-	 */
-	private class TestEngineDriverException extends Exception {
-		private static final long serialVersionUID = 1L;
-
-		public TestEngineDriverException() {
-
-		}
+		System.err.println(title + "\n" + message);
 	}
 
 	public boolean isDumpFinal() {

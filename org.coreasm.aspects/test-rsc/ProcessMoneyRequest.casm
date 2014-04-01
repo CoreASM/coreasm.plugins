@@ -28,6 +28,7 @@ rule ProcessMoneyRequest(In) =
 		MoneyLeft := MoneyLeft - In
 	else Out := {NotAllowedMsg, CurrCard}
 
+//@requires "InformFinanceAuthority"
 rule InformFinanceAuthority(accountHolder, currIn, date) = abstract "InformFinanceAuthority"
 
 rule GrantMoney(a) = skip

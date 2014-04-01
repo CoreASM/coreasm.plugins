@@ -1,0 +1,9 @@
+CoreASM TestAllCasm
+
+use Standard
+
+init StartRule
+
+@requires "TestAllCasm"
+rule StartRule = 
+	print "TestAllCasm"

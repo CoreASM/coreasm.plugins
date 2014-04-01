@@ -1,8 +1,10 @@
 package org.coreasm.aspects;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 
@@ -69,13 +71,16 @@ public class TestOrchestration {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		PrintStream syso = System.out;
+		System.setOut(new PrintStream(new ByteArrayOutputStream()));
 		td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
 		ASTNode rootNode = td.getEngine().getParser().getRootNode();
 		ASTNode ruleDelaration = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
 		String dot = AspectTools.nodes2dot(ruleDelaration);
 		AspectTools.createDotGraph(dot, new LinkedList<Node>());
 		td.stop();
-		Assert.assertFalse(td != null && TestEngineDriver.getRunningInstances().contains(td));
+		System.setOut(syso);
+		Assert.assertFalse(td.isRunning());
 	}
 
 }
