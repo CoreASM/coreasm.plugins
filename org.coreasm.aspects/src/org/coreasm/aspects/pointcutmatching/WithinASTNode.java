@@ -21,7 +21,6 @@ import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
-import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
 import org.coreasm.engine.plugins.signature.FunctionNode;
 import org.coreasm.engine.plugins.string.StringBackgroundElement;
@@ -55,13 +54,11 @@ public class WithinASTNode extends PointCutASTNode {
 
 	@Override
 	public Binding matches(ASTNode compareToNode) throws AspectException {
-        if ( !(compareToNode.getParent() instanceof MacroCallRuleNode) )
-			return new Binding(compareToNode.getParent(), this);
-		compareToNode = compareToNode.getParent();
-
 		ASTNode ruleDeclaration = compareToNode;
-		while (!Kernel.GR_RULEDECLARATION.equals(ruleDeclaration.getGrammarRule()))
+		while (ruleDeclaration != null && !Kernel.GR_RULEDECLARATION.equals(ruleDeclaration.getGrammarRule()))
 			ruleDeclaration = ruleDeclaration.getParent();
+		if (ruleDeclaration == null)
+			return new Binding(compareToNode, this);
         String pointCutToken = null;
 		Binding resultingBinding = null;
 		Node node;

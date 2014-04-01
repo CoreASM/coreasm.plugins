@@ -19,7 +19,6 @@ import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
-import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
 import org.coreasm.engine.plugins.signature.FunctionNode;
 import org.coreasm.engine.plugins.string.StringBackgroundElement;
@@ -57,12 +56,8 @@ public class CallASTNode extends PointCutASTNode {
 	/** \TODO init rule is a problem!!! */
 	@Override
 	public Binding matches(ASTNode compareToNode) throws AspectException {
-        if ( !(compareToNode.getParent() instanceof MacroCallRuleNode) )
-			return new Binding(compareToNode.getParent(), this);
-		compareToNode = compareToNode.getParent();
-
         //name of the macro call rule node
-        FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode.getFirst();
+        FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode;
         Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
         String pointCutToken = null;
 		Binding resultingBinding = null;
