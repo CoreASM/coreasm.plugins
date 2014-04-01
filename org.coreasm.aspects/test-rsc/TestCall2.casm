@@ -7,7 +7,9 @@ init TestCallPointcut
 
 aspect ParserTest {
 
-	advice test1 before : call("myRuleCall") { print "test1"}
+	advice test1 before : call("myRuleCall", ".*",".*") { print "before_test1"}
+	
+	advice test1 before : call("myRuleCall", ".*",".*") { print "after_test1"}
 
 }
 

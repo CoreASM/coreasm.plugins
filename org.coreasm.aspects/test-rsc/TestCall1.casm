@@ -1,4 +1,4 @@
-CoreASM ParserTest
+CoreASM TestCall1
 
 use Standard
 use AoASMPlugin

@@ -16,7 +16,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.coreasm.aspects.utils.TestEngineDriver;
-import org.coreasm.engine.interpreter.ASTNode;
 
 public class TestCall2 {
 
@@ -43,7 +42,9 @@ public class TestCall2 {
 
 	@BeforeClass
 	public static void setRequiredOutput() {
-		requiredOutputList.add("test1");
+		requiredOutputList.add("before_test1");
+		requiredOutputList.add("after_test1");
+
 	}
 
 	@Before
@@ -66,12 +67,9 @@ public class TestCall2 {
 			Assert.assertNotNull(td);
 			td.executeSteps(1);
 			for (String requiredOutput : requiredOutputList) {
-				System.err.println(outContent.toString());
 				if (!outContent.toString().contains(requiredOutput))
 					Assert.fail("missing required output:\n" + requiredOutput);
 			}
-			ASTNode root = td.getEngine().getParser().getRootNode();
-			System.out.println("The root node is " + root.toString());
 		}
 		catch (Exception e) {
 			e.printStackTrace();
