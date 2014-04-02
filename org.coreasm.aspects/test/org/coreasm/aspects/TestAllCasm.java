@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -43,14 +44,14 @@ public class TestAllCasm {
 	private final PrintStream origOutput = System.out;
 	private final PrintStream origError = System.err;
 
-	public static List<String> getRequiredOutput(File file) {
+	public static List<String> getFilteredOutput(File file, String filter) {
 		List<String> requiredOutputList = new LinkedList<String>();
 		BufferedReader input = null;
 		try {
 			input = new BufferedReader(new FileReader(file));
 			String line = null; //not declared within while loop
 			while ((line = input.readLine()) != null) {
-				if (line.contains("@requires")) {
+				if (Pattern.matches(".*" + filter + ".*", line)) {
 					int first = line.indexOf("\"");
 					int last = line.lastIndexOf("\"");
 					if (first >= 0 && last >= 0)
@@ -100,11 +101,30 @@ public class TestAllCasm {
 	@Test
 	public void runSpecifications() {
 		for (File testFile : testFiles) {
-			List<String> requiredOutputList = getRequiredOutput(testFile);
+			List<String> requiredOutputList = getFilteredOutput(testFile, "@require");
+			List<String> refusedOutputList = getFilteredOutput(testFile, "@refuse");
 			TestEngineDriver td = null;
 			try {
+				outContent.reset();
 				td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
 				td.executeSteps(1);
+				//test if no error has been occured and maybe output error message
+				if (!errContent.toString().isEmpty()) {
+					origError.println("An error occurred in " + testFile.getName() + ":");
+					origError.println(errContent);
+					Assert.fail();
+				}
+				//check if no refused output is contained
+				for (String refusedOutput : refusedOutputList) {
+					if (outContent.toString().contains(refusedOutput)) {
+						String failMessage = "refused output found in test file:" + testFile.getName()
+								+ ", refused output: "
+								+ refusedOutput;
+						origError.println(failMessage);
+						Assert.fail(failMessage);
+					}
+				}
+				//check if no required output is missing
 				for (String requiredOutput : requiredOutputList) {
 					if (!outContent.toString().contains(requiredOutput)) {
 						String failMessage = "missing required output for test file:" + testFile.getName()
@@ -124,11 +144,6 @@ public class TestAllCasm {
 			if (td.isRunning())
 				origError.println(testFile.getName() + " has a running instance but is stopped!");
 			Assert.assertFalse(td.isRunning());
-			if (!errContent.toString().isEmpty()) {
-				origError.println("An error occurred in " + testFile.getName() + ":");
-				origError.println(errContent);
-				Assert.fail();
-			}
 			origOutput.println("Test of " + testFile.getName() + " successful");
 		}
 

@@ -1,0 +1,27 @@
+CoreASM TestCall3
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 1
+	* an initial rule, i.e. 'startRule', cannot be used for aspect modeling
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule startRule</li>
+	* 	</ol>
+	* @expects
+	* 	advice should not be executed because the startrule is not a real rule
+	* 
+	* @refuse "TestCall3"
+	*/
+	advice TestCall3 before : call(StartRule) {print adviceInfo("TestCall3")}
+
+}
+
+init StartRule
+
+rule StartRule =
+	print "StartRule"

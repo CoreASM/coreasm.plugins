@@ -4,6 +4,6 @@ use Standard
 
 init StartRule
 
-@requires "TestAllCasm"
+//@require "TestAllCasm"
 rule StartRule = 
 	print "TestAllCasm"
