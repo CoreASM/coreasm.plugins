@@ -104,26 +104,46 @@ public class TestAllCasm {
 		for (File testFile : testFiles) {
 			List<String> requiredOutputList = getFilteredOutput(testFile, "@require");
 			List<String> refusedOutputList = getFilteredOutput(testFile, "@refuse");
+			List<String> minStepsList = getFilteredOutput(testFile, "@minsteps");
+			List<String> maxStepsList = getFilteredOutput(testFile, "@maxsteps");
+			int minSteps = 1;
+			int maxSteps = 1;
+			if (!minStepsList.isEmpty()) {
+				try {
+					minSteps = Integer.parseInt(minStepsList.get(0));
+				} catch (NumberFormatException e) {
+				}
+			}
+			if (!maxStepsList.isEmpty()) {
+				try {
+					maxSteps = Integer.parseInt(maxStepsList.get(0));
+				} catch (NumberFormatException e) {
+				}
+			}
 			TestEngineDriver td = null;
 			try {
 				outContent.reset();
 				td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
 				td.setOutputStream(new PrintStream(outContent));
-				td.executeSteps(1);
-				//test if no error has been occured and maybe output error message
-				if (!errContent.toString().isEmpty()) {
-					origError.println("An error occurred in " + testFile.getName() + ":");
-					origError.println(errContent);
-					Assert.fail();
-				}
-				//check if no refused output is contained
-				for (String refusedOutput : refusedOutputList) {
-					if (outContent.toString().contains(refusedOutput)) {
-						String failMessage = "refused output found in test file:" + testFile.getName()
-								+ ", refused output: "
-								+ refusedOutput;
-						origError.println(failMessage);
-						Assert.fail(failMessage);
+				for (int steps = minSteps; steps <= maxSteps; steps++) {
+					td.executeSteps(minSteps);
+					minSteps = 1;
+					//test if no error has been occured and maybe output error message
+					if (!errContent.toString().isEmpty()) {
+						origError.println("An error occurred in " + testFile.getName() + ":");
+						origError.println(errContent);
+						Assert.fail();
+					}
+					//check if no refused output is contained
+					for (String refusedOutput : refusedOutputList) {
+						if (outContent.toString().contains(refusedOutput)) {
+							String failMessage = "refused output found in test file:" + testFile.getName()
+									+ ", refused output: "
+									+ refusedOutput
+									+ ", actual output: " + outContent.toString();
+							origError.println(failMessage);
+							Assert.fail(failMessage);
+						}
 					}
 				}
 				//check if no required output is missing
