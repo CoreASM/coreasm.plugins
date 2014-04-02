@@ -12,7 +12,7 @@ use AoASM
 
 aspect {
 advice CommunicateMoneyRequestToFinanceAuthority(currIn) 
-after : call(".*", ".*" as currIn) and within("ProcessMoneyRequest"){
+after : call("GrantMoney", ".*" as currIn) and within("ProcessMoneyRequest", ".*"){
 	if currIn >= 10.000 then
 		InformFinanceAuthority(accountHolder, currIn, date)
 }
@@ -28,7 +28,7 @@ rule ProcessMoneyRequest(In) =
 		MoneyLeft := MoneyLeft - In
 	else Out := {NotAllowedMsg, CurrCard}
 
-//@requires "InformFinanceAuthority"
+//@require "InformFinanceAuthority"
 rule InformFinanceAuthority(accountHolder, currIn, date) = abstract "InformFinanceAuthority"
 
 rule GrantMoney(a) = skip
