@@ -1,0 +1,45 @@
+CoreASM TestCall5
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 5
+	* before some rule calls (in this case two alternatives), the advice has to be executed
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule doSomething</li>
+	*		<li>rule incrementGlobalNumber</li>
+	*	</ol>
+	* @expects
+	*	output before the method doSomething AND incrementGlobalNumber
+	*
+	* @minsteps "2"
+	* @maxsteps "10"
+	* @require "TestCall5\nDoSomething"
+	* @require "TestCall5\nDoSomethingElse"
+	*/
+	advice simpleCall before : call("DoSomething") or call("DoSomethingElse") {print "TestCall5"}
+
+}
+
+function ruleChooser: -> BOOLEAN initially true
+
+init StartRule
+
+rule StartRule =
+	if ruleChooser then {
+		DoSomething
+		ruleChooser := false
+	}
+	else {
+		DoSomethingElse
+		ruleChooser := true
+	}
+rule DoSomething =
+	print "DoSomething"
+
+rule DoSomethingElse =
+	print "DoSomethingElse"

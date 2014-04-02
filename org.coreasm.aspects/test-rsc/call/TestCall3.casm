@@ -5,7 +5,7 @@ use AoASMPlugin
 
 aspect {
 
-	/** TEST 1
+	/** TEST 3
 	* an initial rule, i.e. 'startRule', cannot be used for aspect modeling
 	*
 	* @precondition
