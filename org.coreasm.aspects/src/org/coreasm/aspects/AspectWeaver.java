@@ -33,6 +33,7 @@ import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ParserPlugin;
+import org.coreasm.engine.plugins.conditionalrule.ConditionalRuleNode;
 import org.coreasm.engine.plugins.letrule.LetRuleNode;
 import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
@@ -355,6 +356,7 @@ public class AspectWeaver {
 				// TODO complete this list according pointcut constructs
 				ASTNode insertionContext = candidate;
 				while (insertionContext != null
+						&& !(insertionContext.getParent() instanceof ConditionalRuleNode)
 						&& !(insertionContext.getParent() instanceof SeqBlockRuleNode)
 						&& !(insertionContext.getParent() instanceof LetRuleNode)
 						&& !(insertionContext.getParent() instanceof ReturnRuleNode)
