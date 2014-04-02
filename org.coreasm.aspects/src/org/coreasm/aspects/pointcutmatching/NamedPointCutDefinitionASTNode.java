@@ -3,8 +3,10 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -84,6 +86,25 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 				return (BinOrASTNode)child;
 		//\todo exception no pointcut (BinOrASTNode) defined by this NamedPointCutASTNode
 		return null;
+	}
+	
+	public Set<PointCutParameterNode> getUnboundPointCutParameters() {
+		Set<PointCutParameterNode> unboundParams = new HashSet<PointCutParameterNode>();
+		Set<String> params = new HashSet<String>();
+		for (ASTNode param : getPointCutParameters())
+			params.add(param.getToken());
+		collectUnboundPointCutParamters(this, unboundParams, params);
+		return unboundParams;
+	}
+	
+	private static void collectUnboundPointCutParamters(ASTNode node, Set<PointCutParameterNode> unboundParams, Set<String> params) {
+		if (node instanceof PointCutParameterNode) {
+			PointCutParameterNode param = (PointCutParameterNode)node;
+			if (!params.contains(param.getName()))
+				unboundParams.add(param);
+		}
+		for (ASTNode child : node.getAbstractChildNodes())
+			collectUnboundPointCutParamters(child, unboundParams, params);
 	}
 
 	/**

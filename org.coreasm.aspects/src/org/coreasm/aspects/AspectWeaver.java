@@ -25,6 +25,7 @@ import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
+import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.absstorage.RuleElement;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
@@ -158,6 +159,8 @@ public class AspectWeaver {
 						throw new CoreASMError(definition.getName() + " requires parameters"
 								+ parameters.toString(), param);
 					}
+				for (PointCutParameterNode unboundParameter : definition.getUnboundPointCutParameters())
+					AspectTools.getCapi().warning(new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "The pointcut parameter " + unboundParameter.getName() + " in named pointcut " + definition.getName() + " is unbound!", unboundParameter.getFuntionRuleTermNode()));
 			}
 		}
 //		//searching for errors of proceed nodes

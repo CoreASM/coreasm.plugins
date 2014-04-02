@@ -11,6 +11,7 @@ import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.utils.AspectTools;
+import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
@@ -207,9 +208,15 @@ public class AdviceASTNode extends ASTNode {
 		else
 		//clone this object taking into account the given binding
 		{
+			List<String> paramNames = new LinkedList<String>();
 			for (ASTNode param : getParameters()) {
 				if (binding.getBindingPartner(param.getToken()) == null)
 					throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
+				paramNames.add(param.getToken());
+			}
+			for (String bindingKey : binding.binding.keySet()) {
+				if (!paramNames.contains(bindingKey))
+					AspectTools.getCapi().warning(new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "The pointcut parameter " + bindingKey + " in aspect " + getRealName() + " is unbound!", this.getFirst().getFirst()));
 			}
 			AdviceASTNode cloneWithBinding;
 			cloneWithBinding = (AdviceASTNode)this.cloneTree();
