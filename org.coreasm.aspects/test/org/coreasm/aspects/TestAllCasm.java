@@ -121,17 +121,18 @@ public class TestAllCasm {
 			}
 			TestEngineDriver td = null;
 			String failMessage = "";
+			int steps = 0;
 			try {
 				outContent.reset();
 				td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
 				td.setOutputStream(new PrintStream(outContent));
-				for (int steps = minSteps; steps <= maxSteps; steps++) {
+				for (steps = minSteps; steps <= maxSteps; steps++) {
 					td.executeSteps(minSteps);
 					minSteps = 1;
 					//test if no error has been occured and maybe output error message
 					if (!errContent.toString().isEmpty()) {
 						failMessage = "An error occurred in " + testFile.getName() + ":" + errContent;
-						new TestReport(testFile, failMessage, false);
+						new TestReport(testFile, failMessage, steps, false);
 						break;
 					}
 					//check if no refused output is contained
@@ -141,21 +142,25 @@ public class TestAllCasm {
 									+ ", refused output: "
 									+ refusedOutput
 									+ ", actual output: " + outContent.toString();
-							new TestReport(testFile, failMessage, false);
+							new TestReport(testFile, failMessage, steps, false);
 							break;
 						}
 					}
+					for (String requiredOutput : new LinkedList<String>(requiredOutputList)) {
+						if (outContent.toString().contains(requiredOutput))
+							requiredOutputList.remove(requiredOutput);
+					}
+					if (requiredOutputList.isEmpty())
+						break;
 				}
 				//check if no required output is missing
-				for (String requiredOutput : requiredOutputList) {
-					if (!outContent.toString().contains(requiredOutput)) {
-						failMessage = "missing required output for test file:" + testFile.getName()
-								+ ", missing output: "
-								+ requiredOutput
-								+ ", actual output: " + outContent.toString();
-						new TestReport(testFile, failMessage, false);
-						break;
-					}
+				if (!requiredOutputList.isEmpty()) {
+					failMessage = "missing required output for test file:" + testFile.getName()
+							+ ", missing output: "
+							+ requiredOutputList.get(0)
+							+ ", actual output: " + outContent.toString();
+					new TestReport(testFile, failMessage, steps, false);
+					break;
 				}
 			}
 			catch (Exception e) {
@@ -166,10 +171,10 @@ public class TestAllCasm {
 			}
 			if (td.isRunning()) {
 				failMessage = testFile.getName() + " has a running instance but is stopped!";
-				new TestReport(testFile, failMessage, false);
+				new TestReport(testFile, failMessage, steps, false);
 			}
 			else
-				new TestReport(testFile);
+				new TestReport(testFile, steps);
 			TestReport.printLast();
 		}
 	}
@@ -178,20 +183,22 @@ public class TestAllCasm {
 		private static LinkedList<TestReport> reports = new LinkedList<TestReport>();
 		private File file;
 		private String message;
+		private int steps;
 		private boolean successful;
 
-		public TestReport(File file) {
-			this(file, "", true);
+		public TestReport(File file, int steps) {
+			this(file, "", steps);
 		}
 
-		public TestReport(File file, String message) {
-			this(file, message, true);
+		public TestReport(File file, String message, int steps) {
+			this(file, message, steps, true);
 		}
 
-		public TestReport(File file, String message, boolean successful) {
+		public TestReport(File file, String message, int steps, boolean successful) {
 			this.file = file;
 			this.message = message;
 			this.successful = successful;
+			this.steps = steps;
 			reports.add(this);
 		}
 
@@ -201,11 +208,11 @@ public class TestAllCasm {
 
 		public void print() {
 			if (this.successful) {
-				String success = "Test of " + this.file.getName() + " successful";
+				String success = "Test of " + this.file.getName() + " successful after " + steps + (steps == 1 ? " step" : " steps");
 				origOutput.println(this.message.isEmpty() ? success : success + "; " + this.message);
 			}
 			else
-				origError.println("An error occurred in " + this.file.getName() + ": "
+				origError.println("An error occurred after " + steps + " steps in " + this.file.getName() + ": "
 						+ this.message);
 		}
 
