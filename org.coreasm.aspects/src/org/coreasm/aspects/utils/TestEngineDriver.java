@@ -20,6 +20,7 @@ package org.coreasm.aspects.utils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.LinkedList;
@@ -41,6 +42,8 @@ import org.coreasm.engine.Specification;
 import org.coreasm.engine.StepFailedEvent;
 import org.coreasm.engine.absstorage.Update;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.plugin.PluginServiceInterface;
+import org.coreasm.engine.plugins.io.IOPlugin.IOPluginPSI;
 import org.coreasm.util.CoreASMGlobal;
 import org.coreasm.util.Logger;
 import org.coreasm.util.Tools;
@@ -105,6 +108,12 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 	public TestEngineDriverStatus getStatus() {
 		return status;
+	}
+
+	public void setOutputStream(PrintStream outputStream) {
+		PluginServiceInterface pi = engine.getPluginInterface("IOPlugin");
+		if (pi != null)
+			((IOPluginPSI)pi).setOutputStream(outputStream);
 	}
 
 	public void setDefaultConfig()

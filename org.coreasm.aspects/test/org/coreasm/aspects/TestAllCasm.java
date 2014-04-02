@@ -39,6 +39,7 @@ public class TestAllCasm {
 			e.printStackTrace();
 		}
 	}
+	private final ByteArrayOutputStream logContent = new ByteArrayOutputStream();
 	private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
 	private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
 	private final PrintStream origOutput = System.out;
@@ -88,7 +89,7 @@ public class TestAllCasm {
 
 	@Before
 	public void setUpStreams() {
-		System.setOut(new PrintStream(outContent));
+		System.setOut(new PrintStream(logContent));
 		System.setErr(new PrintStream(errContent));
 	}
 
@@ -107,6 +108,7 @@ public class TestAllCasm {
 			try {
 				outContent.reset();
 				td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
+				td.setOutputStream(new PrintStream(outContent));
 				td.executeSteps(1);
 				//test if no error has been occured and maybe output error message
 				if (!errContent.toString().isEmpty()) {
@@ -129,7 +131,8 @@ public class TestAllCasm {
 					if (!outContent.toString().contains(requiredOutput)) {
 						String failMessage = "missing required output for test file:" + testFile.getName()
 								+ ", missing output: "
-								+ requiredOutput;
+								+ requiredOutput
+								+ ", actual output: " + outContent.toString();
 						origError.println(failMessage);
 						Assert.fail(failMessage);
 					}
