@@ -100,7 +100,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	private static void collectUnboundPointCutParamters(ASTNode node, Set<PointCutParameterNode> unboundParams, Set<String> params) {
 		if (node instanceof PointCutParameterNode) {
 			PointCutParameterNode param = (PointCutParameterNode)node;
-			if (!params.contains(param.getName()))
+			if (param.getName() != null && !params.contains(param.getName()))
 				unboundParams.add(param);
 		}
 		for (ASTNode child : node.getAbstractChildNodes())
