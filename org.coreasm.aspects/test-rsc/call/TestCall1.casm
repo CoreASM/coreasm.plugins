@@ -15,16 +15,15 @@ aspect ParserTest {
 
 	pointcut b(fn, nmb) : call("X" as fn, "[0-9]*" as nmb) by "InitAgent" without return
 
-	//@ require "test(4)"
-	advice test(fn, nmb) before : a(fn, nmb) { print "test( "+ nmb +" )"}
+	//@ require "TestCall1(4)\n4\nHallo Welt!"
+	advice TestCall1(fn, nmb) before : a(fn, nmb) { print "TestCall1("+ nmb +")"}
 
 }
 
 rule X(a) = {
 	print a
 }
-//@require "4"
-//@require "Hallo Welt!"
+
 rule TestCallPointcut = {
 	X(4)
 	print "Hallo Welt!"

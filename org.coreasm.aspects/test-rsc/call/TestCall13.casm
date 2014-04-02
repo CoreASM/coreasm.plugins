@@ -1,0 +1,35 @@
+CoreASM TestCall13
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 13
+	* as substitution of the matched macrocallrule, the advice has to be executed instead
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule doJustAroundAdvice</li>
+	*	</ol>
+	* @expects
+	*	output this advice instead of doSomething
+	*
+	* @require "TestCall13"
+	* @refuse "DoSomething"
+	*/
+	advice TestCall13(proceed, p1) around : call("DoSomething" as proceed,"[0..9]*" as p1) {
+		proceed(p1)
+		print "TestCall13"
+	}
+
+}
+
+init StartRule
+
+rule StartRule = {
+		DoSomething(42)
+}
+
+rule DoSomething(zahl) =
+	print "DoSomething "+ zahl

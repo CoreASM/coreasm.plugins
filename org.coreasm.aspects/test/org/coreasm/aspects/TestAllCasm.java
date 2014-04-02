@@ -138,7 +138,7 @@ public class TestAllCasm {
 					//check if no refused output is contained
 					for (String refusedOutput : refusedOutputList) {
 						if (outContent.toString().contains(refusedOutput)) {
-							failMessage = "refused output found in test file:" + testFile.getName()
+							failMessage = "refused output found in test file: " + testFile.getName()
 									+ ", refused output: "
 									+ refusedOutput
 									+ ", actual output: " + outContent.toString();
@@ -155,12 +155,11 @@ public class TestAllCasm {
 				}
 				//check if no required output is missing
 				if (!requiredOutputList.isEmpty()) {
-					failMessage = "missing required output for test file:" + testFile.getName()
+					failMessage = "missing required output for test file: " + testFile.getName()
 							+ ", missing output: "
 							+ requiredOutputList.get(0)
 							+ ", actual output: " + outContent.toString();
-					new TestReport(testFile, failMessage, steps, false);
-					break;
+					new TestReport(testFile, failMessage, steps - 1, false);
 				}
 			}
 			catch (Exception e) {
@@ -173,8 +172,9 @@ public class TestAllCasm {
 				failMessage = testFile.getName() + " has a running instance but is stopped!";
 				new TestReport(testFile, failMessage, steps, false);
 			}
-			else
+			else if (steps <= maxSteps /* only if successful */)
 				new TestReport(testFile, steps);
+			/* else: a failure already occured */
 			TestReport.printLast();
 		}
 	}

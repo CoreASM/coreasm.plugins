@@ -1,0 +1,37 @@
+CoreASM TestCall11
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 11
+	* test if the regular expression works for the matching pattern WITHOUT RETURN
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule doSome*</li>
+	*	</ol>
+	* @expects
+	*	no parse error & no runtime error; output before the method doSomething
+	*
+	* @require "TestCall11\nDoSomething\nDoSomethingElse"
+	*/
+	advice TestCall11 before : call( "DoSome[a-zA-Z0-9]*" ) without return {print "TestCall11"}
+
+}
+
+init StartRule
+
+rule StartRule =
+	seqblock
+		DoSomething
+		print DoSomethingElse
+	endseqblock
+
+rule DoSomething =
+	print "DoSomething"
+
+rule DoSomethingElse =
+	return res in 
+		res := "DoSomethingElse"

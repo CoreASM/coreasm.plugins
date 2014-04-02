@@ -1,0 +1,31 @@
+CoreASM TestCall8
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 8
+	* after a rule call, the advice has to be executed
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule doSomething</li>
+	*	</ol>
+	* @expects
+	*	output after the method doSomething
+	*
+	* @require "DoSomething\nTestCall8"
+	*/
+	advice TestCall8 after : call("DoSomething") {print "TestCall8"}
+
+}
+
+init StartRule
+
+rule StartRule = {
+		DoSomething
+}
+
+rule DoSomething =
+	print "DoSomething"

@@ -1,0 +1,41 @@
+CoreASM TestCall9
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 9
+	* test extended syntax of the call expression
+	*
+	* @precondition
+	* 	<ol>
+	*		<li>rule doSomething</li>
+	*	</ol>
+	* @expects
+	*	no parse error & no runtime error; output before the method doSomething
+	*
+	* @minsteps "2"
+	* @require "TestCall9\nDoSomething by Juan"
+	* @refuse "TestCall9\nDoSomething by InitAgent"
+	*/
+	advice TestCall9 before : call( "DoSomething" ) by "Juan" {print "TestCall9"}
+
+}
+
+init StartRule
+
+enum AgentNames = {Juan}
+
+rule StartRule = {
+	Agents(Juan) := true
+	program(Juan) := @JuansProgram
+	program(self) := undef
+	DoSomething
+}
+
+rule JuansProgram =
+	DoSomething
+
+rule DoSomething =
+	print "DoSomething by "+self

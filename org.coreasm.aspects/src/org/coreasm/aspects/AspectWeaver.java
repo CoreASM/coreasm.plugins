@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
+
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -373,7 +374,7 @@ public class AspectWeaver {
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
 						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
-								aroundNodes.getFirst().getToken(),
+								Node.DEFAULT_NAME,
 								aroundNodes.getFirst());
 					else
 						AspectTools.addChild(parentOfInsertionContext, aroundNodes.getFirst());
