@@ -1,4 +1,4 @@
-CoreASM TestCall13
+CoreASM TestCall3
 
 use Standard
 use AoASMPlugin
@@ -15,12 +15,12 @@ aspect {
 	* @expects
 	*	output this advice instead of doSomething
 	*
-	* @require "TestCall13"
-	* @refuse "DoSomething"
+	* @require "DoSomething TestCall3"
+	* @refuse "DoSomething\n"
 	*/
-	advice TestCall13(proceed, p1) around : call("DoSomething" as proceed,"[0..9]*" as p1) {
-		proceed(p1)
-		print "TestCall13"
+	advice TestCall3(pro, p1) around : call("DoSomething" as pro,"[0-9]*" as p1) {
+		if p1 = 42 then
+			pro("TestCall3")
 	}
 
 }
@@ -28,8 +28,9 @@ aspect {
 init StartRule
 
 rule StartRule = {
-		DoSomething(42)
+	DoSomething(42)
 }
 
-rule DoSomething(zahl) =
+rule DoSomething(zahl) = {
 	print "DoSomething "+ zahl
+}
