@@ -156,4 +156,17 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 		throw new CoreASMError("Node is not a child of any AdviceASTNode!", this);
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public AspectASTNode getAspect() {
+		ASTNode node = this;
+		while (!(node instanceof AspectASTNode))
+			node = node.getParent();
+		if (node != null)
+			return (AspectASTNode) node;
+		throw new CoreASMError("Node is not a child of any AspectASTNode!", this);
+	}
+
 }

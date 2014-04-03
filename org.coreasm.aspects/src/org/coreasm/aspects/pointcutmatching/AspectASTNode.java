@@ -21,6 +21,18 @@ public class AspectASTNode extends ASTNode {
 		super(self);
 	}
 
+	/**
+	 * get the name of the aspect
+	 * 
+	 * @return token of first ASTNode
+	 */
+	public String getName() {
+		String name = "";
+		if (this.getFirst().getToken() != null)
+			name = this.getFirst().getToken();
+		return name;
+	}
+
 	/** {@inheritDoc}
 	 *
 	 * @param scannerInfo    necessary for super constructor

@@ -1161,6 +1161,8 @@ public class AoASMPlugin extends Plugin
 		Specification spec = capi.getSpec();
 		CharacterPosition charPos = functionRuleTermNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
 		data.put("file", spec.getAbsolutePath());
+		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
+		data.put("aspect", binding.getPointcutASTNode().getAspect().getName());
 		data.put("line", "" + spec.getLine(charPos.line).line);
 		data.put("column", "" + charPos.column);
 		data.put("length", "" + functionRuleTermNode.getFirst().getToken().length());
