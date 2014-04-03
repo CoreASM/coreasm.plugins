@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         id="CoreASM AST into CoreASM Spec"
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="org.coreasm.ast2spec.Ast2SpecPlugin"
+            nameFilter="*.coreasm"
+            objectClass="org.eclipse.core.resources.IFile">
+         <menu
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.menu"
+               label="CoreASM"
+               path="additions">
+            <separator
+                  name="coreasm">
+            </separator>
+         </menu>
+         <action
+               class="org.coreasm.ast2spec.popup.actions.Ast2SpecPopupMenu"
+               enablesFor="1"
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.ast2spec.popup"
+               label="export file&apos;s AST as CoreASM specification "
+               menubarPath="org.coreasm.menu/group"
+               tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
+         </action>
+      </objectContribution>
+      <objectContribution
+            id="org.coreasm.ast2spec.Ast2SpecPlugin"
+            nameFilter="*.casm"
+            objectClass="org.eclipse.core.resources.IFile">
+         <menu
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.menu"
+               label="CoreASM"
+               path="additions">
+            <separator
+                  name="coreasm">
+            </separator>
+         </menu>
+         <action
+               class="org.coreasm.ast2spec.popup.actions.Ast2SpecPopupMenu"
+               enablesFor="1"
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.ast2spec.popup"
+               label="export file&apos;s AST as CoreASM specification "
+               menubarPath="org.coreasm.menu/group"
+               tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
+         </action>
+      </objectContribution>
+      <objectContribution
+            id="org.coreasm.ast2spec.Ast2SpecPlugin"
+            nameFilter="*.coreasm"
+            objectClass="org.eclipse.ui.IEditorInput">
+         <menu
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.menu"
+               label="CoreASM"
+               path="additions">
+            <separator
+                  name="coreasm">
+            </separator>
+         </menu>
+         <action
+               class="org.coreasm.ast2spec.popup.actions.Ast2SpecPopupMenu"
+               enablesFor="1"
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.ast2spec.popup"
+               label="export file&apos;s AST as CoreASM specification "
+               menubarPath="org.coreasm.menu/group"
+               tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
+         </action>
+      </objectContribution>
+      <objectContribution
+            id="org.coreasm.ast2spec.Ast2SpecPlugin"
+            nameFilter="*.casm"
+            objectClass="org.eclipse.ui.IEditorInput">
+         <menu
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.menu"
+               label="CoreASM"
+               path="additions">
+            <separator
+                  name="coreasm">
+            </separator>
+         </menu>
+         <action
+               class="org.coreasm.ast2spec.popup.actions.Ast2SpecPopupMenu"
+               enablesFor="1"
+               icon="rsc/icons/CoreASM-Logo.png"
+               id="org.coreasm.ast2spec.popup"
+               label="export file&apos;s AST as CoreASM specification "
+               menubarPath="org.coreasm.menu/group"
+               tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
+         </action>
+      </objectContribution>
+   </extension>
+
+</plugin>
