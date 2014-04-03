@@ -24,15 +24,15 @@ import org.coreasm.util.Tools;
 
 public class TestAllCasm {
 
-	private static List<File> testFiles = null;
+	protected static List<File> testFiles = null;
 
 	@BeforeClass
 	public static void onlyOnce() {
-		URL url = TestAllCasm.class.getClassLoader().getResource(TestAllCasm.class.getSimpleName() + ".casm");
+		URL url = TestAllCasm.class.getClassLoader().getResource("./without_test_class");
 		
 		try {
 			testFiles = new LinkedList<File>();
-			getTestFiles(testFiles, new File(url.toURI()).getParentFile());
+			getTestFiles(testFiles, new File(url.toURI()));
 		}
 		catch (URISyntaxException e) {
 			e.printStackTrace();
@@ -69,7 +69,27 @@ public class TestAllCasm {
 		return requiredOutputList;
 	}
 
-	private static void getTestFiles(List<File> testFiles, File file) {
+	protected static void getTestFile(List<File> testFiles, File file, Class<?> clazz) {
+		if (!testFiles.isEmpty())
+			return;
+		if (file != null && file.isDirectory())
+			for (File child : file.listFiles(new FileFilter() {
+
+				@Override
+				public boolean accept(File file) {
+					return (file.isDirectory()
+							|| file.getName().toLowerCase().endsWith(".casm")
+							|| file.getName().toLowerCase().endsWith(".coreasm"));
+				}
+			})) {
+				getTestFile(testFiles, child, clazz);
+			}
+		else if (file != null
+				&& file.getName().toLowerCase().matches(clazz.getSimpleName().toLowerCase() + "(.casm|.coreasm)"))
+			testFiles.add(file);
+	}
+
+	static void getTestFiles(List<File> testFiles, File file) {
 		if (file != null && file.isDirectory())
 			for (File child : file.listFiles(new FileFilter() {
 
