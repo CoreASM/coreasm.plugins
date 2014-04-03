@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -46,6 +47,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
      * @return
 	 * @throws AspectException 
 	 */
+	@Override
 	public abstract Binding matches(ASTNode compareToNode) throws AspectException;
 	
 	/**
@@ -90,6 +92,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 *   
 	 * @return a this method should return a string which can be used to weave runtime conditions for aspect matching
 	 */
+	@Override
 	public abstract String generateExpressionString();
 	
 	/**
@@ -116,6 +119,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 * @param expression
 	 * @param candidate
 	 */
+	@Override
 	public void addExpression(ASTNode candidate, String expression){
 		if (expression!=null && this!=null){
 			LinkedList<ASTNode> nodesWithSameExpression=new LinkedList<ASTNode>();
@@ -134,8 +138,22 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 * 
 	 * @return
 	 */
+	@Override
 	public HashMap <String, LinkedList<ASTNode>> getExpressions(){
 		return PointCutASTNode.expressions;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public AdviceASTNode getAdvice() {
+		ASTNode node = this;
+		while (!(node instanceof AdviceASTNode))
+			node = node.getParent();
+		if (node != null)
+			return (AdviceASTNode) node;
+		throw new CoreASMError("Node is not a child of any AdviceASTNode!", this);
 	}
 
 }
