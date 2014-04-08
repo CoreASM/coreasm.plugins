@@ -120,6 +120,8 @@ public class TestAllCasm {
 
 	@Test
 	public void runSpecifications() {
+		if (testFiles.isEmpty())
+			new TestReport(null, "no test file found!", -1, false);
 		for (File testFile : testFiles) {
 			List<String> requiredOutputList = getFilteredOutput(testFile, "@require");
 			List<String> refusedOutputList = getFilteredOutput(testFile, "@refuse");
