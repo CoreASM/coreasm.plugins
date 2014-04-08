@@ -3,12 +3,13 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
-
-import java.util.ArrayList;
 
 /**
  * @author Marcel Dausend
@@ -37,7 +38,7 @@ public class CFlowASTNode extends PointCutASTNode {
 	@Override
 	public Binding matches(ASTNode compareToNode) {
 		//this concept is always true before execution, because its a runtime concept
-		return new Binding(compareToNode, this);
+		return new Binding(compareToNode, this, new HashMap<String, ASTNode>());
 	}
 
 	@Override

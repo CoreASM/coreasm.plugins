@@ -23,6 +23,7 @@ import org.coreasm.aspects.GraphViz;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMIssue;
@@ -208,6 +209,10 @@ public class AspectTools {
 				output = output
 				        + node2String(node.getAbstractChildNodes().get(node.getAbstractChildNodes().size() - 1)) + " )";
 			}
+		}
+		else if (node.getGrammarRule().equals(PointCutParameterNode.class.getSimpleName())) {
+			PointCutParameterNode param = (PointCutParameterNode) node;
+			output = param.getPattern();
 		}
 		else if (node.getGrammarRule().equals("RuleOrFunctionElementTerm")) {
 			output = "@" + node.getFirst().getToken();
