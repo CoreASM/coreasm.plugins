@@ -741,11 +741,9 @@ public class AspectWeaver {
 		// add new rule definitions as first children to the
 		// root of the parse tree
 		root = this.getRootnode();
-		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
-				Node.DEFAULT_NAME, ruleCallASTNode);
+		AspectTools.addChildAfter(root, root.getFirst(), Node.DEFAULT_NAME, ruleCallASTNode);
 
-		AspectTools.addChildAfter(root, capi.getParser().getRootNode().getFirst(),
-				Node.DEFAULT_NAME, argsCheckASTNode);
+		AspectTools.addChildAfter(root, root.getFirst(), Node.DEFAULT_NAME, argsCheckASTNode);
 	}
 
 	/**
