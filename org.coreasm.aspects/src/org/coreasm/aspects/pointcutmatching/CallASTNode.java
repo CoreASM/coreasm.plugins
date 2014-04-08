@@ -56,8 +56,9 @@ public class CallASTNode extends PointCutASTNode {
 	/** \TODO init rule is a problem!!! */
 	@Override
 	public Binding matches(ASTNode compareToNode) throws AspectException {
-        //name of the macro call rule node
         FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode;
+        if (!AspectTools.isRuleName(fnNode.getName()))
+        	return new Binding(compareToNode, this);
         Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
         String pointCutToken = null;
 		Binding resultingBinding = null;

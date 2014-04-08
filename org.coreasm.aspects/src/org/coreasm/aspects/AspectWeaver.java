@@ -265,6 +265,7 @@ public class AspectWeaver {
 						substituted.add(nptcdef.getName());
 						//perfomr the substutution recursively
 						substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
+						nptcdef.removeFromTree();
 					}
 				}
 			
@@ -764,6 +765,10 @@ public class AspectWeaver {
 				ruleDeclarations.addAll(getRuleDefinitions(astNode));
 			}
 		return ruleDeclarations;
+	}
+	
+	public LinkedList<ASTNode> getRuleDefinitions() {
+		return getRuleDefinitions(getRootnode());
 	}
 
 	/**
