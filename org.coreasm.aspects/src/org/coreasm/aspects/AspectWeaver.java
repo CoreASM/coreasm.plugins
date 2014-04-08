@@ -687,9 +687,6 @@ public class AspectWeaver {
 			ASTNode seqBlockASTNode = AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
 
 			AspectTools.addChildAfter(parent, insertionReference, Node.DEFAULT_NAME, seqBlockASTNode);
-
-			if (AoASMPlugin.isDebugMode())
-				AspectTools.writeParseTreeToFile(parent.getFirst().getFirst().getToken() + ".dot", parent);
 		}
 
 		//step 2

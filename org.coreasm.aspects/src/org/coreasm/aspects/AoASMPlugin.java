@@ -128,11 +128,6 @@ public class AoASMPlugin extends Plugin
 			VocabularyExtender,
 			ExtensionPointPlugin {
 
-	/** switch to activate a debug mode */
-	private static boolean debug=false;
-
-	public static boolean isDebugMode(){return debug;};
-
 	/** version of the aspect-oriented CoreASM-Plugin*/
 	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 2,
 			"alpha");
@@ -142,14 +137,20 @@ public class AoASMPlugin extends Plugin
 	/** the Plugin-names where this plugin depends on*/
 	private Set<String> dependencyNames = null;
 
-	/** map of parsers defined in {\link getParsers()} */
+	/**
+	 * map of parsers defined in \link getParsers() \endlink
+	 */
 	private Map<String, GrammarRule> parsers = null;
 
+	/**
+	 * Information dispatcher used to create provide information to other
+	 * registered plugins
+	 */
 	private static InformationDispatcher info = InformationDispatcher.getInstance(PLUGIN_NAME);
 	
 	/**
 	 * @name Keywords and Operators
-	 * final strings used in the {\link getParsers()} method
+	 *       final strings used in the \link getParsers() \endlink method
 	 */
 	///@{
 	/** \brief	keyword used for the parser*/
@@ -182,7 +183,10 @@ public class AoASMPlugin extends Plugin
 	///@}
 
 	///@{
-	/** collection of keyword and operator strings use by the parser in {\link getParsers()}*/
+	/**
+	 * collection of keyword and operator strings use by the parser in \link
+	 * getParsers() \endlink
+	 */
 	private final String[] keywords = {KW_ASPECT, KW_ADVICE, KW_BEFORE,
 			KW_AFTER, KW_AROUND, KW_BEGIN, KW_END, KW_RULECALL, KW_WITHIN,
 			KW_ARGS, KW_CFLOW, KW_CFLOWBELOW, KW_CFLOWTOP, KW_BY, KW_WITHOUT, OP_AND, OP_OR,
@@ -210,10 +214,15 @@ public class AoASMPlugin extends Plugin
 		return VERSION_INFO;
 	}
 
-	/** {@inheritDoc}
-	 * \attention	this plugin depends on the {@link org.coreasm.engine.plugins.signature.SignaturePlugin} and the {@link org.coreasm.engine.plugins.conditionalrule.ConditionalRulePlugin}
-	 * @return	set required CoreASM plugins
+	//@formatter:off
+	/**
+	 * {@inheritDoc} 
+	 * \attention this plugin depends on the \link org.coreasm.engine.plugins.signature.SignaturePlugin \endlink and the
+	 * \link org.coreasm.engine.plugins.conditionalrule.ConditionalRulePlugin \endlink
+	 * 
+	 * @return set required CoreASM plugins
 	 */
+	//@formatter:on
 	@Override
 	public Set<String> getDependencyNames() {
 		if (dependencyNames == null) {
@@ -974,11 +983,14 @@ public class AoASMPlugin extends Plugin
 		return null;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.ParserPlugin#getKeywords()
-	 *
-	 * \retval array of keywords {\link keywords}
-	 * Returns the list of keywords this plugin provides. The returned value should not be null.
+	 * 
+	 * @return array of keywords \link keywords \endlink
+	 *         Returns the list of keywords this plugin provides. The returned
+	 *         value should not be null.
 	 */
 	@Override
 	public String[] getKeywords() {
@@ -1040,18 +1052,24 @@ public class AoASMPlugin extends Plugin
 		return targetModes;
 	}
 
-	/** {@inheritDoc}
-	 *
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.ExtensionPointPlugin#getSourceModes()
-	 *
-	 * @return source modes which invoke the method {\link fireOnModeTransition} to be executed.
-	 *	Returns a map of engine modes to call priorities; upon transition of
-	 *	the engine mode from any of these modes, the given plug-in must be
-	 *	notified. Zero (0) is the lowest priority and 100 is the highest
-	 *	calling priority. The engine will consider this priority when
-	 *	calling plug-ins at extension point transitions. All plug-ins with
-	 *	the same priority level will be called in a non-deterministic order.
-	 *	Default call priority is DEFAULT_PRIORITY.
+	 * 
+	 * @return source modes which invoke the method \link fireOnModeTransition
+	 *         \endlink to be executed.
+	 *         Returns a map of engine modes to call priorities; upon transition
+	 *         of
+	 *         the engine mode from any of these modes, the given plug-in must
+	 *         be
+	 *         notified. Zero (0) is the lowest priority and 100 is the highest
+	 *         calling priority. The engine will consider this priority when
+	 *         calling plug-ins at extension point transitions. All plug-ins
+	 *         with
+	 *         the same priority level will be called in a non-deterministic
+	 *         order.
+	 *         Default call priority is DEFAULT_PRIORITY.
 	 */
 	@Override
 	public Map<EngineMode, Integer> getSourceModes() {
@@ -1082,6 +1100,7 @@ public class AoASMPlugin extends Plugin
 		return sourceModes;
 	}
 
+	@Override
 	/** {@inheritDoc}
 	 * @see org.coreasm.engine.plugin.ExtensionPointPlugin#fireOnModeTransition(org.coreasm.engine.CoreASMEngine.EngineMode, org.coreasm.engine.CoreASMEngine.EngineMode)
 	 *
@@ -1111,7 +1130,6 @@ public class AoASMPlugin extends Plugin
 		}
 	\enddot
 	 */
-	@Override
 	public void fireOnModeTransition(EngineMode source, EngineMode target)
 			throws EngineException {
 
@@ -1156,6 +1174,17 @@ public class AoASMPlugin extends Plugin
 		}
 	}
 	
+	/**
+	 * create a marker and send the information to plugins that are registered
+	 * at information dispatcher
+	 * 
+	 * @param capi
+	 *            used to get the current spec
+	 * @param functionRuleTermNode
+	 *            the node to which the information is related
+	 * @param binding
+	 *            the binding information about the given functionRuleTermNode
+	 */
 	public static void createMarker(ControlAPI capi, ASTNode functionRuleTermNode, Binding binding) {
 		Map<String, String> data = new HashMap<String, String>();
 		Specification spec = capi.getSpec();
@@ -1202,17 +1231,21 @@ public class AoASMPlugin extends Plugin
 		return esp.getUniverses();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getRules()
-	 *
-	 *	\retval rule elements	if extending the vocabulary with rules, initialize and return
-	 *	corresponding rule elements
-	 *	\retval null	otherwise
-	 *
-	 *	\attention This method uses the class {@link ExcerptOfSignaturePlugin}
-	 *	(which is a limited, changed subset of the SignaturePlugin) create
-	 *	the rules declared in aspects. Moreover, all adviceRules are stored
-	 *	in a hashMap to ease the weaving process.
+	 * 
+	 *      \retval rule elements if extending the vocabulary with rules,
+	 *      initialize and return
+	 *      corresponding rule elements
+	 *      \retval null otherwise
+	 * 
+	 *      \attention This method uses the class \link ExcerptOfSignaturePlugin
+	 *      \endlink
+	 *      (which is a limited, changed subset of the SignaturePlugin) create
+	 *      the rules declared in aspects. Moreover, all adviceRules are stored
+	 *      in a hashMap to ease the weaving process.
 	 */
 	@Override
 	public Map<String, RuleElement> getRules() {

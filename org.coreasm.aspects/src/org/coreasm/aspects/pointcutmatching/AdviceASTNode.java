@@ -13,11 +13,9 @@ import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
-import org.coreasm.engine.kernel.MacroCallRuleNode;
 
 
 /**
@@ -33,8 +31,7 @@ public class AdviceASTNode extends ASTNode {
 	private final String adviceId;
 	private String realName;/*TODO String realName maybe useful for debugging*/
 	
-	private List<ProceedASTNode> proceedNodes = new LinkedList<ProceedASTNode>();;
-    private HashMap <ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
+	private HashMap<ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
 
 	/**
 	 * this constructor is needed to support duplicate
@@ -57,53 +54,28 @@ public class AdviceASTNode extends ASTNode {
 	}
 	
 	/**
-	 * Override the advice name in the identifier with the generic unique value adviceName!
-	 * Exchange FunctionRuleTermNodes with name "proceed" with a ProceedASTNode
-	 * ExcerptOfSigniturePlugin.createRuleElement(ASTNode currentRuleDeclaration, Interpreter interpreter)
+	 * Override the advice name in the identifier with the generic unique value
+	 * adviceName!
 	 */
 	@Override
-	public void addChild( String name, Node node){
+	public void addChild(String name, Node node) {
 		super.addChild(name, node);
-		
+
 		//real name cannot be set, when e.g. using cloneTree, because children do not exist at this time
-		if (realName == null){
+		if (realName == null) {
 			this.realName = this.getName();
 			this.getFirst().getFirst().setToken(adviceId);
 		}
-		
-		//if node is a FunctionRuleTermNode or MacroCallRule with token proceed, a new ProceedASTNode has to be inserted instead
-		if ( node.getPluginName().equals("BlockRulePlugin")){//if the child of advice is the BlockRule, i.e. the advice's body
-			LinkedList<Node> proceedNodes = AspectTools.getNodesWithName(node, "proceed");
-			ASTNode proceedNode = null;
-			Node parent = null;
-			Node insertionReference = null;
-			for (Node proceedId : proceedNodes) {
-				if (proceedId.getParent() instanceof FunctionRuleTermNode)
-					proceedNode = (FunctionRuleTermNode)proceedId.getParent();
-				if (proceedNode != null && proceedNode.getParent() instanceof MacroCallRuleNode)
-					proceedNode = (MacroCallRuleNode)proceedNode.getParent();
-				if(proceedNode != null) {
-					proceedNodes.add(proceedNode);
-					parent = proceedNode.getParent();
-					insertionReference = proceedNode.removeFromTree();
-					// TODO check node names
-					if (proceedNode instanceof FunctionRuleTermNode)
-						AspectTools.addChildAfter(parent,insertionReference, Node.DEFAULT_NAME, (FunctionRuleTermNode)proceedNode.cloneTree());
-					else if (proceedNode instanceof MacroCallRuleNode)
-						AspectTools.addChildAfter(parent,insertionReference, Node.DEFAULT_NAME, (MacroCallRuleNode)proceedNode.cloneTree());
-				}
-			}
-			
-		}
 	}
-	
+
 	/**
 	 * returns the boolean value of the pointcut expression of this advice
 	 * and stores successful bindings in the bindings HashMap of the advice
 	 * 
-	 * @param candidate given pointcut of the advice
+	 * @param candidate
+	 *            given pointcut of the advice
 	 * @return result of the matching
-	 * @throws AspectException 
+	 * @throws AspectException
 	 */
 	public Binding matches(ASTNode candidate) throws AspectException{
 		//pointcut cannot be null (which is assured by parsing)
@@ -278,13 +250,6 @@ public class AdviceASTNode extends ASTNode {
 	 */
 	public String getRealName() {
 		return realName;
-	}
-
-	/**
-	 * @return the proceedNodes
-	 */
-	public List<ProceedASTNode> getProceedNodes() {
-		return proceedNodes;
 	}
 	
 }
