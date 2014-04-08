@@ -6,17 +6,21 @@ package org.coreasm.aspects.pointcutmatching;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.utils.AspectTools;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
-
+import org.coreasm.engine.kernel.RuleOrFuncElementNode;
 
 /**
  * @author Marcel Dausend
@@ -82,9 +86,74 @@ public class AdviceASTNode extends ASTNode {
 		Binding binding = getPointCut().matches(candidate);
 		/*	stores the binding in the bindings HashMap
 			where the key is the node that successfully matches this advice */
-		if (binding.exists())
+		if (binding.exists()) {
+			if ("around".equals(getLocator())) {
+				FunctionRuleTermNode fnNode = (FunctionRuleTermNode)candidate;
+				ASTNode astn = candidate.getFirst();
+				RuleOrFuncElementNode ruleOrFuncElemNode = new RuleOrFuncElementNode(astn.getScannerInfo());
+				AspectTools.addChild(ruleOrFuncElemNode, new Node(null, "@", astn.getScannerInfo(), Node.OPERATOR_NODE));
+				AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn.cloneTree());
+				if (!binding.addBinding("proceed", ruleOrFuncElemNode))
+					throw new CoreASMError("Name proceed already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.getFirst().getToken(), this);
+				int numProceedParameters = 0;
+				for (ASTNode arg : fnNode.getArguments()) {
+					if (Kernel.GR_ID.equals(arg.getGrammarRule())) {
+						FunctionRuleTermNode functionRuleTermNode = new FunctionRuleTermNode(arg.getScannerInfo());
+						AspectTools.addChild(functionRuleTermNode, "alpha", arg.cloneTree());
+						arg = functionRuleTermNode;
+					}
+					if (!binding.addBinding("p" + (numProceedParameters + 1), arg))
+						throw new CoreASMError("Name p" + (numProceedParameters + 1) + " already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.getFirst().getToken(), this);
+					numProceedParameters++;
+				}
+				ensureProceedParameters(numProceedParameters);
+			}
 			bindings.put(candidate, binding);
-		return  binding;
+		}
+		return binding;
+	}
+	
+	private void ensureProceedParameters(int requiredProceedParameters) {
+		ASTNode signature = getSignature();
+		ASTNode lastASTNode = signature.getFirst();
+		ASTNode lastProceedParameter = null;
+		Pattern pattern = Pattern.compile("p[0-9]*");
+		boolean hasProceed = false;
+		for (ASTNode param = signature.getFirst().getNext(); param != null; param = param.getNext()) {
+			Matcher matcher = pattern.matcher(param.getToken());
+			if (matcher.find())
+				lastProceedParameter = param;
+			if ("proceed".equals(param.getToken()))
+				hasProceed = true;
+			lastASTNode = param;
+		}
+		if (!hasProceed) {
+			boolean hasParams = signature.getFirst().getNext() != null;
+			ASTNode idNode = (ASTNode)signature.getFirst().duplicate();
+			idNode.setToken("proceed");
+			if (!hasParams)
+				signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ")", idNode.getScannerInfo(), Node.OPERATOR_NODE));
+			signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, idNode);
+			if (hasParams)
+				signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", idNode.getScannerInfo(), Node.OPERATOR_NODE));
+			else
+				signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, "(", idNode.getScannerInfo(), Node.OPERATOR_NODE));
+			lastASTNode = idNode;
+		}
+		int numProceedParameters = 0;
+		if (lastProceedParameter != null)
+			numProceedParameters = Integer.parseInt(lastProceedParameter.getToken().substring("p".length()));
+		for (int i = numProceedParameters; i < requiredProceedParameters; i++) {
+			ASTNode idNode = (ASTNode)signature.getFirst().duplicate();
+			idNode.setToken("p" + (i + 1));
+			signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, idNode);
+			signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", idNode.getScannerInfo(), Node.OPERATOR_NODE));
+			lastASTNode = idNode;
+		}
+	}
+	
+	public ASTNode getSignature() {
+		return getFirst();
 	}
 	
 	/**
@@ -180,10 +249,15 @@ public class AdviceASTNode extends ASTNode {
 		else
 		//clone this object taking into account the given binding
 		{
+			Pattern pattern = Pattern.compile("p[0-9]*");
 			List<String> paramNames = new LinkedList<String>();
 			for (ASTNode param : getParameters()) {
-				if (binding.getBindingPartner(param.getToken()) == null)
-					throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
+				if (binding.getBindingPartner(param.getToken()) == null) {
+					if ("around".equals(getLocator()) && pattern.matcher(param.getToken()).find())
+						binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "undef", param.getScannerInfo(), Node.KEYWORD_NODE));
+					else
+						throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
+				}
 				paramNames.add(param.getToken());
 			}
 			for (String bindingKey : binding.binding.keySet()) {
