@@ -18,6 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.GraphViz;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
@@ -641,6 +642,14 @@ public class AspectTools {
 				functionRuleNode.addChild(node.cloneTree());
 		AspectTools.addChild(adviceMacroCallRule, functionRuleNode);
 		return adviceMacroCallRule;
+	}
+	
+	public static boolean isRuleName(String name) {
+		for (ASTNode ruleDefinition : AspectWeaver.getInstance().getRuleDefinitions()) {
+			if (name.equals(ruleDefinition.getFirst().getFirst().getToken()))
+				return true;
+		}
+		return false;
 	}
 
 	/**
