@@ -21,6 +21,7 @@ import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
+import org.coreasm.engine.plugins.number.NumberPlugin;
 
 /**
  * @author Marcel Dausend
@@ -265,7 +266,7 @@ public class AdviceASTNode extends ASTNode {
 							int numProceedParameters = 0;
 							while (binding.getBindingPartner("p" + (numProceedParameters + 1)) != null)
 								numProceedParameters++;
-							binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "" + numProceedParameters, param.getScannerInfo(), Node.KEYWORD_NODE));
+							binding.addBinding(param.getToken(), new ASTNode(NumberPlugin.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "" + numProceedParameters, param.getScannerInfo(), Node.KEYWORD_NODE));
 						}
 					}
 					else
