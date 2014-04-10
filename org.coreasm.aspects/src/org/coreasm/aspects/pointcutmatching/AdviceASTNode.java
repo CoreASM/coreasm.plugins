@@ -117,7 +117,7 @@ public class AdviceASTNode extends ASTNode {
 		ASTNode signature = getSignature();
 		ASTNode lastASTNode = signature.getFirst();
 		ASTNode lastProceedParameter = null;
-		Pattern pattern = Pattern.compile("p[0-9]*");
+		Pattern pattern = Pattern.compile("p[0-9]+");
 		boolean hasProceed = false;
 		for (ASTNode param = signature.getFirst().getNext(); param != null; param = param.getNext()) {
 			Matcher matcher = pattern.matcher(param.getToken());
@@ -138,6 +138,11 @@ public class AdviceASTNode extends ASTNode {
 				signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", idNode.getScannerInfo(), Node.OPERATOR_NODE));
 			else
 				signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, "(", idNode.getScannerInfo(), Node.OPERATOR_NODE));
+			lastASTNode = idNode;
+			idNode = (ASTNode)signature.getFirst().duplicate();
+			idNode.setToken("pn");
+			signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, idNode);
+			signature.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", idNode.getScannerInfo(), Node.OPERATOR_NODE));
 			lastASTNode = idNode;
 		}
 		int numProceedParameters = 0;
@@ -249,12 +254,20 @@ public class AdviceASTNode extends ASTNode {
 		else
 		//clone this object taking into account the given binding
 		{
-			Pattern pattern = Pattern.compile("p[0-9]*");
+			Pattern pattern = Pattern.compile("p[0-9]+");
 			List<String> paramNames = new LinkedList<String>();
 			for (ASTNode param : getParameters()) {
 				if (binding.getBindingPartner(param.getToken()) == null) {
-					if ("around".equals(getLocator()) && pattern.matcher(param.getToken()).find())
-						binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "undef", param.getScannerInfo(), Node.KEYWORD_NODE));
+					if ("around".equals(getLocator())) {
+						if (pattern.matcher(param.getToken()).find())
+							binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "undef", param.getScannerInfo(), Node.KEYWORD_NODE));
+						else if ("pn".equals(param.getToken())) {
+							int numProceedParameters = 0;
+							while (binding.getBindingPartner("p" + (numProceedParameters + 1)) != null)
+								numProceedParameters++;
+							binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "" + numProceedParameters, param.getScannerInfo(), Node.KEYWORD_NODE));
+						}
+					}
 					else
 						throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
 				}
