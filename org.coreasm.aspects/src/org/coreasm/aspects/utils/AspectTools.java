@@ -258,7 +258,7 @@ public class AspectTools {
 		boolean extraIndentationElse = false;
 		int indentation = 0;
 		for (String line : lines) {
-			line = line.replace("  ", " ").replace("( ", "(").replace(" )", ")").replace(",", ", ").replace(":=", " := ");
+			line = line.replace("( ", "(").replace(" )", ")").replace(" (", "(").replace(" ]", "]").replace(" |", "|").replace("| ", "|").replace("@ ", "@").replace(" ,", ",").replace(",", ", ").replace(":=", " := ").replace("  ", " ").replace("  ", " ");
 			line = line.trim();
 			if (indentation > 0 && line.isEmpty())
 				continue;
