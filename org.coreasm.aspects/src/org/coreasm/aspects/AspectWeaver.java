@@ -625,7 +625,7 @@ public class AspectWeaver {
 		ASTNode updateASTNodeStart, ruleBody, updateASTNodeEnd, parent;
 		Node insertionReference;
 		for (ASTNode ruleDeclarationASTNode : ruleDeclarations) {
-			signatureList = getRuleSignatureAsCoreASMList(ruleDeclarationASTNode);
+			signatureList = AspectTools.getRuleSignatureAsCoreASMList(ruleDeclarationASTNode);
 			updateRuleStart = "if callStack(self) = undef then callStack(self) := [" + signatureList + "]"
 					+ " else callStack(self) := cons(" + signatureList + ", callStack(self))";//condition for initialization case callStack(self)=undef
 			updateRuleEnd = "callStack(self) := tail(callStack(self))";
@@ -778,47 +778,6 @@ public class AspectWeaver {
 	
 	public LinkedList<ASTNode> getRuleDefinitions() {
 		return getRuleDefinitions(getRootnode());
-	}
-
-	/**
-	 * return a rule or function signature as coreasm string
-	 * 
-	 * @param astNode
-	 *            should be a rule definition or function rule term
-	 * @return string in coreasm syntax representing the signature of the given
-	 *         node
-	 */
-	private String getRuleSignatureAsCoreASMList(ASTNode astNode) {
-		String ruleSignatureAsCoreASMList = "";
-		ASTNode node;
-		if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) || astNode instanceof FunctionRuleTermNode) {
-			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
-			{
-				ruleSignatureAsCoreASMList += "[";
-			}
-			//signature node
-			node = astNode.getFirst();
-			ASTNode signatureElement;
-			//add name of rule/function surrounded by quotes
-			ruleSignatureAsCoreASMList += "\"" + node.getFirst().getToken() + "\"";
-			//add parameters
-			for (int i = 1; i < node.getAbstractChildNodes().size(); i++) {
-				signatureElement = node.getAbstractChildNodes().get(i);
-				ruleSignatureAsCoreASMList += ", ";
-				ruleSignatureAsCoreASMList += getRuleSignatureAsCoreASMList(signatureElement);
-				//if its not the last signature element, insert a colon, too.
-			}
-
-			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION))
-			{
-				ruleSignatureAsCoreASMList += "]";
-			}
-		}
-		else //ID, NUMBER, BOOLEAN, StringTerm, BooleanTerm, KernelTerms
-		{
-			ruleSignatureAsCoreASMList = astNode.getToken();
-		}
-		return ruleSignatureAsCoreASMList;
 	}
 
 	/**
