@@ -401,60 +401,60 @@ public class AoASMPlugin extends Plugin
 			 */
 			Parser<Node> callParser = // 'call' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
 			Parsers.array(pTools.getKeywParser(KW_RULECALL, PLUGIN_NAME),
-						pTools.getOprParser("("),
-						pointCutParameterParser.optional(),
-						pTools.star(
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
 							Parsers.array(
-								pTools.getOprParser(","),
-								pointCutParameterParser
-							)
-						),
-						pTools.getOprParser(")"),						
-						Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")"),
+					Parsers.array(
 							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
 							Parsers.or(
-								idParser,
-								stringParser
-							)
-						).optional(),
-						Parsers.array(
+									idParser,
+									stringParser
+									)
+							).optional(),
+					Parsers.array(
 							Parsers.or(
 									pTools.getKeywParser("with", PLUGIN_NAME),
 									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
-							),
+									),
 							Parsers.or(
 									pTools.getKeywParser("result", PLUGIN_NAME),
 									pTools.getKeywParser("return", PLUGIN_NAME)
-							)
-						).optional()
+									)
+							).optional()
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							CallASTNode node = new CallASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							// ((Node) ((Object[]) from[0])[0])
-							// .getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									CallASTNode node = new CallASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 
 			/* Parser for within expression */
 			Parser<Node> withinParser = // 'within' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
 			Parsers.array(pTools.getKeywParser(KW_WITHIN, PLUGIN_NAME),
 					pTools.getOprParser("("),
-					pointCutParameterParser.optional(),
+					pointCutParameterParser,
 					pTools.star(
 						Parsers.array(
 							pTools.getOprParser(","),
