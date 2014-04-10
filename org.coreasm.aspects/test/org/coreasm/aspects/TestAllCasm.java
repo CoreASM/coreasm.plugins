@@ -10,9 +10,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
@@ -29,7 +32,7 @@ public class TestAllCasm {
 	@BeforeClass
 	public static void onlyOnce() {
 		URL url = TestAllCasm.class.getClassLoader().getResource("./without_test_class");
-		
+
 		try {
 			testFiles = new LinkedList<File>();
 			getTestFiles(testFiles, new File(url.toURI()));
@@ -38,6 +41,7 @@ public class TestAllCasm {
 			e.printStackTrace();
 		}
 	}
+
 	private final ByteArrayOutputStream logContent = new ByteArrayOutputStream();
 	private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
 	private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
@@ -54,7 +58,7 @@ public class TestAllCasm {
 				if (Pattern.matches(".*" + filter + ".*", line)) {
 					int first = line.indexOf("\"");
 					int last = line.lastIndexOf("\"");
-					if (first >= 0 && last >= 0)
+					if (first >= 0 && last > first)
 						requiredOutputList.add(Tools.convertFromEscapeSequence(line.substring(first + 1, last)));
 				}
 			}
@@ -119,90 +123,117 @@ public class TestAllCasm {
 	}
 
 	@Test
-	public void runSpecifications() {
-		if (testFiles.isEmpty())
-			new TestReport(null, "no test file found!", -1, false);
+	public void performTest() {
+		TestReport t = null;
+		boolean succesful = true;
+		//check if their are files for testing for this class
+		if (testFiles.isEmpty()) {
+			t = new TestReport(null, "no test file found!", -1, false);
+			succesful = false;
+		}
+		//perform test for all test files, output result, and modify test result if test has been failed
 		for (File testFile : testFiles) {
-			List<String> requiredOutputList = getFilteredOutput(testFile, "@require");
-			List<String> refusedOutputList = getFilteredOutput(testFile, "@refuse");
-			List<String> minStepsList = getFilteredOutput(testFile, "@minsteps");
-			List<String> maxStepsList = getFilteredOutput(testFile, "@maxsteps");
-			int minSteps = 1;
-			if (!minStepsList.isEmpty()) {
-				try {
-					minSteps = Integer.parseInt(minStepsList.get(0));
-				} catch (NumberFormatException e) {
-				}
-			}
-			int maxSteps = minSteps;
-			if (!maxStepsList.isEmpty()) {
-				try {
-					maxSteps = Integer.parseInt(maxStepsList.get(0));
-				} catch (NumberFormatException e) {
-				}
-			}
-			TestEngineDriver td = null;
-			String failMessage = "";
-			int steps = 0;
+			t = runSpecification(testFile);
+			if (!t.successful())
+				succesful = false;
+			t.print();
+			t = null;
+		}
+		//report overall test result
+		//test failed if at least one test has been failed
+		if (!succesful)
+			Assert.fail("Test failed for class: " + TestAllCasm.class.getSimpleName());
+
+	}
+
+	public TestReport runSpecification(File testFile) {
+
+		List<String> requiredOutputList = getFilteredOutput(testFile, "@require");
+		List<String> refusedOutputList = getFilteredOutput(testFile, "@refuse");
+		List<String> minStepsList = getFilteredOutput(testFile, "@minsteps");
+		List<String> maxStepsList = getFilteredOutput(testFile, "@maxsteps");
+		int minSteps = 1;
+		if (!minStepsList.isEmpty()) {
 			try {
-				outContent.reset();
-				td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
-				td.setOutputStream(new PrintStream(outContent));
-				for (steps = minSteps; steps <= maxSteps; steps++) {
-					td.executeSteps(minSteps);
-					minSteps = 1;
-					//test if no error has been occured and maybe output error message
-					if (!errContent.toString().isEmpty()) {
-						failMessage = "An error occurred in " + testFile.getName() + ":" + errContent;
-						new TestReport(testFile, failMessage, steps, false);
-						break;
-					}
-					//check if no refused output is contained
-					for (String refusedOutput : refusedOutputList) {
-						if (outContent.toString().contains(refusedOutput)) {
-							failMessage = "refused output found in test file: " + testFile.getName()
-									+ ", refused output: "
-									+ refusedOutput
-									+ ", actual output: " + outContent.toString();
-							new TestReport(testFile, failMessage, steps, false);
-							break;
-						}
-					}
-					for (String requiredOutput : new LinkedList<String>(requiredOutputList)) {
-						if (outContent.toString().contains(requiredOutput))
-							requiredOutputList.remove(requiredOutput);
-					}
-					if (requiredOutputList.isEmpty())
-						break;
+				minSteps = Integer.parseInt(minStepsList.get(0));
+			}
+			catch (NumberFormatException e) {
+			}
+		}
+		int maxSteps = minSteps;
+		if (!maxStepsList.isEmpty()) {
+			try {
+				maxSteps = Integer.parseInt(maxStepsList.get(0));
+			}
+			catch (NumberFormatException e) {
+			}
+		}
+		TestEngineDriver td = null;
+		String failMessage = "";
+		int steps = 0;
+		try {
+			outContent.reset();
+			errContent.reset();
+			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
+			if (TestEngineDriver.TestEngineDriverStatus.stopped.equals(td.getStatus()))
+				return new TestReport(
+						testFile, "engine is stopped!", steps, false);
+
+			td.setOutputStream(new PrintStream(outContent));
+			for (steps = minSteps; steps <= maxSteps; steps++) {
+				td.executeSteps(minSteps);
+				minSteps = 1;
+				//test if no error has been occured and maybe output error message
+				if (!errContent.toString().isEmpty()) {
+					failMessage = "An error occurred in " + testFile.getName() + ":" + errContent;
+					return new TestReport(testFile, failMessage, steps, false);
 				}
-				//check if no required output is missing
-				if (!requiredOutputList.isEmpty()) {
-					failMessage = "missing required output for test file: " + testFile.getName()
-							+ ", missing output: "
-							+ requiredOutputList.get(0)
-							+ ", actual output: " + outContent.toString();
-					new TestReport(testFile, failMessage, steps - 1, false);
+				//check if no refused output is contained
+				for (String refusedOutput : refusedOutputList) {
+					if (outContent.toString().contains(refusedOutput)) {
+						failMessage = "refused output found in test file: " + testFile.getName()
+								+ ", refused output: "
+								+ refusedOutput
+								+ ", actual output: " + outContent.toString();
+						return new TestReport(testFile, failMessage, steps, false);
+					}
 				}
+				for (String requiredOutput : new LinkedList<String>(requiredOutputList)) {
+					if (outContent.toString().contains(requiredOutput))
+						requiredOutputList.remove(requiredOutput);
+				}
+				if (requiredOutputList.isEmpty())
+					break;
 			}
-			catch (Exception e) {
-				e.printStackTrace(origOutput);
+			//check if no required output is missing
+			if (!requiredOutputList.isEmpty()) {
+				failMessage = "missing required output for test file: " + testFile.getName()
+						+ ", missing output: "
+						+ requiredOutputList.get(0)
+						+ ", actual output: " + outContent.toString();
+				return new TestReport(testFile, failMessage, steps - 1, false);
 			}
-			finally {
-				td.stop();
-			}
-			if (td.isRunning()) {
-				failMessage = testFile.getName() + " has a running instance but is stopped!";
-				new TestReport(testFile, failMessage, steps, false);
-			}
-			else if (steps <= maxSteps /* only if successful */)
-				new TestReport(testFile, steps);
-			/* else: a failure already occured */
-			TestReport.printLast();
+		}
+		catch (Exception e) {
+			e.printStackTrace(origOutput);
+		}
+		finally {
+			td.stop();
+		}
+		if (td.isRunning()) {
+			failMessage = testFile.getName() + " has a running instance but is stopped!";
+			return new TestReport(testFile, failMessage, steps, false);
+		}
+		else if (steps <= maxSteps /* only if successful */)
+			return new TestReport(testFile, steps);
+		else {
+			failMessage = "No test result for test class " + TestAllCasm.class.getSimpleName();
+			return new TestReport(testFile, failMessage, steps, false);
 		}
 	}
 
 	static class TestReport {
-		private static LinkedList<TestReport> reports = new LinkedList<TestReport>();
+		private static ArrayList<TestReport> reports = new ArrayList<TestReport>();
 		private File file;
 		private String message;
 		private int steps;
@@ -221,16 +252,21 @@ public class TestAllCasm {
 			this.message = message;
 			this.successful = successful;
 			this.steps = steps;
+			if (!TestReport.reports.isEmpty()
+					&& TestReport.getLast().getFile() == this.file)
+				origOutput
+						.println("Last report has been for the same file. Check if your test produces a unique result.");
 			reports.add(this);
 		}
 
-		public static void printLast() {
-			reports.getLast().print();
+		private File getFile() {
+			return this.file;
 		}
 
 		public void print() {
 			if (this.successful) {
-				String success = "Test of " + this.file.getName() + " successful after " + steps + (steps == 1 ? " step" : " steps");
+				String success = "Test of " + this.file.getName() + " successful after " + steps
+						+ (steps == 1 ? " step" : " steps");
 				origOutput.println(this.message.isEmpty() ? success : success + "; " + this.message);
 			}
 			else
@@ -242,6 +278,21 @@ public class TestAllCasm {
 			for (TestReport report : reports) {
 				report.print();
 			}
+		}
+
+		public boolean successful() {
+			return this.successful;
+		}
+
+		public static TestReport getLast() {
+			if (reports.isEmpty())
+				return null;
+			else
+				return reports.get(reports.size() - 1);
+		}
+
+		public String getMessage() {
+			return this.message;
 		}
 	}
 
