@@ -621,13 +621,13 @@ public class AspectWeaver {
 
 		//step 1
 		LinkedList<ASTNode> ruleDeclarations = getRuleDefinitions(this.getRootnode());
-		String sigantureList, updateRuleStart, updateRuleEnd;
+		String signatureList, updateRuleStart, updateRuleEnd;
 		ASTNode updateASTNodeStart, ruleBody, updateASTNodeEnd, parent;
 		Node insertionReference;
 		for (ASTNode ruleDeclarationASTNode : ruleDeclarations) {
-			sigantureList = getRuleSignatureAsCoreASMList(ruleDeclarationASTNode);
-			updateRuleStart = "if callStack(self) = undef then callStack(self) := " + sigantureList
-					+ " else callStack(self) := cons(" + sigantureList + ", callStack(self))";//condition for initialization case callStack(self)=undef
+			signatureList = getRuleSignatureAsCoreASMList(ruleDeclarationASTNode);
+			updateRuleStart = "if callStack(self) = undef then callStack(self) := [" + signatureList + "]"
+					+ " else callStack(self) := cons(" + signatureList + ", callStack(self))";//condition for initialization case callStack(self)=undef
 			updateRuleEnd = "callStack(self) := tail(callStack(self))";
 
 			//set default rule respectively block as scope for the orchestration
