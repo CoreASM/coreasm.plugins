@@ -250,12 +250,15 @@ public class AspectTools {
 		result = result.replace(" aspect ", "\naspect ");
 		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n");
 		result = result.replace(" par ", "\npar\n").replace(" endpar ", "\nendpar\n");
+		result = result.replace(" seq ", "\nseq\n").replace(" next ", "\nnext\n");
 		result = result.replace(" then ", " then\n").replace(" else ", "\nelse\n");
 		// Second step: Add indentation
 		String[] lines = result.split("\n");
 		result = "";
 		boolean extraIndentationThen = false;
 		boolean extraIndentationElse = false;
+		boolean extraIndentationSeq = false;
+		boolean extraIndentationNext = false;
 		int indentation = 0;
 		for (String line : lines) {
 			line = line.replace("( ", "(").replace(" )", ")").replace(" (", "(").replace(" ]", "]").replace(" |", "|").replace("| ", "|").replace("@ ", "@").replace(" ,", ",").replace(",", ", ").replace(":=", " := ").replace("  ", " ").replace("  ", " ");
@@ -264,6 +267,16 @@ public class AspectTools {
 				continue;
 			if (line.startsWith("use") && line.contains("TabBlocks"))
 				continue;
+			if (extraIndentationNext) {
+				result += "\t";
+				extraIndentationNext = false;
+			}
+			else if ("next".equals(line)) {
+				extraIndentationSeq = false;
+				extraIndentationNext = true;
+			}
+			if (extraIndentationSeq)
+				result += "\t";
 			if (extraIndentationThen) {
 				result += "\t";
 				extraIndentationThen = false;
@@ -284,6 +297,8 @@ public class AspectTools {
 				extraIndentationThen = true;
 			if ("else".equals(line))
 				extraIndentationElse = true;
+			if ("seq".equals(line))
+				extraIndentationSeq = true;
 		}
 		return result;
 	}
