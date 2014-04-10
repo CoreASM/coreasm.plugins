@@ -227,19 +227,12 @@ public class AspectTools {
 	public static String getRuleSignatureAsCoreASMList(CallASTNode astNode) {
 		String ruleSignatureAsCoreASMList = "[";
 		ASTNode param = astNode.getFirst();
-		if (param.getGrammarRule().equals("StringTerm"))
-			ruleSignatureAsCoreASMList += AspectTools.node2String(param);
-		else
-			// include the result into string quotes
-			ruleSignatureAsCoreASMList += "\"" + AspectTools.node2String(param) + "\"";
-		param = param.getNext();
 		while (param != null) {
-			ruleSignatureAsCoreASMList += AspectTools.node2String(param);
+			ruleSignatureAsCoreASMList += "\"" + ((PointCutParameterNode) param).getPattern() + "\"";
 			param = param.getNext();
 			if (param != null)
 				ruleSignatureAsCoreASMList += ", ";
 		}
-
 		ruleSignatureAsCoreASMList += " ]";
 		return ruleSignatureAsCoreASMList;
 	}
