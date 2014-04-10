@@ -222,7 +222,8 @@ public class CallASTNode extends PointCutASTNode {
 		}
 		//if the call is surrounded by a cflow construct, generate runtime check
 		if (withinCflow) {
-			condition += AspectWeaver.MATCHING_RULE_INSIDE_CALLSTACK+"("+AspectTools.getRuleSignatureAsCoreASMList(this)+")!={}";
+			condition += AspectWeaver.MATCHING_RULE_INSIDE_CALLSTACK + "( "
+					+ AspectTools.getRuleSignatureAsCoreASMList(this) + " )";
 		}
 
 		//if the context of the call has been restricted to an specific agent

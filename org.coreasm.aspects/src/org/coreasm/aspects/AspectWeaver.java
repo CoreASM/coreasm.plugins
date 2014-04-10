@@ -693,18 +693,29 @@ public class AspectWeaver {
 		//step 2
 		//@formatter:off
 		String ruleCallCheck =
-				//"//returns a set of rule signatures from the callStack matching the given ruleSignature\n"+
-				"rule "+ MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature) =\n" +
-				"	return res in par\n" +
-				"		//just looking for a rulename (i.e. call(x))\n" +
-				"		if(head(ruleSignature)!={} and tail(ruleSignature)={}) then\n" +
-				"			res := {signature | signature in callStack(self) with matches(head(signature),head(ruleSignature))}\n" +
-				"			//looking for a rule signature i.e. call(x,[p1,...,pn])\n" +
-				"		else if ( tail(ruleSignature) != {} ) then\n" +
-				"			res := { signature | signature in callStack(self) with signature = ruleSignature }\n" +
-				"		else res := {}\n"+
-				"	endpar";
-
+			"//returns true if an element of the callstack matches ruleSignature\n"
+			+"rule "+MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature)= return res in\n"
+			+"	local list, currentSignature in\n"
+			+"		seq\n"
+			+"			par\n"
+			+"				res := false\n"
+			+"				list := callStack(self)\n"
+			+"			endpar\n"
+			+"		next\n"
+			+"			while(head(list) != undef and not res)\n"
+			+"				seq\n"
+			+"					par\n"
+			+"						res := true\n"
+			+"						currentSignature := head(list)\n"
+			+"						list := tail(list)\n"
+			+"					endpar\n"
+			+"				next\n"
+			+"					if |currentSignature| != |ruleSignature| then\n"
+			+"						res := false\n"
+			+"					else\n"
+			+"						forall i in [1..|currentSignature|] do\n"
+			+"							if not matches(toString(nth(currentSignature, i)), nth(ruleSignature, i)) then\n"
+			+"								res := false";
 		
 		String argsCheck =
 				"//returns a set of rule signatures from the callStack matching the given argument list\n"
