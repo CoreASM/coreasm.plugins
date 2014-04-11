@@ -1,28 +1,7 @@
 package org.coreasm.aspects.utils;
 
-/*
- * TestEngineDriver.java $Revision: 108 $
- * 
- * Copyright (C) 2005 Vincenzo Gervasi
- * 
- * Later modified and improved by
- * Roozbeh Farahbod
- * Daniel Sadilek
- * 
- * Last modified by $Author: rfarahbod $ on $Date: 2009-12-15 14:06:24 -0500
- * (Tue, 15 Dec 2009) $.
- * 
- * Licensed under the Academic Free License version 3.0
- * http://www.opensource.org/licenses/afl-3.0.php
- * http://www.coreasm.org/afl-3.0.php
- */
-
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -37,24 +16,19 @@ import org.coreasm.engine.EngineErrorObserver;
 import org.coreasm.engine.EngineEvent;
 import org.coreasm.engine.EngineProperties;
 import org.coreasm.engine.EngineStepObserver;
-import org.coreasm.engine.EngineWarningObserver;
-import org.coreasm.engine.Specification;
 import org.coreasm.engine.StepFailedEvent;
 import org.coreasm.engine.absstorage.Update;
-import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.plugin.PluginServiceInterface;
 import org.coreasm.engine.plugins.io.IOPlugin.IOPluginPSI;
 import org.coreasm.util.CoreASMGlobal;
 import org.coreasm.util.Logger;
 import org.coreasm.util.Tools;
 
-public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErrorObserver,
-		EngineWarningObserver {
+public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErrorObserver {
 
 	protected static List<TestEngineDriver> runningInstances = null;
 
 	protected Engine engine;
-	private final boolean isSyntaxEngine;
 
 	public enum TestEngineDriverStatus {
 		stopped, running, paused
@@ -79,10 +53,8 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	private boolean printAgents;
 	private boolean shouldStop;
 	private boolean shouldPause;
-	static long lastPrefChangeTime;
 
-	private TestEngineDriver(boolean isSyntaxEngine) {
-		//super();
+	private TestEngineDriver() {
 		if (runningInstances == null)
 			runningInstances = new LinkedList<TestEngineDriver>();
 		runningInstances.add(this);
@@ -92,14 +64,11 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		shouldStop = false;
 		shouldPause = true;
 		status = TestEngineDriverStatus.paused;
-		this.isSyntaxEngine = isSyntaxEngine;
 
 		String pluginFolders = Tools.getRootFolder(AoASMPlugin.class).split("target")[0] + "target/";
 		if (System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY) != null)
 			pluginFolders += EngineProperties.PLUGIN_FOLDERS_DELIM
 					+ System.getProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY);
-		//		JOptionPane.showMessageDialog(null, "additional plugin folders: " + pluginFolders, "TestEngineDriver("
-		//				+ isSyntaxEngine + ")", JOptionPane.INFORMATION_MESSAGE);
 		engine.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, pluginFolders);
 		engine.setClassLoader(CoreASMEngineFactory.class.getClassLoader());
 		engine.initialize();
@@ -142,7 +111,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	}
 
 	public static TestEngineDriver newLaunch(String abspathname) {
-		TestEngineDriver td = new TestEngineDriver(false);
+		TestEngineDriver td = new TestEngineDriver();
 		td.setDefaultConfig();
 		td.dolaunch(abspathname);
 		return td;
@@ -170,14 +139,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		t.start();
 	}
 
-	protected void preExecutionCallback() {
-		// Empty implementation. Can be overridden by subclasses.
-	}
-
-	protected void postExecutionCallback() {
-		// Empty implementation. Can be overridden by subclasses.
-	}
-
 	@Override
 	public void run()
 	{
@@ -192,8 +153,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 				handleError();
 				return;
 			}
-
-			preExecutionCallback();
 
 			while (engine.getEngineMode() == EngineMode.emIdle) {
 
@@ -264,7 +223,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 				this.engine.terminate();
 				this.engine.hardInterrupt();
 
-				postExecutionCallback();
 				status = TestEngineDriverStatus.stopped;
 			}
 		}
@@ -273,14 +231,14 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	/**
 	 * starts the engine and resets
 	 */
-	public synchronized void start() {
+	public void start() {
 		shouldPause = false;
 		shouldStop = false;
 		stopOnStepsLimit = false;
 		resume();
 	}
 
-	public synchronized void restart() {
+	public void restart() {
 		shouldPause = false;
 		shouldStop = false;
 		stopOnStepsLimit = false;
@@ -294,7 +252,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			}
 	}
 
-	public synchronized void resume() {
+	public void resume() {
 		if (stepsLimit == 0)
 			stepsLimit = -1;
 		shouldPause = false;
@@ -307,7 +265,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			}
 	}
 
-	public synchronized void stop() {
+	public void stop() {
 		shouldStop = true;
 		while (getStatus() != TestEngineDriverStatus.stopped)
 			try {
@@ -318,7 +276,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			}
 	}
 
-	public synchronized void pause() {
+	public void pause() {
 		shouldPause = true;
 		while (getStatus() == TestEngineDriverStatus.running)
 			try {
@@ -329,7 +287,7 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 			}
 	}
 
-	public synchronized void executeSteps(int numberOfSteps) {
+	public void executeSteps(int numberOfSteps) {
 		stepsLimit = numberOfSteps;
 		stopOnStepsLimit = true;
 		resume();
@@ -359,61 +317,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		return false;
 	}
 
-	public static ASTNode getRootNodeFromSpecification(String body) {
-		return getRootNodeFromSpecification("", body);
-	}
-
-	public static ASTNode getRootNodeFromSpecification(String header, String body) {
-
-		File tmpfile;
-		ASTNode rootNode = null;
-		TestEngineDriver td = null;
-		try {
-			String tmpDir = System.getProperty("java.io.tmpdir");
-			tmpfile = new File(tmpDir + "/coreasm-spec.casm");
-			tmpfile.getParentFile().mkdirs();
-			tmpfile.deleteOnExit();
-
-			PrintWriter output = new PrintWriter(new FileWriter(tmpfile));
-			if (header.isEmpty())
-				output.write("CoreASM TempSpec\nuse Standard\nuse AoASMPlugin\ninit test\nrule test = print \"Step\"\n\n");
-			else
-				output.write(header);
-			output.write(body + "\n");
-			output.close();
-
-			td = TestEngineDriver.newLaunch(tmpfile.getAbsolutePath());
-			AspectTools.setCapi(td.getEngine());
-			rootNode = td.engine.getParser().getRootNode();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		finally {
-			td.stop();
-		}
-		return rootNode;
-	}
-
-	public synchronized Specification getSpec(String text, boolean loadPlugins) {
-		if (!isSyntaxEngine)
-			return null;
-
-		engine.waitWhileBusy();
-		if (engine.getEngineMode() == EngineMode.emError) {
-			engine.recover();
-			return null;
-		}
-		engine.parseSpecificationHeader(new StringReader(text), loadPlugins);
-		engine.waitWhileBusy();
-		if (engine.getEngineMode() == EngineMode.emError) {
-			engine.recover();
-			return null;
-		}
-		else
-			return engine.getSpec();
-	}
-
 	@Override
 	public void update(EngineEvent event) {
 
@@ -435,140 +338,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 
 	}
 
-	/**
-	 * @return Returns the maxsteps.
-	 */
-	public int getMaxsteps() {
-		return stepsLimit;
-	}
-
-	/**
-	 * @param maxsteps
-	 *            The maxsteps to set.
-	 */
-	public void setMaxsteps(int maxsteps) {
-		this.stepsLimit = maxsteps;
-	}
-
-	/**
-	 * @return Returns the stopOnEmptyUpdates.
-	 */
-	public boolean isStopOnEmptyUpdates() {
-		return stopOnEmptyUpdates;
-	}
-
-	/**
-	 * @param stopOnEmptyUpdates
-	 *            The stopOnEmptyUpdates to set.
-	 */
-	public void setStopOnEmptyUpdates(boolean stopOnEmptyUpdates) {
-		this.stopOnEmptyUpdates = stopOnEmptyUpdates;
-	}
-
-	/**
-	 * @return Returns the stopOnError.
-	 */
-	public boolean isStopOnError() {
-		return stopOnError;
-	}
-
-	/**
-	 * @param stopOnError
-	 *            The stopOnError to set.
-	 */
-	public void setStopOnError(boolean stopOnError) {
-		this.stopOnError = stopOnError;
-	}
-
-	/**
-	 * @return Returns the stopOnFailedUpdates.
-	 */
-	public boolean isStopOnFailedUpdates() {
-		return stopOnFailedUpdates;
-	}
-
-	/**
-	 * @param stopOnFailedUpdates
-	 *            The stopOnFailedUpdates to set.
-	 */
-	public void setStopOnFailedUpdates(boolean stopOnFailedUpdates) {
-		this.stopOnFailedUpdates = stopOnFailedUpdates;
-	}
-
-	public boolean isStopOnEmptyActiveAgents() {
-		return stopOnEmptyActiveAgents;
-	}
-
-	public void setStopOnEmptyActiveAgents(boolean b) {
-		stopOnEmptyActiveAgents = b;
-	}
-
-	/**
-	 * @return Returns the stopOnStableUpdates.
-	 */
-	public boolean isStopOnStableUpdates() {
-		return stopOnStableUpdates;
-	}
-
-	/**
-	 * @param stopOnStableUpdates
-	 *            The stopOnStableUpdates to set.
-	 */
-	public void setStopOnStableUpdates(boolean stopOnStableUpdates) {
-		this.stopOnStableUpdates = stopOnStableUpdates;
-	}
-
-	/**
-	 * @return Returns the stopOnStepsLimit.
-	 */
-	public boolean isStopOnStepsLimit() {
-		return stopOnStepsLimit;
-	}
-
-	/**
-	 * @param stopOnStepsLimit
-	 *            The stopOnStepsLimit to set.
-	 */
-	public void setStopOnStepsLimit(boolean stopOnStepsLimit) {
-		this.stopOnStepsLimit = stopOnStepsLimit;
-	}
-
-	/**
-	 * @return Returns the stepsLimit.
-	 */
-	public int getStepsLimit() {
-		return stepsLimit;
-	}
-
-	/**
-	 * @param stepsLimit
-	 *            The stepsLimit to set.
-	 */
-	public void setStepsLimit(int stepsLimit) {
-		this.stepsLimit = stepsLimit;
-	}
-
-	/**
-	 * @return Returns the lastError.
-	 */
-	public CoreASMError getLastError() {
-		return lastError;
-	}
-
-	/**
-	 * @return Returns the stepFailedMsg.
-	 */
-	public String getStepFailedMsg() {
-		return stepFailedMsg;
-	}
-
-	/**
-	 * @return Returns the updateFailed.
-	 */
-	public boolean isUpdateFailed() {
-		return updateFailed;
-	}
-
 	protected void handleError() {
 		String message = "";
 		if (lastError != null)
@@ -576,7 +345,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 		else
 			message = message + " unknown.";
 
-		//		JOptionPane.showMessageDialog(null, message, "CoreASM Engine Error", JOptionPane.ERROR_MESSAGE);
 		showErrorDialog("CoreASM Engine Error", message);
 
 		lastError = null;
@@ -586,16 +354,6 @@ public class TestEngineDriver implements Runnable, EngineStepObserver, EngineErr
 	}
 
 	private void showErrorDialog(String title, String message) {
-		//MessageDialog.openError(shell, title, message);
 		System.err.println(title + "\n" + message);
 	}
-
-	public boolean isDumpFinal() {
-		return dumpFinal;
-	}
-
-	public void setDumpFinal(boolean dumpFinal) {
-		this.dumpFinal = dumpFinal;
-	}
-
 }
