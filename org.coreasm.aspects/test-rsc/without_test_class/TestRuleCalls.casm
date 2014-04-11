@@ -1,0 +1,40 @@
+CoreASM TestRuleCalls
+
+use Standard
+
+init TestRuleCalls
+
+rule X = print "x"
+rule Y(a) = print a
+rule Z = return res in res := "z"
+rule W(a) = return res in res := "a"
+
+/*
+ * @require "x\nx\ny\ny\nz\nz\nw\nw\n"
+*/
+rule CALL(macrodirect, macroindirect, macrodirectwitharg, macroindirectwitharg, frdirect, frindirect, frdirectwitharg, frindirectwitharg) =
+seqblock
+	macrodirect
+	macroindirect
+	macrodirectwitharg("y")
+	macroindirectwitharg("y")
+	print frdirect
+	print frindirect
+	print frdirectwitharg("w")
+	print frindirectwitharg("w")
+endseqblock
+
+rule TestRuleCalls = {
+	seq {
+		if tmpX = undef then
+			tmpX := @X
+		if tmpY = undef then
+			tmpY := @Y
+		if tmpZ = undef then
+			tmpZ := @Z
+		if tmpW = undef then
+			tmpW := @W
+	}
+	next
+		CALL(@X, tmpX, @Y, tmpY, @Z, tmpZ, @W, tmpW)
+}
