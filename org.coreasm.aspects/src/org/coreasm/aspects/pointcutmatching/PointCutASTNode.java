@@ -149,7 +149,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 */
 	public AdviceASTNode getAdvice() {
 		ASTNode node = this;
-		while (!(node instanceof AdviceASTNode))
+		while (node != null && !(node instanceof AdviceASTNode))
 			node = node.getParent();
 		if (node != null)
 			return (AdviceASTNode) node;
@@ -162,7 +162,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 */
 	public AspectASTNode getAspect() {
 		ASTNode node = this;
-		while (!(node instanceof AspectASTNode))
+		while (node != null && !(node instanceof AspectASTNode))
 			node = node.getParent();
 		if (node != null)
 			return (AspectASTNode) node;
