@@ -8,7 +8,7 @@ init Test
 aspect TestAspect {
 
 	//@require "CFlow\nCFlowCaller\nCFlow\nTestCFlow1"
-	advice TestCFlow1 after : call("CFlow") and cflow( call("CFlowCaller")) {
+	advice TestCFlow1 after : call("CFlow") and cflow("CFlowCaller") {
 		print "TestCFlow1"
 	}
 }
