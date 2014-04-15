@@ -21,8 +21,8 @@ import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.GraphViz;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
-import org.coreasm.aspects.pointcutmatching.CallASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
+import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
@@ -224,7 +224,7 @@ public class AspectTools {
 		return output;
 	}
 
-	public static String getRuleSignatureAsCoreASMList(CallASTNode astNode) {
+	public static String getRuleSignatureAsCoreASMList(PointCutASTNode astNode) {
 		String ruleSignatureAsCoreASMList = "[";
 		ASTNode param = astNode.getFirst();
 		while (param != null) {
