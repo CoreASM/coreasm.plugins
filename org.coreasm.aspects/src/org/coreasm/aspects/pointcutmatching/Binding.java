@@ -87,9 +87,9 @@ public class Binding {
 						"Name "
 								+ parameterOfArgsASTNode
 								+ " already bound to a different construct during pointcut matching between "
-								+ compareToNode.unparseTree()
+								+ compareToNode.unparseTree() + " and " + astNode.unparseTree()
 								+ ". Consistency check must be specified inside advice because it a runtime check.",
-						astNode.getChildNode(Node.DEFAULT_NAME));//astNode is a binAndAstNode and the only unmarked child is the keyword "and"
+						astNode);
 			return parameterOfArgsASTNode.equals("_") ||
 					binding.get(parameterOfArgsASTNode).unparseTree().equals(parameterOfCompareToNode.unparseTree());
 		}

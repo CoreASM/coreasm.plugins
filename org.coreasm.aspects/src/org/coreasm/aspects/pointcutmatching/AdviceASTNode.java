@@ -96,7 +96,7 @@ public class AdviceASTNode extends ASTNode {
 				AspectTools.addChild(ruleOrFuncElemNode, new Node(null, "@", astn.getScannerInfo(), Node.OPERATOR_NODE));
 				AspectTools.addChild(ruleOrFuncElemNode, "alpha", astn.cloneTree());
 				if (!binding.addBinding("proceed", ruleOrFuncElemNode))
-					throw new CoreASMError("Name proceed already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.getFirst().getToken(), this);
+					throw new CoreASMError("Name proceed already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.unparseTree(), this);
 				int numProceedParameters = 0;
 				for (ASTNode arg : fnNode.getArguments()) {
 					if (Kernel.GR_ID.equals(arg.getGrammarRule())) {
@@ -105,7 +105,7 @@ public class AdviceASTNode extends ASTNode {
 						arg = functionRuleTermNode;
 					}
 					if (!binding.addBinding("p" + (numProceedParameters + 1), arg))
-						throw new CoreASMError("Name p" + (numProceedParameters + 1) + " already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.getFirst().getToken(), this);
+						throw new CoreASMError("Name p" + (numProceedParameters + 1) + " already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.unparseTree(), this);
 					numProceedParameters++;
 				}
 				ensureProceedParameters(numProceedParameters);
