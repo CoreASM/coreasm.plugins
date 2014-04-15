@@ -38,34 +38,37 @@ public class BinOrASTNode extends PointCutASTNode {
 	
 	@Override
 	public Binding matches(ASTNode compareToNode) throws AspectException {
-		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
+		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
 		//just one node which must be a BinAndASTNode according to the grammar;
 		//return the result of the child node.
-		if (children.size()==1 )
-			if ( this.getFirstChild() instanceof BinAndASTNode ) 
+		if (children.size() == 1)
+			if (this.getFirstChild() instanceof BinAndASTNode)
 				return this.getFirstChild().matches(compareToNode);
-			else if ( this.getFirstChild().getGrammarRule().equals(AspectTools.RULESIGNATURE) )
+			else if (this.getFirstChild().getGrammarRule().equals(AspectTools.RULESIGNATURE))
 				//exchange with pointcut from namedpointcut
 				return new Binding(compareToNode, this);
-			else //error!!! \todo errorhandling
+			else
+				//error!!! \todo errorhandling
 				return new Binding(compareToNode, this);
 		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
-		else if (children.size()==2 && 
-				this.getFirstChild() instanceof BinAndASTNode && 
+		else if (children.size() == 2 &&
+				this.getFirstChild() instanceof BinAndASTNode &&
 				this.getSecondChild() instanceof BinOrASTNode)
-			{
-				Binding firstChildBinding, secondChildBinding;
-				firstChildBinding = this.getFirstChild().matches(compareToNode);
-				secondChildBinding = this.getSecondChild().matches(compareToNode);
-				//compute resulting binding if at least one matching has been succesfull (i.e. a binding exists)
-                Binding resultingBinding = new Binding(firstChildBinding, secondChildBinding, this);
+		{
+			Binding firstChildBinding, secondChildBinding;
+			firstChildBinding = this.getFirstChild().matches(compareToNode);
+			secondChildBinding = this.getSecondChild().matches(compareToNode);
+			//compute resulting binding if at least one matching has been succesfull (i.e. a binding exists)
+			Binding resultingBinding = new Binding(firstChildBinding, secondChildBinding, this);
 
-                //todo null check for resulting bindings of children
-				if (firstChildBinding.exists()) resultingBinding = new Binding(compareToNode, this, firstChildBinding.getBinding());
-				else if (secondChildBinding.exists()) resultingBinding = new Binding(compareToNode, this, secondChildBinding.getBinding());
-                else
-                    new Binding(compareToNode, this);
-                return resultingBinding;
+			//todo null check for resulting bindings of children
+			if (firstChildBinding.exists())
+				resultingBinding = new Binding(compareToNode, this, firstChildBinding.getBinding());
+			else if (secondChildBinding.exists())
+				resultingBinding = new Binding(compareToNode, this, secondChildBinding.getBinding());
+			else
+				new Binding(compareToNode, this);
+			return resultingBinding;
 		}
 		else
 			return new Binding(compareToNode, this);
