@@ -549,8 +549,33 @@ public class AoASMPlugin extends Plugin
 			/* Parser for cflow expression */
 			Parser<Node> cFlowParser = // cflow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOW, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
-					pTools.getOprParser(")")).map(
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")"),
+					Parsers.array(
+							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
+							Parsers.or(
+									idParser,
+									stringParser
+									)
+							).optional(),
+					Parsers.array(
+							Parsers.or(
+									pTools.getKeywParser("with", PLUGIN_NAME),
+									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
+									),
+							Parsers.or(
+									pTools.getKeywParser("result", PLUGIN_NAME),
+									pTools.getKeywParser("return", PLUGIN_NAME)
+									)
+							).optional()
+					).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
@@ -574,17 +599,40 @@ public class AoASMPlugin extends Plugin
 			/* Parser for cflow below expression */
 			Parser<Node> cFlowBelowParser = // cflowbelow(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWBELOW, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
-					pTools.getOprParser(")")).map(
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")"),
+					Parsers.array(
+							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
+							Parsers.or(
+									idParser,
+									stringParser
+									)
+							).optional(),
+					Parsers.array(
+							Parsers.or(
+									pTools.getKeywParser("with", PLUGIN_NAME),
+									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
+									),
+							Parsers.or(
+									pTools.getKeywParser("result", PLUGIN_NAME),
+									pTools.getKeywParser("return", PLUGIN_NAME)
+									)
+							).optional()
+					).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
 							CFlowBelowASTNode node = new CFlowBelowASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							// ((Node) ((Object[]) from[0])[0])
-							// .getScannerInfo());
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
 							addChildren(node, from);
 							return node;
 						}
@@ -601,8 +649,32 @@ public class AoASMPlugin extends Plugin
 			/* Parser for cflow top expression */
 			Parser<Node> cFlowTopParser = // cflowtop(pointCutParser)
 			Parsers.array(pTools.getKeywParser(KW_CFLOWTOP, PLUGIN_NAME),
-					pTools.getOprParser("("), refBinOrParser.lazy(),
-					pTools.getOprParser(")")).map(
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")"),
+					Parsers.array(
+							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
+							Parsers.or(
+									idParser,
+									stringParser
+									)
+							).optional(),
+					Parsers.array(
+							Parsers.or(
+									pTools.getKeywParser("with", PLUGIN_NAME),
+									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
+									),
+							Parsers.or(
+									pTools.getKeywParser("result", PLUGIN_NAME),
+									pTools.getKeywParser("return", PLUGIN_NAME)
+									)
+							).optional()).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
 						public Node map(Object[] from) {
