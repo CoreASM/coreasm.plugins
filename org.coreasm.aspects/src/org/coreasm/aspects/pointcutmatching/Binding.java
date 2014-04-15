@@ -33,7 +33,7 @@ public class Binding {
 	}
 
 	/**
-	 * Create one consistent binding by merging to existing bindings
+	 * Create one consistent binding by unifying two existing bindings
 	 * 
 	 * @param baseBinding
 	 * @param mergeBinding
@@ -44,16 +44,15 @@ public class Binding {
 		binding = new HashMap<String, ASTNode>();
 		if (baseBinding.exists() && mergeBinding.exists()) {
 			for (Entry<String, ASTNode> entry : baseBinding.getBinding().entrySet()) {
-				if (!addBinding(entry.getKey(), (ASTNode) entry.getValue())) {
+				if (!addBinding(entry.getKey(), entry.getValue())) {
 					binding = null;
 					return;
 				}
 			}
+			//add unique bindings from mergeBinding into the resulting binding
 			for (Entry<String, ASTNode> entry : mergeBinding.getBinding().entrySet()) {
-				if (!addBinding(entry.getKey(), (ASTNode) entry.getValue())) {
-					binding = null;
-					return;
-				}
+				if (!binding.containsKey(entry.getKey()))
+					addBinding(entry.getKey(), entry.getValue());
 			}
 		}
 		else
