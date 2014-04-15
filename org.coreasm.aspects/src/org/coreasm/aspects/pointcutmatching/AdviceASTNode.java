@@ -6,6 +6,7 @@ package org.coreasm.aspects.pointcutmatching;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -195,6 +196,32 @@ public class AdviceASTNode extends ASTNode {
 	}
 
 	/**
+	 * remove bindings created by dynamic poincut constructs from all bindings
+	 */
+	public void removeDynamicBindingParameters() {
+		for (Binding binding : bindings.values()) {
+			//remove parameters from advice which have a null binding. These bindings are used for dynamic constructs like cflow.
+			List<ASTNode> parameter = getParameters();
+			ListIterator<ASTNode> it = parameter.listIterator(parameter.size());
+			while (it.hasPrevious())
+			{
+				ASTNode param = it.previous();
+				if (binding.hasBindingPartner(param.getToken()) && binding.getBindingPartner(param.getToken()) == null)
+				{
+					Node predecessor = param.removeFromTree();
+					Node successor = predecessor.getNextCSTNode();
+					if ("(".equals(predecessor.getToken()) && ")".equals(successor.getToken())) {
+						predecessor.removeFromTree();
+						successor.removeFromTree();
+					}
+					else if (",".equals(predecessor.getToken()))
+						predecessor.removeFromTree();
+				}
+			}
+		}
+	}
+
+	/**
 	 * transform the given advice ASTNode into a rule declaration ASTNode
 	 * 
 	 * @param advice
@@ -274,7 +301,7 @@ public class AdviceASTNode extends ASTNode {
 				}
 				paramNames.add(param.getToken());
 			}
-			for (String bindingKey : binding.binding.keySet()) {
+			for (String bindingKey : binding.getBinding().keySet()) {
 				if (!paramNames.contains(bindingKey))
 					AspectTools.getCapi().warning(new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "The pointcut parameter " + bindingKey + " in aspect " + getRealName() + " is unbound!", this.getFirst().getFirst()));
 			}
@@ -305,6 +332,8 @@ public class AdviceASTNode extends ASTNode {
 			ASTNode bindingPartner = binding.getBindingPartner(node.getToken());
 			if (bindingPartner != null)
 				node.replaceWith(bindingPartner);
+			else
+				node.removeFromTree();
 		}
 
 		for (ASTNode child : node.getAbstractChildNodes())

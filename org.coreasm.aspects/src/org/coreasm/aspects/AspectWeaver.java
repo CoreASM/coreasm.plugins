@@ -543,6 +543,9 @@ public class AspectWeaver {
 		if (node instanceof AdviceASTNode) {
 			AdviceASTNode advice = (AdviceASTNode) node;
 
+			//cleanup bindings by removing bindings with null created by dynamic joinpoint constructs like cflow
+			advice.removeDynamicBindingParameters();
+
 			//a) add runtime condition of pointcuts to advice body
 			// 1) create condition ASTNode with runtime expressions from
 			// pointcuts

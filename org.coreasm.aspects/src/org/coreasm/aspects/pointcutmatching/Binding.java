@@ -18,7 +18,7 @@ public class Binding {
 	
 	private final ASTNode compareToNode;
 	private final PointCutASTNode astNode;
-	HashMap<String, ASTNode> binding;
+	private HashMap<String, ASTNode> binding;
 
     public Binding(ASTNode compareToNode, PointCutASTNode astNode, HashMap<String, ASTNode> binding){
         this.compareToNode = compareToNode;
