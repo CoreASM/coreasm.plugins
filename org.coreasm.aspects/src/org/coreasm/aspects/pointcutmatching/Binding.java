@@ -6,8 +6,9 @@ package org.coreasm.aspects.pointcutmatching;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.coreasm.aspects.utils.AspectTools;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.Node;
 
 /**
  * @author marcel
@@ -31,44 +32,33 @@ public class Binding {
 		this.binding = null;
 	}
 
-    /**
-     * Create one consistent binding by merging to existing bindings
-     * @param baseBinding
-     * @param mergeBinding
-     */
-    public Binding(Binding baseBinding, Binding mergeBinding, PointCutASTNode astNode) {
-        this.compareToNode = baseBinding.getCompareToNode();
-        this.astNode = astNode;
-        binding = new HashMap<String, ASTNode>();
-        if (baseBinding.exists() && mergeBinding.exists()){
-            for(Entry<String, ASTNode> entry : baseBinding.getBinding().entrySet()){
-
-                //check if a variable that is used in both bindings binds to the same asm construct in both cases
-                if ( mergeBinding.getBinding().containsKey(entry.getKey()) )
-                    if ( AspectTools.node2String(mergeBinding.getBindingPartner(entry.getKey())).equals(
-                            AspectTools.node2String(entry.getValue())
-                    ) ) //add
-                        binding.put(entry.getKey(), (ASTNode)entry.getValue().cloneTree());
-                    else {
-                        //inconsistent binding -> exit constructor
-                        binding = null;
-                        return;
-                    }
-                else
-                    //include not common bindings from baseBinding into the resulting binding
-                    binding.put(entry.getKey(), (ASTNode)entry.getValue().cloneTree());
-                ;
-            }
-            //include not common bindings from mergeBinding into the resulting binding
-            for(Entry<String, ASTNode> entry : mergeBinding.getBinding().entrySet())   {
-                if ( ! binding.containsKey(entry.getKey() ) ){
-                    binding.put(entry.getKey(), (ASTNode)entry.getValue().cloneTree());
-                }
-            }
-        }
-        else
-            binding = null;
-    }
+	/**
+	 * Create one consistent binding by merging to existing bindings
+	 * 
+	 * @param baseBinding
+	 * @param mergeBinding
+	 */
+	public Binding(Binding baseBinding, Binding mergeBinding, PointCutASTNode astNode) {
+		this.compareToNode = baseBinding.getCompareToNode();
+		this.astNode = astNode;
+		binding = new HashMap<String, ASTNode>();
+		if (baseBinding.exists() && mergeBinding.exists()) {
+			for (Entry<String, ASTNode> entry : baseBinding.getBinding().entrySet()) {
+				if (!addBinding(entry.getKey(), (ASTNode) entry.getValue())) {
+					binding = null;
+					return;
+				}
+			}
+			for (Entry<String, ASTNode> entry : mergeBinding.getBinding().entrySet()) {
+				if (!addBinding(entry.getKey(), (ASTNode) entry.getValue())) {
+					binding = null;
+					return;
+				}
+			}
+		}
+		else
+			binding = null;
+	}
 
     //clear the binding, if a parameter matching fails during the matching process
 	public void clear() {
@@ -91,9 +81,23 @@ public class Binding {
 		else{
 			//if token of the already bound ASTNode is not equal to the current AstNode
 			//no unique, consistent binding for the given parameterOfArgsASTNode is possible
+			if (parameterOfCompareToNode == null && binding.get(parameterOfArgsASTNode) == null)
+				return true;
+			if (parameterOfCompareToNode == null || binding.get(parameterOfArgsASTNode) == null)
+				throw new CoreASMError(
+						"Name "
+								+ parameterOfArgsASTNode
+								+ " already bound to a different construct during pointcut matching between "
+								+ compareToNode.unparseTree()
+								+ ". Consistency check must be specified inside advice because it a runtime check.",
+						astNode.getChildNode(Node.DEFAULT_NAME));//astNode is a binAndAstNode and the only unmarked child is the keyword "and"
 			return parameterOfArgsASTNode.equals("_") ||
 					binding.get(parameterOfArgsASTNode).unparseTree().equals(parameterOfCompareToNode.unparseTree());
 		}
+	}
+
+	public boolean hasBindingPartner(String key) {
+		return binding.containsKey(key);
 	}
 
 	public ASTNode getBindingPartner(String key){

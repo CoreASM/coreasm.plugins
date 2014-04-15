@@ -258,13 +258,13 @@ public class AdviceASTNode extends ASTNode {
 			Pattern pattern = Pattern.compile("p[0-9]+");
 			List<String> paramNames = new LinkedList<String>();
 			for (ASTNode param : getParameters()) {
-				if (binding.getBindingPartner(param.getToken()) == null) {
+				if (!binding.hasBindingPartner(param.getToken())) {
 					if ("around".equals(getLocator())) {
 						if (pattern.matcher(param.getToken()).find())
 							binding.addBinding(param.getToken(), new ASTNode(Kernel.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "undef", param.getScannerInfo(), Node.KEYWORD_NODE));
 						else if ("pn".equals(param.getToken())) {
 							int numProceedParameters = 0;
-							while (binding.getBindingPartner("p" + (numProceedParameters + 1)) != null)
+							while (binding.hasBindingPartner("p" + (numProceedParameters + 1)))
 								numProceedParameters++;
 							binding.addBinding(param.getToken(), new ASTNode(NumberPlugin.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "" + numProceedParameters, param.getScannerInfo(), Node.KEYWORD_NODE));
 						}
@@ -296,21 +296,20 @@ public class AdviceASTNode extends ASTNode {
 	 * @param binding
 	 */
 	private void cloneWithBinding(ASTNode node, Binding binding) {
-		
-		if (binding.getBindingPartner(node.getToken())!=null && //a binding for the current token exists
-				node.getParent().getGrammarRule().equals("RuleSignature") && //node is part of the advice signature
-				node.getParent().getFirst()!=node)	//but node is not the name of the signature
-			{
-				ASTNode parentNode = node.getParent();
-				Node insertionReference = node.removeFromTree();
-				//children are named "beta" according to ..kernel.RuleDeclarationParseMap.java
-				parentNode.addChildAfter(insertionReference, "beta", binding.getBindingPartner(node.getToken()));
-			}
-		
-			for(ASTNode child : node.getAbstractChildNodes())
-				cloneWithBinding(child, binding);
 
-		
+		if (binding.hasBindingPartner(node.getToken()) && //a binding for the current token exists
+				node.getParent().getGrammarRule().equals("RuleSignature") && //node is part of the advice signature
+				node.getParent().getFirst() != node)	//but node is not the name of the signature
+		{
+			//children are named "beta" according to ..kernel.RuleDeclarationParseMap.java
+			ASTNode bindingPartner = binding.getBindingPartner(node.getToken());
+			if (bindingPartner != null)
+				node.replaceWith(bindingPartner);
+		}
+
+		for (ASTNode child : node.getAbstractChildNodes())
+			cloneWithBinding(child, binding);
+
 	}
 
 	/**
