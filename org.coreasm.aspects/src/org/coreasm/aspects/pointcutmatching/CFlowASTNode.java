@@ -5,12 +5,9 @@ package org.coreasm.aspects.pointcutmatching;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.regex.PatternSyntaxException;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
-import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
@@ -56,46 +53,28 @@ public class CFlowASTNode extends PointCutASTNode {
 		FunctionRuleTermNode fnNode = (FunctionRuleTermNode) compareToNode;
 		if (!AspectTools.isRuleName(fnNode.getName()))
 			return new Binding(compareToNode, this);
-		Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
-		String pointCutToken = null;
 		Binding resultingBinding = null;
 		Node node;
-		ASTNode astn = fnNode.getFirst();
 		// \todo add bindings
 		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
-		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
+		for (node = this.getFirstCSTNode(); node != null; node = node.getNextCSTNode()) {
 			if (node instanceof PointCutParameterNode) {
 				//check if the name/regEx of the pointcut matches the compareToNode
 				PointCutParameterNode parameterNode = (PointCutParameterNode) node;
-				//get pointcut's token
-				pointCutToken = parameterNode.getPattern();
-
 				//compare the token of the given node with this node's token by using regular expressions
 				//if a string is given instead of an id node, the regular expression has to be generated
-				try {
-					String name = parameterNode.getName();
-					if (name == null) {
-						if (resultingBinding == null)
-							resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
-					}
-					else {
-						if (resultingBinding == null)
-							resultingBinding = new Binding(compareToNode, this);
-						resultingBinding.addBinding(name, null);
-					}
+				String name = parameterNode.getName();
+				if (name == null) {
+					if (resultingBinding == null)
+						resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
 				}
-				catch (PatternSyntaxException e) {
-					//if the pointcut token is no regular expression throw an exception towards the weaver
-					throw new MatchingError(pointCutToken, this, e.getMessage());
+				else {
+					if (resultingBinding == null)
+						resultingBinding = new Binding(compareToNode, this);
+					resultingBinding.addBinding(name, null);
 				}
-				astn = (argIterator.hasNext() ? argIterator.next() : null);
 			}
 		}
-
-		// find next ASTNode
-		Node parameterNode = node;
-		while (parameterNode != null && !(parameterNode instanceof ASTNode))
-			parameterNode = parameterNode.getNextCSTNode();
 
 		while (node != null) {
 			if (node.getConcreteNodeType().equals("keyword") && node.getToken().equals("by")) {
