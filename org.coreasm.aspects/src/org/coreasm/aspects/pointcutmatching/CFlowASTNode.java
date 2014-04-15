@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
@@ -44,9 +45,12 @@ public class CFlowASTNode extends PointCutASTNode {
 	@Override
 	public String generateExpressionString() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
-		if (children.size()==1 && children.get(0) instanceof PointCutASTNode)
+		if (children.size() >= 1 && children.get(0) instanceof PointCutParameterNode)
 		{
-			return "( "+((PointCutASTNode)children.get(0)).generateExpressionString()+" )";
+			//			AspectWeaver.getInstance().getControlAPI()
+			//					.warning(AoASMPlugin.PLUGIN_NAME, "Generation of expression not implemented yed for cflow",
+			//							this, AspectWeaver.getInstance().getControlAPI().getInterpreter());
+			return "matchingRuleCallsInsideCallstack(" + AspectTools.getRuleSignatureAsCoreASMList(this) + ") != []";//"( "+((PointCutASTNode)children.get(0)).generateExpressionString()+" )";
 		}
 		else throw new CoreASMError("generation of expression failed for cflow", this);
 	}
