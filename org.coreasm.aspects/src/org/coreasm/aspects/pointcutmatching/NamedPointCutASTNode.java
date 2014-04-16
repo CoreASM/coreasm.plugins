@@ -52,15 +52,5 @@ public class NamedPointCutASTNode extends ASTNode {
 		}
 		return params;
 	}
-	
-	@Override
-	public Binding matches(ASTNode compareToNode) throws AspectException {
-		throw new MatchingError("no pattern for matching", this, "NamedPointcut should not occcur during matching");
-	}
-	
-	@Override
-	public String generateExpressionString() {
-		return AspectTools.node2String(this);		
-	}
 
 }
