@@ -3,7 +3,7 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.coreasm.aspects.errorhandling.AspectException;
@@ -87,6 +87,16 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 			collectParameters(child, parameters);
 	}
 
+	@Override
+	public HashSet<String> getLocalIds() {
+		HashSet<String> localIds = new HashSet<String>();
+		for (PointCutParameterNode param : this.getParameters()) {
+			if (param.getName() != null)
+				localIds.add(param.getName());
+		}
+		return localIds;
+	}
+
 	/**
 	 *  returns null, because this node holds no expression
 	 *   
@@ -104,45 +114,6 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 		return NODE_TYPE;
 	}
 	
-	/**
-	 * should contain the string representation of the node kind, e.g. "PointCutASTNode" 
-	 */
-	
-	/**
-	 * hashmap containing string representation of expressions and their source PointCutASTNodes
-	 */
-	private static HashMap <String, LinkedList<ASTNode>> expressions;
-	
-	/**
-	 * adds the expression to the expressions static hashmap of PointCutASTNode if not already included
-	 * 
-	 * @param expression
-	 * @param candidate
-	 */
-	@Override
-	public void addExpression(ASTNode candidate, String expression){
-		if (expression!=null && this!=null){
-			LinkedList<ASTNode> nodesWithSameExpression=new LinkedList<ASTNode>();
-			
-			if (PointCutASTNode.expressions.containsKey(expression))
-				nodesWithSameExpression=PointCutASTNode.expressions.get(expression);
-			if (!nodesWithSameExpression.contains(this))
-				nodesWithSameExpression.add(this);
-			if(!nodesWithSameExpression.isEmpty())
-			PointCutASTNode.expressions.put(expression, nodesWithSameExpression);
-		}
-	}
-	
-	/**
-	 * returns the hashmap of expressions and their source nodes
-	 * 
-	 * @return
-	 */
-	@Override
-	public HashMap <String, LinkedList<ASTNode>> getExpressions(){
-		return PointCutASTNode.expressions;
-	}
-
 	/**
 	 * 
 	 * @return

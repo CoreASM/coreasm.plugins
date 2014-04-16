@@ -7,9 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.coreasm.aspects.AoASMPlugin;
-import org.coreasm.aspects.errorhandling.AspectException;
-import org.coreasm.aspects.errorhandling.MatchingError;
-import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
@@ -19,7 +16,7 @@ import org.coreasm.engine.interpreter.ScannerInfo;
  * @author marcel
  *
  */
-public class NamedPointCutASTNode extends PointCutASTNode {
+public class NamedPointCutASTNode extends ASTNode {
 
 	public static final String NODE_TYPE = NamedPointCutASTNode.class.getSimpleName();
 	/**
