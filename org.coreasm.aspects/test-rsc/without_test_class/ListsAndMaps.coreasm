@@ -1,6 +1,6 @@
 /* 
  * Examples of using functions defined on lists, maps, and sets
- * @require "map([{3, 2, 1}, {30, 20, 10}], @foo) is [{2, 4, 8}, {1024, 1048576, 1073741824}]\nmapping the map {1.5->2, 3->d, a->b, 1->2} through 'reverse' gives us {d->3, b->a, 2->1.5}\nNatural numbers in [a, 1.5, 2, 3.4, 5] are [2, 5]\nfiltering the map {1.5->5, 3->d, a->b, 1->2} gives us {3->d, 1->2}\nfold( [a, b, c] , concat, " it goes ") is: "it goes  c b a"\n[1, m] is [1 | [m]]  and nth([m, 1], 2) = m\nIf l = [a, b, a, d, e, f, g], we have:\n  take(l, 3) : [a, b, a]\n  drop(l, 5) : [f, g]\n  size(l) : 7\n  last(l) : g\n  reverse(l) : [g, f, e, d, a, b, a]\n  indexes(2, l) : undef\n"
+ * @require "zip([a0, a1, a2], [b0, b1, b2]) is [[a0, b0], [a1, b1], [a2, b2]]\nmap([{3, 2, 1}, {30, 20, 10}], @foo) is [{2, 4, 8}, {1024, 1048576, 1073741824}]\nmapping the map {1.5->2, 3->d, a->b, 1->2} through 'reverse' gives us {d->3, b->a, 2->1.5}\nNatural numbers in [a, 1.5, 2, 3.4, 5] are [2, 5]\nfiltering the map {1.5->5, 3->d, a->b, 1->2} gives us {3->d, 1->2}\nfold( [a, b, c] , concat, " it goes ") is: "it goes  c b a"\n[1, m] is [1 | [m]]  and nth([m, 1], 2) = m\nIf l = [a, b, a, d, e, f, g], we have:\n  take(l, 3) : [a, b, a]\n  drop(l, 5) : [f, g]\n  size(l) : 7\n  last(l) : g\n  reverse(l) : [g, f, e, d, a, b, a]\n  indexes(2, l) : undef\n"
  */
  
 CoreASM ListsAndMaps
@@ -28,6 +28,10 @@ init TestAll
 
 rule TestAll =
 	seqblock
+
+		let L0 = ["a0","a1","a2"], L1 = ["b0","b1","b2"] in
+			print "zip("+L0+", "+L1+") is "+zip(L0,L1)
+
 	    // the 'map' function
 		let l = [ {1, 2, 3}, {10, 20, 30} ] in
 			print "map(" + l + ", @foo) is " + map(l, @foo)
