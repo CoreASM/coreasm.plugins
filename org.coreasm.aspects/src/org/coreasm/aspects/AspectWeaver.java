@@ -550,7 +550,7 @@ public class AspectWeaver {
 			// 1) create condition ASTNode with runtime expressions from
 			// pointcuts
 			ASTNode conditionASTNode = null;
-			String condition = advice.getPointCut().generateExpressionString();
+			String condition = advice.getPointCut().getCondition();
 			String ifThenConstruct = "if (" + condition + ") then skip";
 
 			// get condition parser to parse the condition

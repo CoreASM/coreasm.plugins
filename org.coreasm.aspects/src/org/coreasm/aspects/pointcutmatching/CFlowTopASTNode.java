@@ -38,7 +38,7 @@ public class CFlowTopASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		// TODO Auto-generated method stub
 		return null;
 	}

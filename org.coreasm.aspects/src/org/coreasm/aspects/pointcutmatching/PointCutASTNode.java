@@ -93,7 +93,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 * @return a this method should return a string which can be used to weave runtime conditions for aspect matching
 	 */
 	@Override
-	public abstract String generateExpressionString();
+	public abstract String getCondition();
 	
 	/**
 	 * returns the type of the PointCutNnodeElement

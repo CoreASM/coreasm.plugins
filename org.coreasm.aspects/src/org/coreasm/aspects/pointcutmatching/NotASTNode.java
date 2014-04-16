@@ -51,7 +51,7 @@ public class NotASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public String generateExpressionString() {
-		return "not ( "+ this.getFirstChild().generateExpressionString() +" )";
+	public String getCondition() {
+		return "not ( "+ this.getFirstChild().getCondition() +" )";
 	}
 }

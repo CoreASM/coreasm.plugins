@@ -75,15 +75,15 @@ public class BinOrASTNode extends PointCutASTNode {
 	}
 	
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		if (children.size()==1 && children.get(0) instanceof BinAndASTNode )
-				return ((BinAndASTNode)children.get(0)).generateExpressionString();
+				return ((BinAndASTNode)children.get(0)).getCondition();
 		else if (children.size()==2 && 
 				children.get(0) instanceof BinAndASTNode && 
 				children.get(1) instanceof BinOrASTNode)
-			return ((BinAndASTNode)children.get(0)).generateExpressionString()+" or "+
-				((BinOrASTNode)children.get(1)).generateExpressionString();
+			return ((BinAndASTNode)children.get(0)).getCondition()+" or "+
+				((BinOrASTNode)children.get(1)).getCondition();
 		throw new CoreASMError("generation of expression failed", this);
 	}
 

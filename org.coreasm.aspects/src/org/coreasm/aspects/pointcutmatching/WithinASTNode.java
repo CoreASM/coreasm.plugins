@@ -206,7 +206,7 @@ public class WithinASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		if (callByAgent != null)
 			return "matches ( toString( self ) , \"" + callByAgent + "\" )";
 		return "true";

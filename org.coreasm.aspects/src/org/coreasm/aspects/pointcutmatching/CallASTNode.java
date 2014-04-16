@@ -207,7 +207,7 @@ public class CallASTNode extends PointCutASTNode {
 
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		//runtime condition for this call node
 		String condition = "";
 

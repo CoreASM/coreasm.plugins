@@ -25,6 +25,8 @@ public interface IPointCutASTNodeExpression {
 	 * @param candidate
 	 * @param expression
 	 */
+	public String getCondition();
+
 	public void addExpression(ASTNode candidate, String expression);
 	
 	/**
@@ -36,10 +38,11 @@ public interface IPointCutASTNodeExpression {
 	public HashMap <String, LinkedList<ASTNode>> getExpressions();
 	
 	/**
+	 * The tokens of local ids which are used to implement dynamically assigned
+	 * bindings, e.g. for cflow
 	 * 
-	 * @return
+	 * @return set of ids for local definitions
 	 */
-	public String generateExpressionString();
 
 	Binding matches(ASTNode compareToNode) throws AspectException;
 	

@@ -126,7 +126,7 @@ public class CFlowASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		String condition = "";
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
 		if (children.size() >= 1 && children.get(0) instanceof PointCutParameterNode)

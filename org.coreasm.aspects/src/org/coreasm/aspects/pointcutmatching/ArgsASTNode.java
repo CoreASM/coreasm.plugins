@@ -208,7 +208,7 @@ public class ArgsASTNode extends PointCutASTNode {
 //	}
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		// static condition which has already been checked
 		boolean withinCflow=false;
 		ASTNode node = this;

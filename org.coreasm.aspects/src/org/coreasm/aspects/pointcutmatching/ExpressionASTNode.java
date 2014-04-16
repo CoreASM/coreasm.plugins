@@ -47,12 +47,12 @@ public class ExpressionASTNode extends PointCutASTNode {
 	}
 
 	@Override
-	public String generateExpressionString() {
+	public String getCondition() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		if (this.getChildNodes().size()>1 && children.get(0) instanceof PointCutASTNode)
-			return "("+((PointCutASTNode)children.get(0)).generateExpressionString()+")";
+			return "("+((PointCutASTNode)children.get(0)).getCondition()+")";
 		else if (this.getChildNodes().size()==1 && children.get(0) instanceof PointCutASTNode)
-			return ((PointCutASTNode)children.get(0)).generateExpressionString();
+			return ((PointCutASTNode)children.get(0)).getCondition();
 		else throw new CoreASMError("generation of expression failed", this);
 	}
 
