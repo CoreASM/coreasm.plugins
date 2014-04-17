@@ -440,20 +440,21 @@ public class AspectWeaver {
 			//exchange
 			LinkedList<ASTNode> nptcdefs = AspectWeaver.getInstance().getAstNodes()
 					.get(NamedPointCutDefinitionASTNode.NODE_TYPE);
-			for (ASTNode nptcdef : nptcdefs) {
-				if (nptcdef instanceof NamedPointCutDefinitionASTNode) {
-					NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
-					if (definition.isDefinitionOf(nptc)) {
-						ASTNode parent = nptc.getParent();
-						Node positionToInsert = nptc.removeFromTree();
-						Node pointcut = cloneWithBinding(definition, nptc);
-						//pointcut.setParent(parent);//TODO add surrounding round brackets
-						AspectTools.addChildAfter(parent, positionToInsert, definition.getName(), pointcut);
-						substituted.add(definition.getName());
-						substituteNamedPointcuts(parent, substituted);
+			if (nptcdefs != null)
+				for (ASTNode nptcdef : nptcdefs) {
+					if (nptcdef instanceof NamedPointCutDefinitionASTNode) {
+						NamedPointCutDefinitionASTNode definition = (NamedPointCutDefinitionASTNode) nptcdef;
+						if (definition.isDefinitionOf(nptc)) {
+							ASTNode parent = nptc.getParent();
+							Node positionToInsert = nptc.removeFromTree();
+							Node pointcut = cloneWithBinding(definition, nptc);
+							//pointcut.setParent(parent);//TODO add surrounding round brackets
+							AspectTools.addChildAfter(parent, positionToInsert, definition.getName(), pointcut);
+							substituted.add(definition.getName());
+							substituteNamedPointcuts(parent, substituted);
+						}
 					}
 				}
-			}
 		}
 		else
 			for (ASTNode child : astnode.getAbstractChildNodes())
