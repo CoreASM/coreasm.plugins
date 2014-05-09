@@ -21,7 +21,6 @@ import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.GraphViz;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
-import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
 import org.coreasm.engine.ControlAPI;
@@ -179,50 +178,6 @@ public class AspectTools {
 
 	/** used to remember the last path that has been selected to store a file */
 	private static File lastChoosenFile;
-
-	/**
-	 * Convert a given AST-node into a String representation.
-	 * 
-	 * @param node
-	 *            to convert start from the string conversion of the AST
-	 * @return The String representation of the given ASTNode
-	 */
-	public static String node2String(ASTNode node) {
-		String output = "";
-		if (node.getGrammarRule().equals("KernelTerms")
-		        || node.getGrammarRule().equals("BooleanTerm")
-		        || node.getGrammarRule().equals("NUMBER")
-		        || node.getGrammarRule().equals("ID")) {
-			output = node.getToken();
-		}
-		else if (node.getGrammarRule().equals("StringTerm")) {
-			output = "\"" + node.getToken() + "\"";
-		}
-		else if (node.getGrammarRule().equals("FunctionRuleTerm") || node instanceof NamedPointCutASTNode) {
-			if (node.getAbstractChildNodes().size() == 1)
-				output = node.getFirst().getToken();
-			else {
-				output = node.getFirst().getToken() + "( ";
-				for (int i = 1; i < node.getAbstractChildNodes().size() - 1; i++) {
-					output = output + node2String(node.getAbstractChildNodes().get(i)) + ", ";
-				}
-				output = output
-				        + node2String(node.getAbstractChildNodes().get(node.getAbstractChildNodes().size() - 1)) + " )";
-			}
-		}
-		else if (node.getGrammarRule().equals(PointCutParameterNode.class.getSimpleName())) {
-			PointCutParameterNode param = (PointCutParameterNode) node;
-			output = param.getPattern();
-		}
-		else if (node.getGrammarRule().equals("RuleOrFunctionElementTerm")) {
-			output = "@" + node.getFirst().getToken();
-		}
-		else {
-			throw new CoreASMError("No conversion rule node2String for GrammarRule \"" + node.getGrammarRule() + "\"",
-			        node);
-		}
-		return output;
-	}
 
 	public static String getRuleSignatureAsCoreASMList(PointCutASTNode astNode) {
 		String ruleSignatureAsCoreASMList = "[";

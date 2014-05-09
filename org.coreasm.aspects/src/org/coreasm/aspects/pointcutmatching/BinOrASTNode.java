@@ -82,8 +82,8 @@ public class BinOrASTNode extends PointCutASTNode {
 		else if (children.size()==2 && 
 				children.get(0) instanceof BinAndASTNode && 
 				children.get(1) instanceof BinOrASTNode)
-			return ((BinAndASTNode)children.get(0)).getCondition()+" or "+
-				((BinOrASTNode)children.get(1)).getCondition();
+			return "(" + ((BinAndASTNode) children.get(0)).getCondition() + " or " +
+					((BinOrASTNode) children.get(1)).getCondition() + ")";
 		throw new CoreASMError("generation of expression failed", this);
 	}
 

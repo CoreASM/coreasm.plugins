@@ -49,8 +49,10 @@ public class ExpressionASTNode extends PointCutASTNode {
 	@Override
 	public String getCondition() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
+		//case '(' BinOr ')'
 		if (this.getChildNodes().size()>1 && children.get(0) instanceof PointCutASTNode)
 			return "("+((PointCutASTNode)children.get(0)).getCondition()+")";
+		//case PointcutTerm
 		else if (this.getChildNodes().size()==1 && children.get(0) instanceof PointCutASTNode)
 			return ((PointCutASTNode)children.get(0)).getCondition();
 		else throw new CoreASMError("generation of expression failed", this);

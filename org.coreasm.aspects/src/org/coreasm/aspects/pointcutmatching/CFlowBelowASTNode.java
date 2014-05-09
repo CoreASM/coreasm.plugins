@@ -36,11 +36,4 @@ public class CFlowBelowASTNode extends PointCutASTNode {
 	public Binding matches(ASTNode compareToNode) {
 		return new Binding(compareToNode, this);
 	}
-
-	@Override
-	public String getCondition() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

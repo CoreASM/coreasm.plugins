@@ -3,26 +3,26 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.errorhandling.MatchingError;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
+import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
+import org.coreasm.engine.kernel.Kernel;
 
 /**
  * @author Marcel Dausend
  *
  */
 public class ArgsASTNode extends PointCutASTNode {
-	
-	//a binding between the parameters of a compareToNode and this args expression is stored to ease weaving
-	private HashMap<ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
-	private Binding parameterBinding;
 	
 	private static final long serialVersionUID = 1L;
 	private static final String NODE_TYPE = ArgsASTNode.class.getSimpleName();
@@ -35,205 +35,83 @@ public class ArgsASTNode extends PointCutASTNode {
 		super(self);
 	}
 	
+	/**
+	 * 
+	 * @param scannerInfo
+	 */
 	public ArgsASTNode(ScannerInfo scannerInfo) {
 		super(AoASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, ArgsASTNode.NODE_TYPE, null, scannerInfo);
 	}
-	/**
-	 *  returns the bindings which exist for the given node
-	 *  if the complete pointcut expression has been evaluated to true
-	 * @param compareToNode binding is returned
-	 * @return bindings for compareToNode
-	 */
-	public Binding getBindings(ASTNode compareToNode) {
-		return bindings.get(compareToNode);
-	}
 	
 	@Override
-	/*
-	 * (non-Javadoc)
-	 * @see org.coreasm.aspects.pointcutmatching.PointCutASTNode#matches(org.coreasm.engine.interpreter.ASTNode)
-	 */
 	public Binding matches(ASTNode compareToNode) {
-		
-		//create a new instance of an argument binding for this compareToNode
-		parameterBinding = new Binding(compareToNode, this);
-		
-		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
+		FunctionRuleTermNode fnNode = (FunctionRuleTermNode) compareToNode;
+		Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
+		String pointCutToken = null;
+		Binding resultingBinding = null;
+		Node node;
+		ASTNode astn = fnNode.getFirst();
+		// skip function name
+		astn = astn.getNext();
+		// \todo add bindings
+		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
+		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
+			if (node instanceof PointCutParameterNode) {
+				//check if the name/regEx of the pointcut matches the compareToNode
+				PointCutParameterNode parameterNode = (PointCutParameterNode) node;
+				//get pointcut's token
+				pointCutToken = parameterNode.getPattern();
 
-		ArrayList<ASTNode> compareChildren = (ArrayList<ASTNode>)compareToNode.getFirst().getAbstractChildNodes();
-		//remove id node of the macro call rule
-		//TODO keep name in binding for later use with proceed
-		compareChildren.remove(0);
+				//compare the token of the given node with this node's token by using regular expressions
+				//if a string is given instead of an id node, the regular expression has to be generated
+				try {
+					//check if the pointcut token is a regular expression
+					if (Pattern.compile(pointCutToken) != null) {
+						if (!Pattern.matches(pointCutToken, (astn instanceof FunctionRuleTermNode ? astn.getFirst()
+								.getToken() : astn.getToken())))
+							return new Binding(compareToNode, this);
 
-		//check if both macro call and this have the same arity
-		if (children.size()==compareChildren.size())
-			//check if each parameter of the call has the same type like the one of this args
-			for (int i = 0;i<children.size();i++) {
-				//if any parameter does not have the same type, return false
-				if ( children.get(i) instanceof FunctionRuleTermNode &&
-					compareChildren.get(i) instanceof FunctionRuleTermNode )
-				{	
-					if(! areASTNodesBindable((FunctionRuleTermNode)children.get(i), (FunctionRuleTermNode)compareChildren.get(i)))
-						return new Binding(compareToNode, this);
-				}
-				else if(! areASTNodesBindable(children.get(i), compareChildren.get(i)))
-					return new Binding(compareToNode, this);
-			}
-		else
-			return new Binding(compareToNode, this);
-		//all params of args match the compareToNode macro call
-		LinkedList<ArgsASTNode> returnList = new LinkedList<ArgsASTNode>();
-		returnList.add(this);
-		{
-			//if the matching is successful, add store binding
-			bindings.put(compareToNode, parameterBinding);
-			return parameterBinding;
-		}
-	}
-	
-	/**
-	 * this method checks if both function rule terms (of a macro rule call) are bindable
-	 * @param one
-	 * @param two
-	 * @return
-	 */
-	private boolean areASTNodesBindable(FunctionRuleTermNode one, FunctionRuleTermNode two){
-		if (one.getAbstractChildNodes().size()== two.getAbstractChildNodes().size())
-		{
-			//bind function name of one to function name of two
-			if (! parameterBinding.addBinding(one.getName(),two))
-			{
-				parameterBinding.clear();
-				return false;
-			}
-			//from one (leave out the id node of the rule function node; 
-			//check if all parameters are bindable
-			for (int i = 1; i < one.getAbstractChildNodes().size(); i++) {
-				//if any parameter does not have the same type, return false
-				if (one.getAbstractChildNodes().get(i) instanceof FunctionRuleTermNode &&
-					two.getAbstractChildNodes().get(i) instanceof FunctionRuleTermNode	)
-					if (! areASTNodesBindable(
-							(FunctionRuleTermNode)one.getAbstractChildNodes().get(i), 
-							(FunctionRuleTermNode)two.getAbstractChildNodes().get(i)
-							)
-						)
-					{
-						parameterBinding.clear();
-						return false;
+						String name = parameterNode.getName();
+						if (name == null) {
+							if (resultingBinding == null)
+								resultingBinding = new Binding(compareToNode, this, new HashMap<String, ASTNode>());
+						}
+						else {
+							if (resultingBinding == null)
+								resultingBinding = new Binding(compareToNode, this);
+							if (Kernel.GR_ID.equals(astn.getGrammarRule())) {
+								FunctionRuleTermNode functionRuleTermNode = new FunctionRuleTermNode(
+										astn.getScannerInfo());
+								AspectTools.addChild(functionRuleTermNode, "alpha", astn.cloneTree());
+								astn = functionRuleTermNode;
+							}
+							if (!resultingBinding.addBinding(name, astn))
+								throw new CoreASMError("Name " + name
+										+ " already bound to a different construct during pointcut matching between "
+										+ compareToNode.unparseTree() + " and " + this.unparseTree(), this);
+						}
 					}
-					else if (! areASTNodesBindable(
-						one.getAbstractChildNodes().get(i), 
-						two.getAbstractChildNodes().get(i)
-						)
-					)
-				{
-						parameterBinding.clear();
-					return false;
 				}
-			}
-			return true;
-		}
-		else
-			parameterBinding.clear();
-			return false;
-	}
-	
-	private boolean areASTNodesBindable(ASTNode one, ASTNode two){
-		
-		String nameOfOne = one.unparseTree();
-		String nameOfTwo = two.unparseTree();
-		
-		/**
-		 * define cases when binding is not possible
-		 *
-		 *	binding is possible:
-		 *	ID -> any
-		 *	FunctionRuleTerm -> FunctionRuleTerm
-		 *	BooleanTerm -> BooleanTerm if equal
-		 *	StringTerm	-> StringTerm if equal
-		 *	KernelTerms -> KernelTerms if equal
-		 *	NUMBER	-> NUMBER	if equal
-		 *
-		 *	the case where a terminal node can be bound to either 
-		 *	a variable or a function is not taken into account:
-		 *	this would need modify the body of each advice and create seperate rules with conditions to check this bindings at runtime.
-		 *	That would mean, that the call of one and the same advice would lead to execution of different rules!
-		 */		
-		if (one.getGrammarRule().equals(two.getGrammarRule())) {
-			//the tokens must be the same in these cases
-			if (one.getGrammarRule().equals("NUMBER") ||
-				one.getGrammarRule().equals("StringTerm") ||
-				one.getGrammarRule().equals("BooleanTerm") ||
-				one.getGrammarRule().equals("KernelTerms") ) {
-				if (! nameOfOne.equals(nameOfTwo))
-				{	
-					parameterBinding.clear();
-					return false;
+				catch (PatternSyntaxException e) {
+					//if the pointcut token is no regular expression throw an exception towards the weaver
+					throw new MatchingError(pointCutToken, this, e.getMessage());
 				}
-			}else{
-				throw new CoreASMError(
-						"values comparision not yet implemented for the GrammarRule "
-								+ one.getGrammarRule());
+				astn = (argIterator.hasNext() ? argIterator.next() : null);
 			}
 		}
-		else if( one instanceof FunctionRuleTermNode && ! (two instanceof FunctionRuleTermNode) )
-		{
-			parameterBinding.clear();
-			return false;
-		}//TODO insert cas both are FunctionRuleTermNode
-		else if ( one.getGrammarRule().equals("FunctionRuleTerm") )
-			//can only bind to another function rule term
-			//\see areASTNodesBindable(FunctionRuleTermNode one, FunctionRuleTermNode two)
-			return false;
-		
-		//returns true if the new binding is possible, i.e. that this binding does not already exist
-		//use a clone node for the binding
-		return parameterBinding.addBinding(nameOfOne, (ASTNode)two.cloneTree());
-	}
-	
-//	/**
-//	 * this method returns an String expression which can be used to check if the parameters of the given candidate match the arguments of this ArgsASTNode
-//	 */
-//	public String generateExpressionString(ASTNode candidate) {
-//		String expression="";
-//		if(this.getAbstractChildNodes().size()==candidate.getFirst().getAbstractChildNodes().size()-1)
-//		for (int i = 0;i<this.getAbstractChildNodes().size();i++) {
-//			expression = expression.concat(
-//					"( "+AspectTools.node2String(this.getAbstractChildNodes().get(i))+" = "+AspectTools.node2String(candidate.getFirst().getAbstractChildNodes().get(i+1))+" )"
-//					);
-//			if (i < this.getAbstractChildNodes().size()-1 )
-//			expression= expression+" and ";
-//		}else expression = "false";
-//		return expression;
-//	}
 
-	@Override
-	public String getCondition() {
-		// static condition which has already been checked
-		boolean withinCflow=false;
-		ASTNode node = this;
-		while(!(node.getParent() instanceof AdviceASTNode)){
-			if (node instanceof CFlowASTNode || node instanceof CFlowBelowASTNode || node instanceof CFlowTopASTNode)
-				withinCflow =true;
-			node=node.getParent();
-		}
-		if (withinCflow) {
-			return "argsCall("+getRuleSignatureAsCoreASMList(this)+")!={}";
-		}else
-			return "true";
-	}
-	
-	private String getRuleSignatureAsCoreASMList(ArgsASTNode astNode){
-		String ruleSignatureAsCoreASMList = "[";
-		ASTNode param = astNode.getFirst();
-		while (param != null) {
-			ruleSignatureAsCoreASMList += AspectTools.node2String(param);
-			param = param.getNext();
-			if (param != null)
-				ruleSignatureAsCoreASMList += ", ";
-		}
+		// find next ASTNode
+		Node parameterNode = node;
+		while (parameterNode != null && !(parameterNode instanceof ASTNode))
+			parameterNode = parameterNode.getNextCSTNode();
 
-		ruleSignatureAsCoreASMList += " ]";
-		return ruleSignatureAsCoreASMList;
+		if (astn != null || parameterNode instanceof PointCutParameterNode)
+			return new Binding(compareToNode, this);
+
+		fetchCallByAgent(node);
+
+		if (!checkRuleReturn(node, fnNode.getName()))
+			return new Binding(compareToNode, this);
+		return resultingBinding;
 	}
 }
