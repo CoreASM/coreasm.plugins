@@ -41,6 +41,7 @@ import org.coreasm.engine.plugins.letrule.LetRuleNode;
 import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
 import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
+import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 
 public class AspectWeaver {
 
@@ -361,7 +362,7 @@ public class AspectWeaver {
 				ASTNode insertionContext = candidate;
 				while (insertionContext != null
 						&& !(insertionContext.getParent() instanceof ConditionalRuleNode)
-						&& !(insertionContext.getParent() instanceof SeqBlockRuleNode)
+						&& !(insertionContext.getParent() instanceof SeqRuleNode)
 						&& !(insertionContext.getParent() instanceof LetRuleNode)
 						&& !(insertionContext.getParent() instanceof ReturnRuleNode)
 						&& !(insertionContext.getParent() instanceof LocalRuleNode)
