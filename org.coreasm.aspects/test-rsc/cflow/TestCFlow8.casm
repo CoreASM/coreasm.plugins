@@ -1,0 +1,33 @@
+CoreASM TestCFlow7
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "Output\nTestCFlow7: [[adv0], [CFlow], [Test]]\nCFlowCaller\nOutput\nTestCFlow7: [[adv0], [CFlow], [CFlowCaller], [Test]]\nTestCFlow7: [[adv0], [CFlowCaller], [Test]]"
+	advice TestCFlow7 after : cflow("CFlow") or cflow("CFlowCaller") {
+		print "TestCFlow7: "+callStack(self)
+	}
+}
+
+rule Test =
+par
+	seq
+		CFlow
+	next
+		CFlowCaller
+	program(self) := undef
+endpar
+rule CFlowCaller =
+	seq
+		print "CFlowCaller"
+	next
+		CFlow
+
+rule CFlow =
+	Output
+	
+rule Output = print "Output"

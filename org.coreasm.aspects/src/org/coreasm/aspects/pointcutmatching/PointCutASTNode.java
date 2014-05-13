@@ -171,6 +171,9 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 							}
 						}
 					} while ((astNode = astNode.getNext()) != null);
+					if (callByAgent==null)
+						throw new CoreASMError(node.getNextCSTNode().getToken() + " is not declared.",
+								node.getNextCSTNode());
 				}
 			}
 			node = node.getNextCSTNode();

@@ -88,7 +88,8 @@ public class BinOrASTNode extends PointCutASTNode {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
 		//just one node which must be a ExpressionASTNode according to the grammar;
 		//return the result of the child node.
-		if (children.size() == 1 && children.get(0) instanceof BinAndASTNode)
+		if (children.size() == 1 && children.get(0) instanceof BinAndASTNode
+				&& !((BinAndASTNode) children.get(0)).getCflowBindings().isEmpty())
 			return ((BinAndASTNode) children.get(0)).getCflowBindings();
 		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
 		else if (children.size() == 2 &&
@@ -105,7 +106,7 @@ public class BinOrASTNode extends PointCutASTNode {
 				return leftChild + rightChild;
 		}
 		else
-			throw new CoreASMError("generation of binding failed", this);
+			return "";
 	}
 
 }

@@ -52,6 +52,13 @@ public class CFlowASTNode extends PointCutASTNode {
 		FunctionRuleTermNode fnNode = (FunctionRuleTermNode) compareToNode;
 		if (!AspectTools.isRuleName(fnNode.getName()))
 			return new Binding(compareToNode, this);
+		//if this is a child of any not node that returns no match
+		ASTNode parent = this.getParent();
+		while (parent != null && !(parent instanceof NotASTNode) && !"and".equals(parent.getToken()))
+			parent = parent.getParent();
+		if (parent instanceof NotASTNode)
+			return new Binding(compareToNode, this);
+
 		Binding resultingBinding = null;
 		Node node;
 		// \todo add bindings
@@ -83,19 +90,15 @@ public class CFlowASTNode extends PointCutASTNode {
 	public String getLetExpression() {
 		String letExpression = "";
 		letExpression = this.getCflowId() + " = callStackMatches( [";
-		ASTNode node = this;
-		Iterator<ASTNode> it = node.getAbstractChildNodes().iterator();
+		Iterator<PointCutParameterNode> it = this.getParameters().iterator();
 		while (it.hasNext()) {
-			node = it.next();
-					if (node instanceof PointCutParameterNode) {
-						PointCutParameterNode parameterNode = (PointCutParameterNode) node;
-						String name = parameterNode.getName();
-						String pattern = parameterNode.getPattern();
-				if (name == null)
-					letExpression += "\"" + pattern + "\"";
-				else
-					letExpression += "[\"" + pattern + "\", \"" + name + "\"]";
-					}
+			PointCutParameterNode parameterNode = it.next();
+			String name = parameterNode.getName();
+			String pattern = parameterNode.getPattern();
+			if (name == null)
+				letExpression += "\"" + pattern + "\"";
+			else
+				letExpression += "[\"" + pattern + "\", \"" + name + "\"]";
 			if (it.hasNext())
 				letExpression += ", ";
 		}
