@@ -235,7 +235,7 @@ public class AspectTools {
 
 	private static String getCoreASMProgram(Node rootNode) {
 		// First step: Break lines
-		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
+		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
 		result = result.replace(" aspect ", "\naspect ");
 		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n");
 		result = result.replace(" par ", "\npar\n").replace(" endpar ", "\nendpar\n");
