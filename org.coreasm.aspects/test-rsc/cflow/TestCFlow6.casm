@@ -1,0 +1,23 @@
+CoreASM TestCFlow6
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "CFlow\nTestCFlow6: 3"
+	advice TestCFlow6(a, b) after : cflow("CFlowCaller", ".*" as a,".*" as b) {
+		print "TestCFlow6: "+(a+b)
+	}
+}
+
+rule Test =
+	CFlowCaller(1,2)
+
+rule CFlowCaller(a,b) =
+	CFlow
+
+rule CFlow =
+	print "CFlow"

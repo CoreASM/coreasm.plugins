@@ -3,6 +3,7 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -198,7 +199,8 @@ public class AdviceASTNode extends ASTNode {
 	/**
 	 * remove bindings created by dynamic poincut constructs from all bindings
 	 */
-	public void removeDynamicBindingParameters() {
+	public List<ASTNode> removeDynamicBindingParameters() {
+		List<ASTNode> dynamicBindingparams = new ArrayList<ASTNode>();
 		for (Binding binding : bindings.values()) {
 			//remove parameters from advice which have a null binding. These bindings are used for dynamic constructs like cflow.
 			List<ASTNode> parameter = getParameters();
@@ -208,6 +210,7 @@ public class AdviceASTNode extends ASTNode {
 				ASTNode param = it.previous();
 				if (binding.hasBindingPartner(param.getToken()) && binding.getBindingPartner(param.getToken()) == null)
 				{
+					dynamicBindingparams.add(param);
 					Node predecessor = param.removeFromTree();
 					Node successor = predecessor.getNextCSTNode();
 					if ("(".equals(predecessor.getToken()) && ")".equals(successor.getToken())) {
@@ -219,6 +222,7 @@ public class AdviceASTNode extends ASTNode {
 				}
 			}
 		}
+		return dynamicBindingparams;
 	}
 
 	/**

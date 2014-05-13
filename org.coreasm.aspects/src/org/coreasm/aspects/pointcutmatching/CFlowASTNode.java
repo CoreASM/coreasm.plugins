@@ -4,6 +4,7 @@
 package org.coreasm.aspects.pointcutmatching;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.utils.AspectTools;
@@ -20,6 +21,9 @@ public class CFlowASTNode extends PointCutASTNode {
 
 	private static final long serialVersionUID = 1L;
 	private static final String NODE_TYPE = CFlowASTNode.class.getSimpleName();
+	private static int cflowCounter = 0;
+	private final String CFLOWIDPREFIX = "_cflow_";
+	int cflowId;
 
 	/**
 	 * this constructor is needed to support duplicate
@@ -29,6 +33,8 @@ public class CFlowASTNode extends PointCutASTNode {
 	 */
 	public CFlowASTNode(CFlowASTNode self) {
 		super(self);
+		cflowCounter++;
+		this.cflowId = cflowCounter;
 	}
 
 	/**
@@ -37,6 +43,8 @@ public class CFlowASTNode extends PointCutASTNode {
 	public CFlowASTNode(ScannerInfo scannerInfo) {
 		super(AoASMPlugin.PLUGIN_NAME, org.coreasm.engine.interpreter.Node.OTHER_NODE, CFlowASTNode.NODE_TYPE, null,
 				scannerInfo);
+		cflowCounter++;
+		this.cflowId = cflowCounter;
 	}
 
 	@Override
@@ -69,5 +77,41 @@ public class CFlowASTNode extends PointCutASTNode {
 
 		fetchCallByAgent(node);
 		return resultingBinding;
+	}
+
+	@Override
+	public String getLetExpression() {
+		String letExpression = "";
+		letExpression = this.getCflowId() + " = callStackMatches( [";
+		ASTNode node = this;
+		Iterator<ASTNode> it = node.getAbstractChildNodes().iterator();
+		while (it.hasNext()) {
+			node = it.next();
+					if (node instanceof PointCutParameterNode) {
+						PointCutParameterNode parameterNode = (PointCutParameterNode) node;
+						String name = parameterNode.getName();
+						String pattern = parameterNode.getPattern();
+				if (name == null)
+					letExpression += "\"" + pattern + "\"";
+				else
+					letExpression += "[\"" + pattern + "\", \"" + name + "\"]";
+					}
+			if (it.hasNext())
+				letExpression += ", ";
+		}
+
+		letExpression += " ])";
+		return letExpression;
+	}
+
+	private String getCflowId() {
+		return CFLOWIDPREFIX + String.valueOf(cflowId);
+	}
+
+	@Override
+	public String getCflowBindings() {
+		//the let expression from <code>getLetExpression()</code> should have been used for initialization of that id.
+		return this.getCflowId();
+
 	}
 }

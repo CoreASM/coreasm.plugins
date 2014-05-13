@@ -13,7 +13,7 @@ aspect {
 	*		<li>rule doJustAroundAdvice</li>
 	*	</ol>
 	* @expects
-	*	output this adbice instead of doSomething
+	*	output this advice instead of doSomething
 	*
 	* @require "TestCall6"
 	* @refuse "DoSomething"

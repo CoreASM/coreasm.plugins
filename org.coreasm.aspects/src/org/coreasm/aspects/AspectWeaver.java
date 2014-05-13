@@ -9,8 +9,10 @@
  */
 package org.coreasm.aspects;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -545,7 +547,48 @@ public class AspectWeaver {
 			AdviceASTNode advice = (AdviceASTNode) node;
 
 			//cleanup bindings by removing bindings with null created by dynamic joinpoint constructs like cflow
-			advice.removeDynamicBindingParameters();
+			List<ASTNode> params = advice.removeDynamicBindingParameters();
+
+			//introduce letConstruct that inserts cflow bindings into advice rule blocks
+			ASTNode letConstruct = null;
+			String letExpression = advice.getPointCut().getLetExpression();
+			if (!letExpression.isEmpty()) {
+				String letDeclaration = "";
+				String cflowBindings = advice.getPointCut().getCflowBindings();
+				letDeclaration = "let\n"
+						+ letExpression
+						+ " in\n"
+						+ " let _cflow_bindings_ = " + cflowBindings + " in\n"
+						+ "if "
+						+ "_cflow_bindings_ != undef then\n";
+				if (!params.isEmpty()){
+					letDeclaration += "let\n";
+					Iterator<ASTNode> it = params.iterator();
+					while (it.hasNext()) {
+						ASTNode astNode = it.next();
+						String name = astNode.getToken();
+						letDeclaration += name + " = GetBindingValue( "
+								+ "\"" + name + "\", _cflow_bindings_ )";
+						if (it.hasNext())
+							letDeclaration += ", ";
+					}
+					letDeclaration += "in\n";
+				}
+				letDeclaration += "skip";
+				// get condition parser to parse the condition
+				Parser<Node> letParser = ((ParserPlugin) capi
+						.getPlugin("LetRulePlugin")).getParsers().get(
+						"Rule").parser;// using
+				ParserTools parserTools = ParserTools.getInstance(capi);
+				Parser<Node> parser = letParser.from(
+						parserTools.getTokenizer(), parserTools.getIgnored());
+				letConstruct = (ASTNode) parser.parse(letDeclaration);
+			}
+
+			// get condition parser to parse the condition
+			Parser<Node> conditionParser = ((ParserPlugin) capi
+					.getPlugin("ConditionalRulePlugin")).getParsers().get(
+					"Rule").parser;// using
 
 			//a) add runtime condition of pointcuts to advice body
 			// 1) create condition ASTNode with runtime expressions from
@@ -554,10 +597,6 @@ public class AspectWeaver {
 			String condition = advice.getPointCut().getCondition();
 			String ifThenConstruct = "if (" + condition + ") then skip";
 
-			// get condition parser to parse the condition
-			Parser<Node> conditionParser = ((ParserPlugin) capi
-					.getPlugin("ConditionalRulePlugin")).getParsers().get(
-					"Rule").parser;// using
 			// FunctionSignature
 			ParserTools parserTools = ParserTools.getInstance(capi);
 			Parser<Node> parser = conditionParser.from(
@@ -565,10 +604,26 @@ public class AspectWeaver {
 			// condition node (is an ASTNode)
 			conditionASTNode = (ASTNode) parser.parse(ifThenConstruct);
 
+			//ASTNode to be inserted into the rule definition created from based on the current advice
+			ASTNode insertOrchestration = letConstruct;
+
+			//if let is not null, i.e. there are cflow bindings, then insert conditional into let construct
+			if (insertOrchestration != null) {
+				//find skip rule to be replaced with conditional
+				ASTNode lastChild = insertOrchestration;
+				while (lastChild != null && !lastChild.getAbstractChildNodes().isEmpty()) {
+					lastChild = lastChild.getAbstractChildNodes().get(lastChild.getAbstractChildNodes().size() - 1);
+				}
+				lastChild.replaceWith(conditionASTNode);
+			}
+			else
+				//no cflow bindings exist
+				insertOrchestration = conditionASTNode;
+
 			ASTNode skip = conditionASTNode.getAbstractChildNodes().get(1);
 			ASTNode ruleBlock = advice.getRuleBlock();
-			// 2) replace ruleBlock in advice by condition rule
-			ruleBlock.replaceWith(conditionASTNode);
+			// 2) replace ruleBlock in advice by let construct that includes the condition rule
+			ruleBlock.replaceWith(insertOrchestration);
 			// 3) replace skip in condition rule by ruleBlock
 			skip.replaceWith(ruleBlock);
 			// 4) replace advice definition by corresponding rule declaration
@@ -695,67 +750,103 @@ public class AspectWeaver {
 		}
 
 		//step 2
-		//@formatter:off
-		String ruleCallCheck =
-			"//returns true if an element of the callstack matches ruleSignature\n"
-			+"rule "+MATCHING_RULE_INSIDE_CALLSTACK+"(ruleSignature)= return res in\n"
-			+"	local list, currentSignature in\n"
-			+"		seq\n"
-			+"			par\n"
-			+"				res := []\n"
-			+"				list := callStack(self)\n"
-			+"			endpar\n"
-			+"		next\n"
-			+"			while(head(list) != undef)\n"
-			+"				seq\n"
-			+"					par\n"
-			+"						currentSignature := head(list)\n"
-			+"						list := tail(list)\n"
-			+"					endpar\n"
-			+"				next\n"
-			+"					if |currentSignature| = |ruleSignature| then\n"
-			+"						if forall i in [1..|currentSignature|] holds\n"
-			+"							matches(toString(nth(currentSignature, i)), nth(ruleSignature, i)) then\n"
-			+"								res := cons(currentSignature, res)";
-		
-		String argsCheck =
-				"//returns a set of rule signatures from the callStack matching the given argument list\n"
-						+ "rule "+ MATCHING_SIGNATURE_INSIDE_CALLSTACK + "(listOfArguments) =\n"
-						+ "	return res in par\n"
-						+ "		res := { signature | signature in callStack(self) with tail(signature) = listOfArguments }\n"
-						+ "	endpar";
-		//@formatter:on
+		//insert auxilliary functions for cflow support
+		insertCflowAuxilliaryFunctions();
+	}
 
-		Parser<Node> ruleDeclarationParser = ((ParserPlugin) capi
-				.getPlugin("Kernel")).getParser("RuleDeclaration");// using
-		parserTools = ParserTools
+	private void insertCflowAuxilliaryFunctions() {
+		//insert derived function definitions for cflow bindings
+		List<String> auxilliaryDefintions = new ArrayList<String>();
+
+		auxilliaryDefintions.add("derived CheckConsistency(list) =\n"
+				+ "	return res in\n"
+				+ "		if list = undef then\n"
+				+ "			res := undef\n"
+				+ "		else if\n"
+				+ "			forall id in GetIds(list) holds\n"
+				+ "				AllEqual(GetValues(GetBindings(id, list)))\n"
+				+ "		then\n"
+				+ "			res := list\n"
+				+ "		else\n"
+				+ "			res := undef");
+		auxilliaryDefintions
+				.add("derived callStackMatches(ruleSignature) = CheckConsistency(foldl(zipwith(reverse(callStack(self)), replicate(ruleSignature, |callStack(self)|), @CreateBinding), @Concat, undef))");
+		auxilliaryDefintions
+				.add("derived Concat(l1, l2) = return res in if l2 = undef then res := l1 else if l1 = undef then res := l2 else res := l1 + l2");
+		auxilliaryDefintions.add(
+				"derived CreateBinding(sig, ruleSignature) =\n"
+						+ "	return binding in\n"
+						+ "		let pattern = map(ruleSignature, @ExtractPattern ) in\n"
+						+ "			if |sig| = |pattern| then\n"
+						+ "				//toString to convert all parameters to Strings\n"
+						+ "				if forall c in zipwith(map(sig,@toString), pattern, @matches) holds c then\n"
+						+ "					binding := IdsIntoList(sig, ruleSignature)\n"
+						+ "				else binding := undef\n"
+						+ "			else binding := undef");
+		auxilliaryDefintions.add(
+				"derived ExtractPattern(list) ="
+						+ "	return singleElementList in"
+						+ "		if head(list) != undef then"
+						+ "			singleElementList := toString(head(list))"
+						+ "				else singleElementList := toString(list)");
+		auxilliaryDefintions
+				.add("derived IdsIntoList(sig, patternsig) = filter(zip(sig, map(patternsig, @last)), @LastNotUndef)");
+		auxilliaryDefintions.add("derived LastNotUndef(tuple) = last(tuple) != undef");
+
+		auxilliaryDefintions
+				.add("derived GetBindings(bindingVar, matchingResult) = map(filter(zip(matchingResult, replicate(bindingVar, |matchingResult|)), @NameEquals), @head)");
+		auxilliaryDefintions.add("derived NameEquals(elem) = last(elem) = last(head(elem))");
+		auxilliaryDefintions.add("derived GetValues(bindinglist) = map(bindinglist, @head)");
+		auxilliaryDefintions.add(
+				"derived AndBinding(list1, list2) =\n"
+						+ "	return res in local list in\n"
+						+ "seq\n"
+						+ "if list1 = undef or list2 = undef then list := undef\n"
+						+ "else list := list1 + list2\n"
+						+ "next"
+						+ "		if list = undef then"
+						+ "			res := undef"
+						+ "		else if"
+						+ "			forall id in GetIds(list) holds"
+						+ "			AllEqual(GetValues(GetBindings(id, list)))"
+						+ "		then"
+						+ "			res := list"
+						+ "		else"
+						+ "			res := undef");
+		auxilliaryDefintions.add(
+				"derived OrBinding(list1, list2) =\n"
+						+ "	return res in local list in\n"
+						+ "seq\n"
+						+ "if list1 = undef and list2 = undef then list := undef\n"
+						+ "else if list1 = undef then list := list1\n"
+						+ "else if list2 = undef then list := list2\n"
+						+ "else list := list1 + list2\n"
+						+ "next\n"
+						+ "		if list = undef then\n"
+						+ "			res := undef\n"
+						+ "		else\n"
+						+ "			//create a list by using a set comprehension as workaround\n"
+						+ "			res := toList({ x is [ GetBindingValue(id, list), id] | id in GetIds(list) })");
+		auxilliaryDefintions
+				.add("derived NotBinding(list) = return res in if list = undef then res := [] else res := undef");
+		auxilliaryDefintions.add("derived GetIds(bindinglist) = map(bindinglist, @last)");
+		auxilliaryDefintions.add("derived AllEqual(list) = forall element in tail(list) holds element = head(list)");
+
+		auxilliaryDefintions
+				.add("derived GetBindingValue(bindingVar, matchingResult) = head(GetValues(GetBindings(bindingVar, matchingResult)))");
+		Parser<Node> signatureParser = ((ParserPlugin) capi.getPlugin("SignaturePlugin"))
+				//.getParsers().get("DerivedFunctionDeclaration").parser;
+				.getParsers().get("Signature").parser;
+		ParserTools parserTools = ParserTools
 				.getInstance(capi);
-		parser = ruleDeclarationParser
+		Parser<Node> parser = signatureParser
 				.from(parserTools.getTokenizer(),
 						parserTools.getIgnored());
-		Node ruleCallASTNode = parser
-				.parse(ruleCallCheck);
-		Node argsCheckASTNode = parser
-				.parse(argsCheck);
-
-		//ASTNode rootNode = TestEngineDriver.getRootNodeFromSpecification(ruleCallCheck + "\n" + argsCheck);
-
-		//ASTNode ruleCallASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_RULE_INSIDE_CALLSTACK);
-		String dot = AspectTools.nodes2dot(ruleCallASTNode);
-		AspectTools.createDotGraph(dot, new LinkedList<Node>());
-
-		//ASTNode argsCheckASTNode = AspectTools.findRuleDeclaration(rootNode, MATCHING_SIGNATURE_INSIDE_CALLSTACK);
-		dot = AspectTools.nodes2dot(argsCheckASTNode);
-		AspectTools.createDotGraph(dot, new LinkedList<Node>());
-		//reset capi to previous one
-		AspectTools.setCapi(capi);
-
-		// add new rule definitions as first children to the
-		// root of the parse tree
-		root = this.getRootnode();
-		AspectTools.addChildAfter(root, root.getFirst(), Node.DEFAULT_NAME, ruleCallASTNode);
-
-		AspectTools.addChildAfter(root, root.getFirst(), Node.DEFAULT_NAME, argsCheckASTNode);
+		for (String definition : auxilliaryDefintions) {
+			Node def = parser.parse(definition);
+			ASTNode root = this.getRootnode();
+			AspectTools.addChildAfter(root, root.getFirst(), Node.DEFAULT_NAME, def);
+		}
 	}
 
 	/**

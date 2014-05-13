@@ -58,17 +58,13 @@ public class BinOrASTNode extends PointCutASTNode {
 			Binding firstChildBinding, secondChildBinding;
 			firstChildBinding = this.getFirstChild().matches(compareToNode);
 			secondChildBinding = this.getSecondChild().matches(compareToNode);
-			//compute resulting binding if at least one matching has been succesfull (i.e. a binding exists)
-			Binding resultingBinding = new Binding(firstChildBinding, secondChildBinding, this);
 
 			//todo null check for resulting bindings of children
 			if (firstChildBinding.exists())
-				resultingBinding = new Binding(compareToNode, this, firstChildBinding.getBinding());
+				return new Binding(compareToNode, this, firstChildBinding.getBinding());
 			else if (secondChildBinding.exists())
-				resultingBinding = new Binding(compareToNode, this, secondChildBinding.getBinding());
-			else
-				new Binding(compareToNode, this);
-			return resultingBinding;
+				return new Binding(compareToNode, this, secondChildBinding.getBinding());
+			return new Binding(compareToNode, this);
 		}
 		else
 			return new Binding(compareToNode, this);
@@ -82,9 +78,34 @@ public class BinOrASTNode extends PointCutASTNode {
 		else if (children.size()==2 && 
 				children.get(0) instanceof BinAndASTNode && 
 				children.get(1) instanceof BinOrASTNode)
-			return "(" + ((BinAndASTNode) children.get(0)).getCondition() + " or " +
-					((BinOrASTNode) children.get(1)).getCondition() + ")";
+			return ((BinAndASTNode) children.get(0)).getCondition() + " or " +
+					((BinOrASTNode) children.get(1)).getCondition();
 		throw new CoreASMError("generation of expression failed", this);
+	}
+
+	@Override
+	public String getCflowBindings() {
+		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
+		//just one node which must be a ExpressionASTNode according to the grammar;
+		//return the result of the child node.
+		if (children.size() == 1 && children.get(0) instanceof BinAndASTNode)
+			return ((BinAndASTNode) children.get(0)).getCflowBindings();
+		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
+		else if (children.size() == 2 &&
+				children.get(0) instanceof BinAndASTNode &&
+				children.get(1) instanceof BinOrASTNode) {
+			String leftChild = ((BinAndASTNode) children.get(0)).getCflowBindings();
+			String rightChild = ((BinOrASTNode) children.get(1)).getCflowBindings();
+
+			if (!leftChild.isEmpty() && !rightChild.isEmpty())
+				return "OrBinding( "
+						+ leftChild + ", " + rightChild
+						+ " )";
+			else
+				return leftChild + rightChild;
+		}
+		else
+			throw new CoreASMError("generation of binding failed", this);
 	}
 
 }

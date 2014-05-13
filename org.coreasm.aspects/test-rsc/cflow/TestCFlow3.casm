@@ -1,0 +1,29 @@
+CoreASM TestCFlow3
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "CFlow\nCFlowCaller\nCFlow\nTestCFlow3"
+	advice TestCFlow3 after : cflow("CFlowCaller") {
+		print "TestCFlow3"
+	}
+}
+
+rule Test =
+	seq
+		CFlow
+	next
+		CFlowCaller
+
+rule CFlowCaller =
+	seq
+		print "CFlowCaller"
+	next
+		CFlow
+
+rule CFlow =
+	print "CFlow"

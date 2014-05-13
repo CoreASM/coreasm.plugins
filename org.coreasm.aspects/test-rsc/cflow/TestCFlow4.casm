@@ -1,0 +1,23 @@
+CoreASM TestCFlow4
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "CFlow\nTestCFlow4: 1"
+	advice TestCFlow4(var) after : cflow("CFlowCaller", ".*" as var,".*") {
+		print "TestCFlow4: "+var
+	}
+}
+
+rule Test =
+	CFlowCaller(1,2)
+
+rule CFlowCaller(a,b) =
+	CFlow
+
+rule CFlow =
+	print "CFlow"

@@ -3,10 +3,12 @@
  */
 package org.coreasm.aspects.pointcutmatching;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -48,6 +50,18 @@ public class NotASTNode extends PointCutASTNode {
             return new Binding(compareToNode, this, new HashMap<String, ASTNode>());
         else
             return  new Binding(compareToNode, this);
+	}
+
+	@Override
+	public String getCflowBindings() {
+		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
+		//just one node which must be a ExpressionASTNode according to the grammar;
+		//return the result of the child node.
+		if (children.size() == 1 && children.get(0) instanceof BinOrASTNode)
+			return "NotBinding(" + ((BinOrASTNode) children.get(0)).getCflowBindings() + ")";
+		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
+		else
+			throw new CoreASMError("generation of binding failed", this);
 	}
 
 	@Override

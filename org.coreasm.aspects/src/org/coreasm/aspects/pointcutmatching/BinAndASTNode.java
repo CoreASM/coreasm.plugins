@@ -76,4 +76,29 @@ public class BinAndASTNode extends PointCutASTNode {
 					((BinAndASTNode)children.get(1)).getCondition();
 		else throw new CoreASMError("generation of expression failed", this);
 	}
+
+	@Override
+	public String getCflowBindings() {
+		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
+		//just one node which must be a ExpressionASTNode according to the grammar;
+		//return the result of the child node.
+		if (children.size() == 1 && children.get(0) instanceof ExpressionASTNode)
+			return ((ExpressionASTNode) children.get(0)).getCflowBindings();
+		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
+		else if (children.size() == 2 &&
+				children.get(0) instanceof ExpressionASTNode &&
+				children.get(1) instanceof BinAndASTNode) {
+			String leftChild = ((ExpressionASTNode) children.get(0)).getCflowBindings();
+			String rightChild = ((BinAndASTNode) children.get(1)).getCflowBindings();
+
+			if (!leftChild.isEmpty() && !rightChild.isEmpty())
+				return "AndBinding( "
+						+ leftChild + ", " + rightChild
+						+ " )";
+			else
+				return leftChild + rightChild;
+		}
+		else
+			throw new CoreASMError("generation of binding failed", this);
+	}
 }
