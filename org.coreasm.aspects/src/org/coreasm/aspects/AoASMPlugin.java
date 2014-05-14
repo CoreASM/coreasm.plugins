@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
-
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.AgentPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
@@ -295,12 +294,6 @@ public class AoASMPlugin extends Plugin
 			Parser<Node> ruleDeclaration = ((ParserPlugin) capi
 					.getPlugin("Kernel")).getParser("RuleDeclaration");
 
-			Parser<Node> basicTerm = ((ParserPlugin) capi
-					.getPlugin("Kernel")).getParser("BasicTerm");
-
-			Parser<Node> functionRuleTerm = ((ParserPlugin) capi
-					.getPlugin("Kernel")).getParser("FunctionRuleTerm");
-
 			Parser<Node> ruleSignature = ((ParserPlugin) capi
 					.getPlugin("Kernel")).getParser("RuleSignature");
 
@@ -490,26 +483,18 @@ public class AoASMPlugin extends Plugin
 					});
 
 			/* Parser for args expression */
-			@SuppressWarnings("unchecked") //@attetion longest parser is type unsafe
-			Parser<Node> argsParser = //args ((id,)*id)
+			Parser<Node> argsParser = //'args' '(' id || string ['as' id] (',' id || string ['as' id] )* ')'
 			Parsers.array(
 					pTools.getKeywParser(KW_ARGS, PLUGIN_NAME),
 					pTools.getOprParser("("),
-					Parsers.longest(
-							pTools.getIdParser(),
-							functionRuleTerm,
-							basicTerm
-							),
+					pointCutParameterParser,
 					pTools.star(
-							Parsers.array(pTools.getOprParser(","),
-							Parsers.longest(
-									pTools.getIdParser(),
-									functionRuleTerm,
-									basicTerm
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
 									)
-								)
 							),
-							pTools.getOprParser(")")
+					pTools.getOprParser(")")
 						).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override

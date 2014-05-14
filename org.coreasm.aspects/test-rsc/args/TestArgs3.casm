@@ -1,0 +1,31 @@
+CoreASM TestArgs3
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "CFlow\nCFlowCaller\nCFlow\nTestArgs3"
+	advice TestArgs3 after : args(".*",".*") and cflow("CFlowCaller") {
+		print "TestArgs3"
+	}
+}
+
+rule Test =
+	seq
+		CFlow(true,2)
+	next
+		CFlowCaller
+
+rule CFlowCaller =
+	seq
+		print "CFlowCaller"
+	next
+		CFlow(true, 4)
+
+rule CFlow(a, b) = {
+		if a then
+			print "CFlow"
+	}

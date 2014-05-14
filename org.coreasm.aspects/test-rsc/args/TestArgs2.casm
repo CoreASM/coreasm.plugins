@@ -1,0 +1,22 @@
+CoreASM TestArgs2
+
+use Standard
+use AoASMPlugin
+
+init TestArgsPointcut
+
+aspect ParserTest {
+
+	//@require "before_TestArgs2_1\nHallo Welt! 42\nafter_TestArgs2_2"
+	advice TestArgs2_1 before : args(".*",".*") { print "before_TestArgs2_1"}
+	
+	advice TestArgs2_2 after : args(".*",".*") { print "after_TestArgs2_2"}
+
+}
+
+rule TestArgsPointcut = {
+	MyRuleCall("Hallo Welt!", 42)
+}
+
+rule MyRuleCall(a, b) =
+	print a + " " + b

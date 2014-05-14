@@ -50,9 +50,9 @@ public class ArgsASTNode extends PointCutASTNode {
 		String pointCutToken = null;
 		Binding resultingBinding = null;
 		Node node;
-		ASTNode astn = fnNode.getFirst();
-		// skip function name
-		astn = astn.getNext();
+		ASTNode astn = null;
+		if (argIterator.hasNext())
+			astn = argIterator.next();
 		// \todo add bindings
 		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
 		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
@@ -108,8 +108,6 @@ public class ArgsASTNode extends PointCutASTNode {
 		if (astn != null || parameterNode instanceof PointCutParameterNode)
 			return new Binding(compareToNode, this);
 
-		if (!checkRuleReturn(node, fnNode.getName()))
-			return new Binding(compareToNode, this);
 		return resultingBinding;
 	}
 }
