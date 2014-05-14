@@ -1,0 +1,30 @@
+CoreASM TestProceed1
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect ParserTest {
+
+	//@require "TestProceed2 a\n6\nTestProceed2 b"
+	advice TestProceed2(a, b) around : args(".*" as a,".*" as b) {
+		seqblock
+			print "TestProceed2 a"
+			case pn of
+				1: proceed(p1)
+				2: proceed(p1,p2)
+			endcase
+			print "TestProceed2 b"
+		endseqblock
+	}
+
+}
+
+rule X(a, b) = {
+	print a / b
+}
+
+rule Test = {
+	X(42,7)
+}

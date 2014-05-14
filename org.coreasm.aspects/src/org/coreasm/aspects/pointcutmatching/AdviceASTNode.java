@@ -8,13 +8,17 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.codehaus.jparsec.Parser;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.utils.AspectTools;
+import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
 import org.coreasm.engine.interpreter.ASTNode;
@@ -22,7 +26,11 @@ import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
+import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
+import org.coreasm.engine.parser.ParserTools;
+import org.coreasm.engine.plugin.ParserPlugin;
+import org.coreasm.engine.plugins.caserule.CaseRuleNode;
 import org.coreasm.engine.plugins.number.NumberPlugin;
 
 /**
@@ -110,12 +118,95 @@ public class AdviceASTNode extends ASTNode {
 					numProceedParameters++;
 				}
 				ensureProceedParameters(numProceedParameters);
+				substituteProceeds(numProceedParameters, this.getRuleBlock());
 			}
 			bindings.put(candidate, binding);
 		}
 		return binding;
 	}
 	
+	private void substituteProceeds(int numProceedParameters, ASTNode astNode) {
+
+		if (astNode instanceof CaseRuleNode ){
+			CaseRuleNode caseNode = ((CaseRuleNode)astNode);
+			if ("pn".equals(caseNode.getCaseTerm().getFirst().getToken())){
+				Map<ASTNode, ASTNode> caseValues = caseNode.getCaseMap();
+				boolean notFound = true;
+				Node expression = null;
+				Node operator = null;
+				for (ASTNode caseValue : caseValues.keySet()) {
+					expression = caseValue;
+					operator = caseValue.getNextCSTNode().cloneTree();
+					if (Integer.parseInt(caseValue.getToken()) == numProceedParameters) {
+						notFound = false;
+						break;
+					}
+				}
+				if (notFound) {
+					Node newCaseValue = expression.cloneTree();
+					newCaseValue.setParent(expression.getParent());
+					newCaseValue.setToken(Integer.toString(numProceedParameters));
+					AspectTools.addChildAfter(expression.getParent(), expression.getNextCSTNode().getNextCSTNode(),
+							"beta", newCaseValue);
+					AspectTools.addChildAfter(expression.getParent(), newCaseValue, DEFAULT_NAME, operator);
+					MacroCallRuleNode proceedCall = new MacroCallRuleNode(expression.getScannerInfo());
+					AspectTools.addChildAfter(expression.getParent(), operator, "gamma", proceedCall);
+					Node id = caseNode.getCaseTerm().getFirst().cloneTree();
+					id.setToken("proceed");
+					FunctionRuleTermNode fn = new FunctionRuleTermNode(expression.getScannerInfo());
+					fn.addChild(id);
+					proceedCall.addChild(fn);
+					Node open = operator.cloneTree();
+					open.setToken("(");
+					fn.addChild(open);
+					for (int i = 1; i <= numProceedParameters; i++) {
+						id = caseNode.getCaseTerm().getFirst().cloneTree();
+						id.setToken("p" + i);
+						fn = new FunctionRuleTermNode(expression.getScannerInfo());
+						fn.addChild(id);
+						proceedCall.addChild(fn);
+						if (i < numProceedParameters)
+						{
+							Node colon = operator.cloneTree();
+							colon.setToken(",");
+							fn.addChild(colon);
+						}
+					}
+					Node close = operator.cloneTree();
+					close.setToken(")");
+					fn.addChild(close);
+				}
+			}
+		}
+		else if (astNode instanceof MacroCallRuleNode) {
+			FunctionRuleTermNode proceed = (FunctionRuleTermNode) astNode.getFirst();
+			if ("proceed".equals(proceed.getName()) && proceed.getNumberOfChildren() == 1) {
+				String params = "";
+				for (int i = 1; i <= numProceedParameters; i++) {
+					params += "p" + i;
+					if (i < numProceedParameters)
+						params += ", ";
+				}
+				String caseRule =
+						"case pn of\n"
+								+ numProceedParameters + ": proceed(" + params + ")\n"
+								+ "endcase";
+				ControlAPI capi = AspectTools.getCapi();
+				Parser<Node> caseParser = ((ParserPlugin) capi
+						.getPlugin("CaseRulePlugin")).getParsers().get(
+						"Rule").parser;// using
+				ParserTools parserTools = ParserTools.getInstance(capi);
+				Parser<Node> parser = caseParser.from(
+						parserTools.getTokenizer(), parserTools.getIgnored());
+				ASTNode caseConstruct = (ASTNode) parser.parse(caseRule);
+				astNode.replaceWith(caseConstruct);
+			}
+		}
+		for (ASTNode child : astNode.getAbstractChildNodes()) {
+			substituteProceeds(numProceedParameters, child);
+		}
+	}
+
 	private void ensureProceedParameters(int requiredProceedParameters) {
 		ASTNode signature = getSignature();
 		ASTNode lastASTNode = signature.getFirst();

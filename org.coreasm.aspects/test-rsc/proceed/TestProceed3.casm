@@ -8,21 +8,27 @@ init Test
 aspect ParserTest {
 
 	//@require "TestProceed1 a\n6\nTestProceed1 b\n6"
-	advice TestProceed1(x, a, b) around : call(".*" as x, ".*" as a,".*" as b) {
+	advice TestCall1(a) around : args(".*" as a,".*") or args(".*", ".*",".*" as a) or call("Z" as a) {
 		seqblock
 			print "TestProceed1 a"
-			proceed(p1, p2)
+			proceed
 			print "TestProceed1 b"
-			x(a,b)
 		endseqblock
 	}
-
 }
 
 rule X(a, b) = {
 	print a / b
 }
 
+rule Y(a, b, c) = {
+	print b / c
+}
+rule Z =
+	print "Z"
+
 rule Test = {
 	X(42,7)
+	Y(1,4,2)
+	Z
 }
