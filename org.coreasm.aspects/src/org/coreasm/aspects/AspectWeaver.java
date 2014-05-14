@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
-
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -443,6 +442,7 @@ public class AspectWeaver {
 			//exchange
 			LinkedList<ASTNode> nptcdefs = AspectWeaver.getInstance().getAstNodes()
 					.get(NamedPointCutDefinitionASTNode.NODE_TYPE);
+			boolean notDefined = true;
 			if (nptcdefs != null)
 				for (ASTNode nptcdef : nptcdefs) {
 					if (nptcdef instanceof NamedPointCutDefinitionASTNode) {
@@ -455,9 +455,13 @@ public class AspectWeaver {
 							AspectTools.addChildAfter(parent, positionToInsert, definition.getName(), pointcut);
 							substituted.add(definition.getName());
 							substituteNamedPointcuts(parent, substituted);
+							notDefined = false;
+							break;
 						}
 					}
 				}
+			if (notDefined)
+				throw new CoreASMError("Named pointcut " + nptc.unparseTree() + " is not defined.", nptc);
 		}
 		else
 			for (ASTNode child : astnode.getAbstractChildNodes())

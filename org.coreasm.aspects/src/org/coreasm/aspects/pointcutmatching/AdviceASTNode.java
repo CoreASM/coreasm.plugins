@@ -299,6 +299,8 @@ public class AdviceASTNode extends ASTNode {
 								numProceedParameters++;
 							binding.addBinding(param.getToken(), new ASTNode(NumberPlugin.PLUGIN_NAME, ASTNode.EXPRESSION_CLASS, "KernelTerms", "" + numProceedParameters, param.getScannerInfo(), Node.KEYWORD_NODE));
 						}
+						else
+							throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
 					}
 					else
 						throw new BindingException("The advice " + getRealName() + " requires a binding for the parameter " + param.getToken() + "!", param);
