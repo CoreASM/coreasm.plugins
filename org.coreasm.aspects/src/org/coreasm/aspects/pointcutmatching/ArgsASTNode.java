@@ -108,8 +108,6 @@ public class ArgsASTNode extends PointCutASTNode {
 		if (astn != null || parameterNode instanceof PointCutParameterNode)
 			return new Binding(compareToNode, this);
 
-		fetchCallByAgent(node);
-
 		if (!checkRuleReturn(node, fnNode.getName()))
 			return new Binding(compareToNode, this);
 		return resultingBinding;

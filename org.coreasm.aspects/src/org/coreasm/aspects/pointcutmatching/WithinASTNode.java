@@ -116,8 +116,6 @@ public class WithinASTNode extends PointCutASTNode {
 		if (astn != null || parameterNode instanceof PointCutParameterNode)
 			return new Binding(compareToNode, this);
 		
-		fetchCallByAgent(node);
-
 		if (!checkRuleReturn(node, ruleDeclaration.getFirst().getFirst().getToken()))
 			return new Binding(compareToNode, this);
 

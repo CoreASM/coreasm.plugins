@@ -27,6 +27,7 @@ import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
 
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
+import org.coreasm.aspects.pointcutmatching.AgentPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
 import org.coreasm.aspects.pointcutmatching.AspectASTNode;
 import org.coreasm.aspects.pointcutmatching.BinAndASTNode;
@@ -171,7 +172,7 @@ public class AoASMPlugin extends Plugin
 	public static final String KW_WITHOUT = "without";
 	private static final String KW_AS ="as";
 	private static final String KW_POINTCUT = "pointcut";
-	//private static final String KW_PROCEED = "proceed";
+	private static final String KW_AGENT = "agent";
 	///@}
 
 	///@{
@@ -190,7 +191,7 @@ public class AoASMPlugin extends Plugin
 	private final String[] keywords = {KW_ASPECT, KW_ADVICE, KW_BEFORE,
 			KW_AFTER, KW_AROUND, KW_BEGIN, KW_END, KW_RULECALL, KW_WITHIN,
 			KW_ARGS, KW_CFLOW, KW_CFLOWBELOW, KW_CFLOWTOP, KW_BY, KW_WITHOUT, OP_AND, OP_OR,
-			OP_NOT, KW_AS, KW_POINTCUT/*, KW_PROCEED*/};
+			OP_NOT, KW_AS, KW_POINTCUT, KW_AGENT };
 
 	/** \attention 	operators OP_AND, OP_OR, and OP_NOT, are treated as keywords because CoreASM does not allow duplicate definitions of operators in the global context. */
 	private final String[] operators = {OP_COLON};
@@ -393,10 +394,10 @@ public class AoASMPlugin extends Plugin
 						}
 					});
 			
-			/** Parser for call expression
-			 * The parser should accept names of agents which execute a call (maybe fuzzy by including *- and _-operators),
+			/**
+			 * Parser for call expression
 			 * the keyword call,
-			 * the id of the rule_name called (maybe fuzzy definition - see above),
+			 * the id of the rule_name called (using regex),
 			 * optional a boolean value saying if the rule has to return a value
 			 */
 			Parser<Node> callParser = // 'call' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
@@ -410,13 +411,6 @@ public class AoASMPlugin extends Plugin
 									)
 							),
 					pTools.getOprParser(")"),
-					Parsers.array(
-							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
-							Parsers.or(
-									idParser,
-									stringParser
-									)
-							).optional(),
 					Parsers.array(
 							Parsers.or(
 									pTools.getKeywParser("with", PLUGIN_NAME),
@@ -462,13 +456,6 @@ public class AoASMPlugin extends Plugin
 						)
 					),
 					pTools.getOprParser(")"),
-					Parsers.array(
-						pTools.getKeywParser(KW_BY, PLUGIN_NAME),
-						Parsers.or(
-							idParser,
-							stringParser
-						)
-					).optional(),
 					Parsers.array(
 						Parsers.or(
 								pTools.getKeywParser("with", PLUGIN_NAME),
@@ -559,13 +546,6 @@ public class AoASMPlugin extends Plugin
 							),
 					pTools.getOprParser(")"),
 					Parsers.array(
-							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
-							Parsers.or(
-									idParser,
-									stringParser
-									)
-							).optional(),
-					Parsers.array(
 							Parsers.or(
 									pTools.getKeywParser("with", PLUGIN_NAME),
 									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
@@ -609,13 +589,6 @@ public class AoASMPlugin extends Plugin
 							),
 					pTools.getOprParser(")"),
 					Parsers.array(
-							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
-							Parsers.or(
-									idParser,
-									stringParser
-									)
-							).optional(),
-					Parsers.array(
 							Parsers.or(
 									pTools.getKeywParser("with", PLUGIN_NAME),
 									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
@@ -658,13 +631,6 @@ public class AoASMPlugin extends Plugin
 									)
 							),
 					pTools.getOprParser(")"),
-					Parsers.array(
-							pTools.getKeywParser(KW_BY, PLUGIN_NAME),
-							Parsers.or(
-									idParser,
-									stringParser
-									)
-							).optional(),
 					Parsers.array(
 							Parsers.or(
 									pTools.getKeywParser("with", PLUGIN_NAME),
@@ -761,6 +727,36 @@ public class AoASMPlugin extends Plugin
 							}
 					});
 
+			// pointcut for checking the executing agent at runtime
+			Parser<Node> agentPointcutParser =
+					Parsers.array(
+							pTools.getKeywParser(KW_AGENT, PLUGIN_NAME),
+							pTools.getOprParser("("),
+							Parsers.or(
+									idParser,
+									stringParser
+									),
+							pTools.getOprParser(")")
+							).map(
+									new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+										@Override
+										public Node map(Object[] from) {
+											AgentPointCutASTNode node = new AgentPointCutASTNode(
+													// get scanner info from first
+													// element of the complex node call
+													((Node) from[0]).getScannerInfo());
+											addChildren(node, from);
+											return node;
+										}
+
+										@Override
+										public void addChild(Node parent, Node child) {
+											if (child instanceof ASTNode)
+												parent.addChild("lambda", child);
+											else
+												parent.addChild(child);
+										}
+									});
 
 			/* pointCutExpression parser */
 			Parser<Node> pointCutTermParser = Parsers.or(
@@ -779,7 +775,9 @@ public class AoASMPlugin extends Plugin
 					// cflowtop(pointCutParser)
 						cFlowTopParser,
 					// namedPointcut
-						namedPointcutExpressionParser
+					namedPointcutExpressionParser,
+					// agentPointcut
+					agentPointcutParser
 							);
 			refPointCutTermParser.set(pointCutTermParser);
 
@@ -787,7 +785,7 @@ public class AoASMPlugin extends Plugin
 					"PointCutTerm",
 					new GrammarRule(
 							"PointCutTerm",
-							"'call(id) | within(id) | args(id*) | bin_not PointCut | cflow(PointCut) | cflowbelow(PointCut) | cflowtop(PointCut) ",
+							"'call(id) | within(id) | args(id*) | bin_not PointCut | cflow(PointCut) | cflowbelow(PointCut) | cflowtop(PointCut) | 'pointcut' id '(' id (',' id)*  ')' ':' BinOr' | 'agent(id | string)'",
 							refPointCutTermParser.lazy(), this.getName()));
 
 			//PointCutExpr = '(' BinOr ')' | PointCutTerm

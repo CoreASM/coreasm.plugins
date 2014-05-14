@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
-import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -66,15 +65,23 @@ public class BinAndASTNode extends PointCutASTNode {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//just one node which must be a ExpressionASTNode according to the grammar;
 		//return the result of the child node.
-		if (children.size()==1 && children.get(0) instanceof ExpressionASTNode)
+		if (children.size() == 1 && children.get(0) instanceof ExpressionASTNode
+				&& !((ExpressionASTNode) children.get(0)).getCondition().isEmpty())
 			return ((ExpressionASTNode)children.get(0)).getCondition();
 		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
 		else if (children.size()==2 && 
 				children.get(0) instanceof ExpressionASTNode && 
-				children.get(1) instanceof BinAndASTNode)
-			return ((ExpressionASTNode)children.get(0)).getCondition()+" and "+
-					((BinAndASTNode)children.get(1)).getCondition();
-		else throw new CoreASMError("generation of expression failed", this);
+				children.get(1) instanceof BinAndASTNode) {
+
+			String leftChild = ((ExpressionASTNode) children.get(0)).getCondition();
+			String rightChild = ((BinAndASTNode) children.get(1)).getCondition();
+
+			if (!leftChild.isEmpty() && !rightChild.isEmpty())
+				return leftChild + " and " + rightChild;
+			else
+				return leftChild + rightChild;
+		}
+		return "";
 	}
 
 	@Override
@@ -99,7 +106,6 @@ public class BinAndASTNode extends PointCutASTNode {
 			else
 				return leftChild + rightChild;
 		}
-		else
-			return "";
+		return "";
 	}
 }

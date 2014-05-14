@@ -1,0 +1,33 @@
+CoreASM TestCFlow9
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestAspect {
+
+	//@require "Output\nTestCFlow9: [[Test], [adv0]]\nCFlowCaller\nOutput\nTestCFlow9: [[Test], [adv0]]"
+	advice TestCFlow9 after : ( not (cflow("CFlow")) and not( within("CFlowCaller")) ) and cflow(".*") and agent("InitAgent") {
+		print "TestCFlow9: "+reverse(callStack(self))
+	}
+}
+
+rule Test =
+par
+	seq
+		CFlow
+	next
+		CFlowCaller
+	program(self) := undef
+endpar
+rule CFlowCaller =
+	seq
+		print "CFlowCaller"
+	next
+		CFlow
+
+rule CFlow =
+	Output
+	
+rule Output = print "Output"

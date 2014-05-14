@@ -81,8 +81,6 @@ public class CFlowASTNode extends PointCutASTNode {
 				}
 			}
 		}
-
-		fetchCallByAgent(node);
 		return resultingBinding;
 	}
 

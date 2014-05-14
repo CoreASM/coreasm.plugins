@@ -19,7 +19,7 @@ aspect {
 	* @require "TestCall9\nDoSomething by Juan"
 	* @refuse "TestCall9\nDoSomething by InitAgent"
 	*/
-	advice TestCall9 before : call( "DoSomething" ) by "Juan" {print "TestCall9"}
+	advice TestCall9 before : call( "DoSomething" ) and agent("Juan") {print "TestCall9"}
 
 }
 

@@ -596,6 +596,8 @@ public class AspectWeaver {
 			// pointcuts
 			ASTNode conditionASTNode = null;
 			String condition = advice.getPointCut().getCondition();
+			if (condition.isEmpty())
+				condition = "true";
 			String ifThenConstruct = "if (" + condition + ") then skip";
 
 			// FunctionSignature

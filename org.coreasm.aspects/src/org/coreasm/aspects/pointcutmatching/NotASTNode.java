@@ -59,13 +59,16 @@ public class NotASTNode extends PointCutASTNode {
 		if (children.size() == 1 && children.get(0) instanceof BinOrASTNode
 				&& !((BinOrASTNode) children.get(0)).getCflowBindings().isEmpty())
 			return "NotBinding(" + ((BinOrASTNode) children.get(0)).getCflowBindings() + ")";
-		//exactly two nodes: if one of those nodes returns 'true', this node returns 'true', too.
-		else
-			return "";
+		return "";
 	}
 
 	@Override
 	public String getCondition() {
-		return "true";//"not ( "+ this.getFirstChild().getCondition() +" )";
+		ArrayList<ASTNode> children = (ArrayList<ASTNode>) this.getAbstractChildNodes();
+
+		if (children.size() == 1 && children.get(0) instanceof BinOrASTNode
+				&& !((BinOrASTNode) children.get(0)).getCondition().isEmpty())
+			return "not " + ((BinOrASTNode) children.get(0)).getCondition();
+		return "";
 	}
 }

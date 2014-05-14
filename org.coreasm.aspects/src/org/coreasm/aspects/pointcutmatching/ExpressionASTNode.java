@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
-import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -50,12 +49,13 @@ public class ExpressionASTNode extends PointCutASTNode {
 	public String getCondition() {
 		ArrayList<ASTNode> children = (ArrayList<ASTNode>)this.getAbstractChildNodes();
 		//case '(' BinOr ')'
-		if (this.getChildNodes().size()>1 && children.get(0) instanceof PointCutASTNode)
+		if (this.getChildNodes().size() > 1 && children.get(0) instanceof PointCutASTNode
+				&& !((PointCutASTNode) children.get(0)).getCondition().isEmpty())
 			return "("+((PointCutASTNode)children.get(0)).getCondition()+")";
 		//case PointcutTerm
 		else if (this.getChildNodes().size()==1 && children.get(0) instanceof PointCutASTNode)
 			return ((PointCutASTNode)children.get(0)).getCondition();
-		else throw new CoreASMError("generation of expression failed", this);
+		return "";
 	}
 
 }

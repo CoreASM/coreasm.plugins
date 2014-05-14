@@ -8,19 +8,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.CoreASMError;
-import org.coreasm.engine.CoreASMWarning;
-import org.coreasm.engine.absstorage.FunctionElement.FunctionClass;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
-import org.coreasm.engine.kernel.Kernel;
-import org.coreasm.engine.plugins.signature.FunctionNode;
-import org.coreasm.engine.plugins.string.StringBackgroundElement;
 
 /**
  * @author Marcel Dausend
@@ -29,8 +23,6 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 
 	private static final long serialVersionUID = 1L;
 	private static final String NODE_TYPE = PointCutASTNode.class.getSimpleName();
-
-	private String callByAgent;
 
 	/**
 	 * this constructor is needed to support duplicate
@@ -123,61 +115,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	 */
 	@Override
 	public String getCondition() {
-		if (callByAgent != null)
-			return "matches ( toString( self ) , \"" + callByAgent + "\" )";
-		return "true";
-	}
-
-	protected void fetchCallByAgent(Node node) {
-		while (node != null) {
-			if (node.getConcreteNodeType().equals("keyword") && node.getToken().equals("by")) {
-				ASTNode agentPattern = (ASTNode) node.getNextCSTNode();
-				if (agentPattern.getGrammarRule().equals("StringTerm")) {
-					callByAgent = agentPattern.getToken();
-				}
-				else //must be id node, so get the initial value from the definition of the static value 
-				{
-					ASTNode astNode;
-					if (!agentPattern.getGrammarRule().equals(Kernel.GR_ID))
-						throw new CoreASMError("node must be an id node", agentPattern);
-					else
-						astNode = agentPattern;
-					// ascend up to aspect node
-					while (!(astNode instanceof AspectASTNode))
-						astNode = astNode.getParent();
-					// iterate over signatures to find the initial string value of the
-					// used id
-					astNode = astNode.getFirst();//first child of aspect ast node
-					do {
-						if (astNode.getGrammarRule().equals("Signature") && astNode.getFirst() instanceof FunctionNode) {
-							FunctionNode fn = (FunctionNode) astNode.getFirst();
-							if (fn.getName().equals(agentPattern.getToken())) {
-								// error: initial value of the variable is not a string
-								// term
-								if (!(fn.getRange().equals(StringBackgroundElement.STRING_BACKGROUND_NAME)
-										&& fn.getInitNode() != null && fn.getInitNode()
-										.getGrammarRule().equals("StringTerm")))
-									throw new CoreASMError("Value of function " + fn.getName()
-											+ " is not a string but is used as pointcut pattern.", fn);
-								// warning: function is not static what is against the
-								// intention of the expected (final) static string
-								// declaration
-								if (fn.getFunctionClass() != FunctionClass.fcStatic) {
-									CoreASMWarning warn = new CoreASMWarning(AoASMPlugin.PLUGIN_NAME, "Function "
-											+ fn.getName() + " is not static but used as pointcut pattern.", fn);
-									AspectWeaver.getInstance().getControlAPI().warning(warn);
-								}
-								callByAgent = fn.getInitNode().getToken();
-							}
-						}
-					} while ((astNode = astNode.getNext()) != null);
-					if (callByAgent==null)
-						throw new CoreASMError(node.getNextCSTNode().getToken() + " is not declared.",
-								node.getNextCSTNode());
-				}
-			}
-			node = node.getNextCSTNode();
-		}
+		return "";
 	}
 
 	/**
@@ -262,7 +200,7 @@ public abstract class PointCutASTNode extends ASTNode implements IPointCutASTNod
 	}
 
 	/**
-	 * returns the type of the PointCutNnodeElement
+	 * returns the type of the PointCutNodeElement
 	 * 
 	 * @return
 	 */
