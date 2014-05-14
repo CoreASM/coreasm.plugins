@@ -7,12 +7,12 @@ init Test
 
 aspect ParserTest {
 
-	//@require "TestArgs6 a\n6\nTestArgs6 b\n6"
+	//@require "TestArgs6 a\n6\nTestArgs6 b"
 	advice TestArgs6(a, b) around : args(".*" as a,".*" as b) {
 		seqblock
-			print "TestProceed1 a"
+			print "TestArgs6 a"
 			proceed(p1, p2)
-			print "TestProceed1 b"
+			print "TestArgs6 b"
 		endseqblock
 	}
 
