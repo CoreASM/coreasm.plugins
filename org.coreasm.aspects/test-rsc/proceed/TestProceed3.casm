@@ -7,12 +7,12 @@ init Test
 
 aspect ParserTest {
 
-	//@require "TestProceed1 a\n6\nTestProceed1 b\n6"
-	advice TestCall1(a) around : args(".*" as a,".*") or args(".*", ".*",".*" as a) or call("Z" as a) {
+	//@require "TestProceed3 a\n6\nTestProceed3 b\nTestProceed3 a\nZ\nTestProceed3 b\nTestProceed3 a\n2\nTestProceed3 b"
+	advice TestProceed3(a) around : args(".*" as a,".*") or args(".*", ".*",".*" as a) or call("Z" as a) {
 		seqblock
-			print "TestProceed1 a"
+			print "TestProceed3 a"
 			proceed
-			print "TestProceed1 b"
+			print "TestProceed3 b"
 		endseqblock
 	}
 }

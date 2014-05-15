@@ -13,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.codehaus.jparsec.Parser;
-
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
@@ -126,56 +125,49 @@ public class AdviceASTNode extends ASTNode {
 	}
 	
 	private void substituteProceeds(int numProceedParameters, ASTNode astNode) {
-
 		if (astNode instanceof CaseRuleNode ){
 			CaseRuleNode caseNode = ((CaseRuleNode)astNode);
 			if ("pn".equals(caseNode.getCaseTerm().getFirst().getToken())){
 				Map<ASTNode, ASTNode> caseValues = caseNode.getCaseMap();
-				boolean notFound = true;
 				Node expression = null;
-				Node operator = null;
 				for (ASTNode caseValue : caseValues.keySet()) {
+					if (Integer.parseInt(caseValue.getToken()) == numProceedParameters)
+						return;
 					expression = caseValue;
-					operator = caseValue.getNextCSTNode().cloneTree();
-					if (Integer.parseInt(caseValue.getToken()) == numProceedParameters) {
-						notFound = false;
-						break;
-					}
 				}
-				if (notFound) {
-					Node newCaseValue = expression.cloneTree();
-					newCaseValue.setParent(expression.getParent());
-					newCaseValue.setToken(Integer.toString(numProceedParameters));
-					AspectTools.addChildAfter(expression.getParent(), expression.getNextCSTNode().getNextCSTNode(),
-							"beta", newCaseValue);
-					AspectTools.addChildAfter(expression.getParent(), newCaseValue, DEFAULT_NAME, operator);
-					MacroCallRuleNode proceedCall = new MacroCallRuleNode(expression.getScannerInfo());
-					AspectTools.addChildAfter(expression.getParent(), operator, "gamma", proceedCall);
-					Node id = caseNode.getCaseTerm().getFirst().cloneTree();
-					id.setToken("proceed");
-					FunctionRuleTermNode fn = new FunctionRuleTermNode(expression.getScannerInfo());
-					fn.addChild(id);
-					proceedCall.addChild(fn);
-					Node open = operator.cloneTree();
-					open.setToken("(");
-					fn.addChild(open);
-					for (int i = 1; i <= numProceedParameters; i++) {
-						id = caseNode.getCaseTerm().getFirst().cloneTree();
-						id.setToken("p" + i);
-						fn = new FunctionRuleTermNode(expression.getScannerInfo());
-						fn.addChild(id);
-						proceedCall.addChild(fn);
-						if (i < numProceedParameters)
-						{
-							Node colon = operator.cloneTree();
-							colon.setToken(",");
-							fn.addChild(colon);
+				Node newCaseValue = expression.cloneTree();
+				newCaseValue.setToken(Integer.toString(numProceedParameters));
+				caseNode.addChildAfter(expression.getNextCSTNode().getNextCSTNode(), "beta", newCaseValue);
+				Node operator = expression.getNextCSTNode().cloneTree();
+				caseNode.addChildAfter(newCaseValue, DEFAULT_NAME, operator);
+				MacroCallRuleNode proceedCall = (MacroCallRuleNode)expression.getNextCSTNode().getNextCSTNode().cloneTree();
+				caseNode.addChildAfter(operator, "gamma", proceedCall);
+
+				// Add missing parameters
+				FunctionRuleTermNode fn = (FunctionRuleTermNode)proceedCall.getFirst();
+				ASTNode lastASTNode = fn.getFirst();
+				for (int i = 0; i < numProceedParameters; i++) {
+					if (lastASTNode.getNext() == null) {
+						ASTNode param = (ASTNode)lastASTNode.cloneTree();
+						if (param.getFirst() == null) {
+							FunctionRuleTermNode tmp = new FunctionRuleTermNode(param.getScannerInfo());
+							tmp.addChild(param);
+							param = tmp;
 						}
+						param.getFirst().setToken("p" + (i + 1));
+						fn.addChildAfter(lastASTNode, "lambda", param);
+						fn.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", param.getScannerInfo(), Node.OPERATOR_NODE));
+						lastASTNode = param;
 					}
-					Node close = operator.cloneTree();
-					close.setToken(")");
-					fn.addChild(close);
+					else
+						lastASTNode = lastASTNode.getNext();
 				}
+
+				// Remove unnecessary parameter
+				while (lastASTNode.getNext() != null)
+					lastASTNode.getNextCSTNode().removeFromTree();
+				if ("proceed".equals(lastASTNode.getToken()))
+					lastASTNode.getNextCSTNode().removeFromTree();
 			}
 		}
 		else if (astNode instanceof MacroCallRuleNode) {
@@ -202,8 +194,9 @@ public class AdviceASTNode extends ASTNode {
 				astNode.replaceWith(caseConstruct);
 			}
 		}
-		for (ASTNode child : astNode.getAbstractChildNodes()) {
-			substituteProceeds(numProceedParameters, child);
+		else {
+			for (ASTNode child : astNode.getAbstractChildNodes())
+				substituteProceeds(numProceedParameters, child);
 		}
 	}
 
