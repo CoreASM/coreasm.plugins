@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.Node;
 
 /**
  * @author marcel
@@ -20,11 +19,11 @@ public class Binding {
 	private final PointCutASTNode astNode;
 	private HashMap<String, ASTNode> binding;
 
-    public Binding(ASTNode compareToNode, PointCutASTNode astNode, HashMap<String, ASTNode> binding){
-        this.compareToNode = compareToNode;
-        this.astNode = astNode;
-        this.binding = binding;
-    }
+	public Binding(ASTNode compareToNode, PointCutASTNode astNode, HashMap<String, ASTNode> binding) {
+		this.compareToNode = compareToNode;
+		this.astNode = astNode;
+		this.binding = binding;
+	}
 
 	public Binding(ASTNode compareToNode, PointCutASTNode astNode){
 		this.compareToNode = compareToNode;
@@ -59,7 +58,7 @@ public class Binding {
 			binding = null;
 	}
 
-    //clear the binding, if a parameter matching fails during the matching process
+	//clear the binding, if a parameter matching fails during the matching process
 	public void clear() {
 		binding.clear();
 	}
@@ -103,9 +102,9 @@ public class Binding {
 			return binding.get(key);
 	}
 
-    public HashMap<String, ASTNode> getBinding(){
-        return this.binding;
-    }
+	public HashMap<String, ASTNode> getBinding() {
+		return this.binding;
+	}
 
 	public ASTNode getCompareToNode(){
 		return this.compareToNode;
@@ -117,6 +116,27 @@ public class Binding {
 
 	@Override
 	public String toString(){
-		return "Match between " + getPointcutASTNode() + " and " + getCompareToNode() + "\n" + binding;
+		ASTNode advice = getPointcutASTNode();
+		while (!(advice instanceof AdviceASTNode))
+			advice = advice.getParent();
+		String variableBinding = bindindValueToString().toString();
+		if (!variableBinding.isEmpty())
+			variableBinding = "\nwith bound variables\n"+variableBinding;
+		return "advice " + ((AdviceASTNode) advice).getRealName() + " and "
+				+ getCompareToNode().unparseTree()
+				+ variableBinding;
+	}
+
+	/**
+	 * returns a copy of the binding where all values are unparsed ton Strings
+	 * 
+	 * @return binding with values as Strings
+	 */
+	private HashMap<String, String> bindindValueToString() {
+		HashMap<String, String> output = new HashMap<String, String>();
+		for (Entry<String, ASTNode> entry : this.binding.entrySet()) {
+			output.put(entry.getKey(), entry.getValue().unparseTree());
+		}
+		return output;
 	}
 }

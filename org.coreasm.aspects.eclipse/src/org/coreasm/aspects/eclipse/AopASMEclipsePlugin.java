@@ -11,7 +11,6 @@ import org.coreasm.aspects.eclipse.ui.AspectOutline;
 import org.coreasm.aspects.eclipse.ui.XReference;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.eclipse.util.Utilities;
-import org.coreasm.engine.EngineProperties;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
@@ -28,7 +27,7 @@ public class AopASMEclipsePlugin implements InformationObserver {
 		asOutline = new AspectOutline();
 		
 		InformationDispatcher.addObserver(this);
-		System.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, Utilities.getAdditionalPluginsFolders());
+		//System.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, Utilities.getAdditionalPluginsFolders());
 	}
 
 	@Override
@@ -64,7 +63,7 @@ public class AopASMEclipsePlugin implements InformationObserver {
 					Map<String, String> data = information.getData();
 					HashMap<String, Object> attributes = new HashMap<String, Object>();
 					attributes.put("name", data.get("name"));
-					MarkerUtilities.setMessage(attributes, "PointCut Match for " + data.get("name"));
+				MarkerUtilities.setMessage(attributes, "Pointcut matching between\n" + data.get("name"));
 					Utilities.createMarker(MARKER_TYPE_POINTCUT_MATCH, data.get("file"), Integer.parseInt(data.get("line")), Integer.parseInt(data.get("column")), Integer.parseInt(data.get("length")), attributes);
 					
 					// create tree objects from pointcut data
