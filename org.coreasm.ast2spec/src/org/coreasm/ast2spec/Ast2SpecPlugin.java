@@ -33,7 +33,7 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			"nextSibling: NODE -> NODE", "class: NODE -> STRING", "grammarRule: NODE -> STRING",
 			"concreteType: NODE -> STRING", "token: NODE -> STRING",
 			//auxiliary functions
-			"spec: NODE -> STRING", "lineNumber: NODE -> NUMBER", "indentation: NODE -> NUMBER"
+			"file: NODE -> STRING", "spec: NODE -> STRING", "lineNumber: NODE -> NUMBER", "indentation: NODE -> NUMBER"
 	};
 
 	private String nodeNames = "";
@@ -252,10 +252,28 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		 * meta information
 		 */
 		if (this.withMetaInformation) {
+			Node spec = node;
+			String aspectName = "";
+			while (spec != null) {
+				if (spec instanceof ASTNode && "AspectASTNode".equals(((ASTNode) spec).getGrammarRule()))
+				{
+					if (((ASTNode) spec).getFirst() != null)
+						aspectName = ((ASTNode) spec).getFirst().getToken();
+					break;
+				}
+				spec = spec.getParent();
+			}
 
-			if (this.rootnode.getChildNodes().get(1).getToken() != null)
+			if (spec != null)
 				printAssignment(stream, "spec", nodeToString(node), "\""
+						+ (aspectName == null ? "AspectSpecfication" : aspectName) + "\"", 2);
+			else
+				printAssignment(stream, "spec", nodeToString(node), "\""
+						+ "OriginalSpecification" + "\"", 2);
+			if (this.rootnode.getChildNodes().get(1).getToken() != null)
+				printAssignment(stream, "file", nodeToString(node), "\""
 						+ this.rootnode.getChildNodes().get(1).getToken() + "\"", 2);
+
 			/*
 			 * \bugfix capi.getSpec() not initialized by Parser of the
 			 * SlimEngine - try to get file from ASMParser.parentEditor
