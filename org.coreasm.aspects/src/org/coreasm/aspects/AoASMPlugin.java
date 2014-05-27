@@ -16,7 +16,6 @@
  */
 package org.coreasm.aspects;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +25,7 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
+
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.AgentPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
@@ -38,10 +38,12 @@ import org.coreasm.aspects.pointcutmatching.CFlowBelowASTNode;
 import org.coreasm.aspects.pointcutmatching.CFlowTopASTNode;
 import org.coreasm.aspects.pointcutmatching.CallASTNode;
 import org.coreasm.aspects.pointcutmatching.ExpressionASTNode;
+import org.coreasm.aspects.pointcutmatching.GetASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.pointcutmatching.NotASTNode;
 import org.coreasm.aspects.pointcutmatching.PointCutParameterNode;
+import org.coreasm.aspects.pointcutmatching.SetASTNode;
 import org.coreasm.aspects.pointcutmatching.WithinASTNode;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.ControlAPI;
@@ -125,17 +127,17 @@ import org.coreasm.util.information.InformationObject.VerbosityLevel;
 //@formatter:on
 public class AoASMPlugin extends Plugin
 		implements
-			ParserPlugin,
-			VocabularyExtender,
-			ExtensionPointPlugin {
+		ParserPlugin,
+		VocabularyExtender,
+		ExtensionPointPlugin {
 
-	/** version of the aspect-oriented CoreASM-Plugin*/
+	/** version of the aspect-oriented CoreASM-Plugin */
 	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 2,
 			"alpha");
-	/** name of the aspect-oriented CoreASM-Plugin*/
+	/** name of the aspect-oriented CoreASM-Plugin */
 	public static final String PLUGIN_NAME = AoASMPlugin.class
 			.getSimpleName();
-	/** the Plugin-names where this plugin depends on*/
+	/** the Plugin-names where this plugin depends on */
 	private Set<String> dependencyNames = null;
 
 	/**
@@ -148,13 +150,13 @@ public class AoASMPlugin extends Plugin
 	 * registered plugins
 	 */
 	private static InformationDispatcher info = InformationDispatcher.getInstance(PLUGIN_NAME);
-	
+
 	/**
 	 * @name Keywords and Operators
 	 *       final strings used in the \link getParsers() \endlink method
 	 */
 	///@{
-	/** \brief	keyword used for the parser*/
+	/** \brief keyword used for the parser */
 	private static final String KW_ASPECT = "aspect";
 	private static final String KW_ADVICE = "advice";
 	private static final String KW_BEFORE = "before";
@@ -163,6 +165,8 @@ public class AoASMPlugin extends Plugin
 	private static final String KW_BEGIN = "begin";
 	private static final String KW_END = "end";
 	private static final String KW_RULECALL = "call";
+	private static final String KW_GET = "get";
+	private static final String KW_SET = "set";
 	private static final String KW_WITHIN = "within";
 	private static final String KW_ARGS = "args";
 	private static final String KW_CFLOW = "cflow";
@@ -170,13 +174,13 @@ public class AoASMPlugin extends Plugin
 	private static final String KW_CFLOWTOP = "cflowtop";
 	private static final String KW_BY = "by";
 	public static final String KW_WITHOUT = "without";
-	private static final String KW_AS ="as";
+	private static final String KW_AS = "as";
 	private static final String KW_POINTCUT = "pointcut";
 	private static final String KW_AGENT = "agent";
 	///@}
 
 	///@{
-	/** \brief	operator used for the parser*/
+	/** \brief operator used for the parser */
 	private static final String OP_COLON = ":";
 	private static final String OP_AND = "and";
 	private static final String OP_OR = "or";
@@ -188,17 +192,24 @@ public class AoASMPlugin extends Plugin
 	 * collection of keyword and operator strings use by the parser in \link
 	 * getParsers() \endlink
 	 */
-	private final String[] keywords = {KW_ASPECT, KW_ADVICE, KW_BEFORE,
-			KW_AFTER, KW_AROUND, KW_BEGIN, KW_END, KW_RULECALL, KW_WITHIN,
+	private final String[] keywords = { KW_ASPECT, KW_ADVICE, KW_BEFORE,
+			KW_AFTER, KW_AROUND, KW_BEGIN, KW_END, KW_RULECALL, KW_GET, KW_SET, KW_WITHIN,
 			KW_ARGS, KW_CFLOW, KW_CFLOWBELOW, KW_CFLOWTOP, KW_BY, KW_WITHOUT, OP_AND, OP_OR,
 			OP_NOT, KW_AS, KW_POINTCUT, KW_AGENT };
 
-	/** \attention 	operators OP_AND, OP_OR, and OP_NOT, are treated as keywords because CoreASM does not allow duplicate definitions of operators in the global context. */
-	private final String[] operators = {OP_COLON};
+	/**
+	 * \attention operators OP_AND, OP_OR, and OP_NOT, are treated as keywords
+	 * because CoreASM does not allow duplicate definitions of operators in the
+	 * global context.
+	 */
+	private final String[] operators = { OP_COLON };
+
 	///@}
 
-	/** {@inheritDoc}
-	 * notify the user that the plugin has been loaded successfully (output
+	/**
+	 * {@inheritDoc} notify the user that the plugin has been loaded
+	 * successfully
+	 * (output
 	 * appears on the debug console) and add an interpreter listener to the
 	 * ControlAPI capi
 	 */
@@ -208,7 +219,7 @@ public class AoASMPlugin extends Plugin
 	}
 
 	/**
-	 * @return	return the version info of the plugin (i.e. for the about dialog)
+	 * @return return the version info of the plugin (i.e. for the about dialog)
 	 */
 	@Override
 	public VersionInfo getVersionInfo() {
@@ -234,31 +245,35 @@ public class AoASMPlugin extends Plugin
 		return dependencyNames;
 	}
 
-	/** {@inheritDoc}
-	 * \retval empty set
+	/**
+	 * {@inheritDoc} \retval empty set
 	 * no lexers defined for this plugin
 	 */
 	@Override
 	public Set<Parser<?>> getLexers() {
 		return Collections.emptySet();
 	}
+
 	/**
 	 * @name Recursive parsers
 	 */
 	//@{
-	/** \brief	references to parsers, which are used recursively.
-	 * \attention	this parser reference is used for the pointcut parser, because the definition uses recursion!
+	/**
+	 * \brief references to parsers, which are used recursively.
+	 * \attention this parser reference is used for the pointcut parser, because
+	 * the definition uses recursion!
 	 * */
-	private final Parser.Reference<Node> refPointCutTermParser = Parser	.newReference();
+	private final Parser.Reference<Node> refPointCutTermParser = Parser.newReference();
 	private final Parser.Reference<Node> refPointCutExpressionParser = Parser.newReference();
 	private final Parser.Reference<Node> refBinAndParser = Parser.newReference();
 	private final Parser.Reference<Node> refBinOrParser = Parser.newReference();
 	private final Parser.Reference<Node> refPointCutParser = Parser.newReference();
+
 	//@}
 
 	/**
 	 * The Definition of the parser for aspect oriented CoreASM specifications.
-	 *
+	 * 
 	 * It consists of the grammar rules (bottom-up)
 	 * <ol>
 	 * <li>binOpParser</li>
@@ -267,11 +282,12 @@ public class AoASMPlugin extends Plugin
 	 * <li>adviceBlockParser</li> and
 	 * <li>aspectBlockParser</li>
 	 * </ol>
-	 * @return	parsers as	Map<String, GrammarRule>
-	 *		<ul>
-	 *			<li> String => name of the parser component
-	 *			<li> GrammarRule => grammar rule used for parsing the component
-	 *		</ul>
+	 * 
+	 * @return parsers as Map<String, GrammarRule>
+	 *         <ul>
+	 *         <li>String => name of the parser component
+	 *         <li>GrammarRule => grammar rule used for parsing the component
+	 *         </ul>
 	 */
 	@Override
 	public Map<String, GrammarRule> getParsers() {
@@ -303,91 +319,93 @@ public class AoASMPlugin extends Plugin
 
 			Parser<Node> idParser = ParserTools.getInstance(capi).getIdParser();
 
-			Parser<Node> stringParser = ((ParserPlugin)capi.getPlugin("StringPlugin")).getParser("StringTerm");
+			Parser<Node> stringParser = ((ParserPlugin) capi.getPlugin("StringPlugin")).getParser("StringTerm");
 
 			//Parser<Node> resultLocation = ((ParserPlugin)capi.getPlugin("TurboASMPlugin")).getParser("ResultLocation");
 
 			ParserTools pTools = ParserTools.getInstance(capi);
 
 			Parser<Node> pointCutParameterParser = //(String || id) ['as' id]
+			Parsers.array(
+					Parsers.or(
+							stringParser,
+							idParser
+							),
 					Parsers.array(
-							Parsers.or(
-									stringParser,
-									idParser
-									),
-							Parsers.array(
-									pTools.getKeywParser(KW_AS, PLUGIN_NAME),
-									idParser
+							pTools.getKeywParser(KW_AS, PLUGIN_NAME),
+							idParser
 							).optional()
 					).map(
-						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-                        @Override
-                        public Node map(Object[] from) {
-                            PointCutParameterNode node = new PointCutParameterNode(
-                                    // get scanner info from first
-                                    // element of the complex node call
-                                    ((Node) from[0]).getScannerInfo());
-                            // ((Node) ((Object[]) from[0])[0])
-                            // .getScannerInfo());
-                            addChildren(node, from);
-                            return node;
-                        }
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									PointCutParameterNode node = new PointCutParameterNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode) {
-								if (((ASTNode) child).getGrammarRule().equals("ID")) {
-									FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
-									fn.addChild("alpha", child);
-									parent.addChild("lambda", fn);
-								} else
-									parent.addChild("lambda", child);
-							} else
-								parent.addChild(child);
-						}
-                    });
-					
-			
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode) {
+										if (((ASTNode) child).getGrammarRule().equals("ID")) {
+											FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
+											fn.addChild("alpha", child);
+											parent.addChild("lambda", fn);
+										}
+										else
+											parent.addChild("lambda", child);
+									}
+									else
+										parent.addChild(child);
+								}
+							});
+
 			Parser<Node> namedPointcutParser = // 'pointcut' id '(' id (',' id)*  ')' ':' binOrParser
-				Parsers.array(
+			Parsers.array(
 					pTools.getKeywParser(KW_POINTCUT, PLUGIN_NAME),
 					idParser,
 					Parsers.array(
-						pTools.getOprParser("("),
-						idParser,
-						pTools.star(
-							Parsers.array(
-									pTools.getOprParser(","),
-									idParser
-							)
-						),
-						pTools.getOprParser(")")
+							pTools.getOprParser("("),
+							idParser,
+							pTools.star(
+									Parsers.array(
+											pTools.getOprParser(","),
+											idParser
+											)
+									),
+							pTools.getOprParser(")")
 							).optional(),
 					pTools.getOprParser(":"),
 					refBinOrParser.lazy()
-				).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							NamedPointCutDefinitionASTNode node = new NamedPointCutDefinitionASTNode(
-							// get scanner info from first
-							// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							// ((Node) ((Object[]) from[0])[0])
-							// .getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+					).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									NamedPointCutDefinitionASTNode node = new NamedPointCutDefinitionASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode) {
-								parent.addChild("lambda", child);
-							} else
-								parent.addChild(child);
-						}
-					});
-			
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode) {
+										parent.addChild("lambda", child);
+									}
+									else
+										parent.addChild(child);
+								}
+							});
+
 			/**
 			 * Parser for call expression
 			 * the keyword call,
@@ -438,50 +456,118 @@ public class AoASMPlugin extends Plugin
 								}
 							});
 
+			Parser<Node> getParser = // 'get' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
+			Parsers.array(pTools.getKeywParser(KW_GET, PLUGIN_NAME),
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")")
+					).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									GetASTNode node = new GetASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
+
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
+
+			Parser<Node> setParser = // 'set' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
+			Parsers.array(pTools.getKeywParser(KW_SET, PLUGIN_NAME),
+					pTools.getOprParser("("),
+					pointCutParameterParser,
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
+					pTools.getOprParser(")")
+					).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									SetASTNode node = new SetASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
+
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
+
 			/* Parser for within expression */
 			Parser<Node> withinParser = // 'within' '(' id || string ['as' id] (',' id || string ['as' id] )* ')' ['by' id || string] [('with' || 'without')( 'result' || 'return') ]
 			Parsers.array(pTools.getKeywParser(KW_WITHIN, PLUGIN_NAME),
 					pTools.getOprParser("("),
 					pointCutParameterParser,
 					pTools.star(
-						Parsers.array(
-							pTools.getOprParser(","),
-							pointCutParameterParser
-						)
-					),
+							Parsers.array(
+									pTools.getOprParser(","),
+									pointCutParameterParser
+									)
+							),
 					pTools.getOprParser(")"),
 					Parsers.array(
-						Parsers.or(
-								pTools.getKeywParser("with", PLUGIN_NAME),
-								pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
-						),
-						Parsers.or(
-								pTools.getKeywParser("result", PLUGIN_NAME),
-								pTools.getKeywParser("return", PLUGIN_NAME)
-						)
-					).optional()
+							Parsers.or(
+									pTools.getKeywParser("with", PLUGIN_NAME),
+									pTools.getKeywParser(KW_WITHOUT, PLUGIN_NAME)
+									),
+							Parsers.or(
+									pTools.getKeywParser("result", PLUGIN_NAME),
+									pTools.getKeywParser("return", PLUGIN_NAME)
+									)
+							).optional()
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							WithinASTNode node = new WithinASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							// ((Node) ((Object[]) from[0])[0])
-							// .getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									WithinASTNode node = new WithinASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 
 			/* Parser for args expression */
 			Parser<Node> argsParser = //'args' '(' id || string ['as' id] (',' id || string ['as' id] )* ')'
@@ -496,28 +582,28 @@ public class AoASMPlugin extends Plugin
 									)
 							),
 					pTools.getOprParser(")")
-						).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							ArgsASTNode node = new ArgsASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node) from[0]).getScannerInfo());
-							// ((Node) ((Object[]) from[0])[0])
-							// .getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+					).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									ArgsASTNode node = new ArgsASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									// ((Node) ((Object[]) from[0])[0])
+									// .getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 
 			/* Parser for cflow expression */
 			Parser<Node> cFlowParser = // cflow(pointCutParser)
@@ -542,25 +628,27 @@ public class AoASMPlugin extends Plugin
 									)
 							).optional()
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							CFlowASTNode node = new CFlowASTNode(
-									/* get scanner info from first
-									 element of the complex node call */
-									((Node) from[0]).getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									CFlowASTNode node = new CFlowASTNode(
+											/*
+											 * get scanner info from first
+											 * element of the complex node call
+											 */
+											((Node) from[0]).getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 
 			/* Parser for cflow below expression */
 			Parser<Node> cFlowBelowParser = // cflowbelow(pointCutParser)
@@ -585,25 +673,25 @@ public class AoASMPlugin extends Plugin
 									)
 							).optional()
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							CFlowBelowASTNode node = new CFlowBelowASTNode(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									CFlowBelowASTNode node = new CFlowBelowASTNode(
 											// get scanner info from first
 											// element of the complex node call
 											((Node) from[0]).getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 
 			/* Parser for cflow top expression */
 			Parser<Node> cFlowTopParser = // cflowtop(pointCutParser)
@@ -671,47 +759,50 @@ public class AoASMPlugin extends Plugin
 								parent.addChild(child);
 						}
 					});
-			
-			/* Parser for named pointcut expressions used as pointcut term*/
-			Parser<Node> namedPointcutExpressionParser = 
-					Parsers.array(
-						idParser,
-						Parsers.array(
-							pTools.getOprParser("("),
-							idParser,
-							pTools.star(
-								Parsers.array(
-									pTools.getOprParser(","),
-									idParser
-								)
-							),
-							pTools.getOprParser(")")
-						).optional())
-					.map(
-						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-							@Override
-							public Node map(Object[] from) {
-								NamedPointCutASTNode node = new NamedPointCutASTNode(
-										// get scanner info from first
-										// element of the complex node call
-										((Node) from[0]).getScannerInfo());
-								addChildren(node, from);
-								return node;
-							}
 
-							@Override
-							public void addChild(Node parent, Node child) {
-								if (child instanceof ASTNode) {
-									if (((ASTNode) child).getGrammarRule().equals("ID")) {
-										FunctionRuleTermNode fn = new FunctionRuleTermNode(child.getScannerInfo());
-										fn.addChild("alpha", child);
-										parent.addChild("lambda", fn);
-									} else
-										parent.addChild("lambda", child);
-								} else
-									parent.addChild(child);
-							}
-					});
+			/* Parser for named pointcut expressions used as pointcut term */
+			Parser<Node> namedPointcutExpressionParser =
+					Parsers.array(
+							idParser,
+							Parsers.array(
+									pTools.getOprParser("("),
+									idParser,
+									pTools.star(
+											Parsers.array(
+													pTools.getOprParser(","),
+													idParser
+													)
+											),
+									pTools.getOprParser(")")
+									).optional())
+							.map(
+									new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+										@Override
+										public Node map(Object[] from) {
+											NamedPointCutASTNode node = new NamedPointCutASTNode(
+													// get scanner info from first
+													// element of the complex node call
+													((Node) from[0]).getScannerInfo());
+											addChildren(node, from);
+											return node;
+										}
+
+										@Override
+										public void addChild(Node parent, Node child) {
+											if (child instanceof ASTNode) {
+												if (((ASTNode) child).getGrammarRule().equals("ID")) {
+													FunctionRuleTermNode fn = new FunctionRuleTermNode(child
+															.getScannerInfo());
+													fn.addChild("alpha", child);
+													parent.addChild("lambda", fn);
+												}
+												else
+													parent.addChild("lambda", child);
+											}
+											else
+												parent.addChild(child);
+										}
+									});
 
 			// pointcut for checking the executing agent at runtime
 			Parser<Node> agentPointcutParser =
@@ -747,24 +838,28 @@ public class AoASMPlugin extends Plugin
 			/* pointCutExpression parser */
 			Parser<Node> pointCutTermParser = Parsers.or(
 					// call(id)
-						callParser,
+					callParser,
 					// within(id)
-						withinParser,
+					withinParser,
 					// args ((id,)*id)
-						argsParser,
+					argsParser,
+					// get(id)
+					getParser,
+					// set(id)
+					setParser,
 					// not pointCutParser
-						notParser,
+					notParser,
 					// cflow(pointCutParser)
-						cFlowParser,
+					cFlowParser,
 					// cflowbelow(pointCutParser)
-						cFlowBelowParser,
+					cFlowBelowParser,
 					// cflowtop(pointCutParser)
-						cFlowTopParser,
+					cFlowTopParser,
 					// namedPointcut
 					namedPointcutExpressionParser,
 					// agentPointcut
 					agentPointcutParser
-							);
+					);
 			refPointCutTermParser.set(pointCutTermParser);
 
 			parsers.put(
@@ -780,30 +875,30 @@ public class AoASMPlugin extends Plugin
 							pTools.getOprParser("("),
 							refBinOrParser.lazy(),
 							pTools.getOprParser(")")
-						),
+							),
 					Parsers.array(
 							refPointCutTermParser.lazy()
 							)
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							ExpressionASTNode node = new ExpressionASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node)from[0]).getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									ExpressionASTNode node = new ExpressionASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 			refPointCutExpressionParser.set(pointCutExpressionParser);
 			parsers.put(
 					"PointCutExpression",
@@ -818,29 +913,29 @@ public class AoASMPlugin extends Plugin
 					pTools.star(
 							Parsers.array(
 									pTools.getOprParser(OP_AND),
-                                    refBinAndParser.lazy()
+									refBinAndParser.lazy()
 									)
-								)
+							)
 					).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							BinAndASTNode node = new BinAndASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node)from[0]).getScannerInfo());
-							addChildren(node, from);
-							return node;
-						}
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									BinAndASTNode node = new BinAndASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 			refBinAndParser.set(binAndParser);
 			parsers.put(
 					"BinAndParser",
@@ -851,33 +946,33 @@ public class AoASMPlugin extends Plugin
 
 			//BinOr =  BinAnd ( 'or' BinOr )*
 			Parser<Node> binOrParser = Parsers.array(
-                    refBinAndParser.lazy(),
-				pTools.star(
-						Parsers.array(
-								pTools.getOprParser(OP_OR),
-								refBinOrParser.lazy()
-								)
+					refBinAndParser.lazy(),
+					pTools.star(
+							Parsers.array(
+									pTools.getOprParser(OP_OR),
+									refBinOrParser.lazy()
+									)
 							)
-			).map(
-					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-						@Override
-						public Node map(Object[] from) {
-							BinOrASTNode node = new BinOrASTNode(
-									// get scanner info from first
-									// element of the complex node call
-									((Node)from[0]).getScannerInfo());
-                            addChildren(node, from);
-							return node;
-						}
+					).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+								@Override
+								public Node map(Object[] from) {
+									BinOrASTNode node = new BinOrASTNode(
+											// get scanner info from first
+											// element of the complex node call
+											((Node) from[0]).getScannerInfo());
+									addChildren(node, from);
+									return node;
+								}
 
-						@Override
-						public void addChild(Node parent, Node child) {
-							if (child instanceof ASTNode)
-								parent.addChild("lambda", child);
-							else
-								parent.addChild(child);
-						}
-					});
+								@Override
+								public void addChild(Node parent, Node child) {
+									if (child instanceof ASTNode)
+										parent.addChild("lambda", child);
+									else
+										parent.addChild(child);
+								}
+							});
 			refBinOrParser.set(binOrParser);
 			parsers.put(
 					"BinOrParser",
@@ -905,16 +1000,20 @@ public class AoASMPlugin extends Plugin
 			parsers.put("locator", new GrammarRule("locator",
 					"'before | around | after'", locatorParser, PLUGIN_NAME));
 
-			/* my Blockrule parser - {\attention redefines standard block rule parser}
-			 * matches only symetric combinations of block start indicator and block end indicator, i.e. both should be brackets. */
+			/*
+			 * my Blockrule parser - {\attention redefines standard block rule
+			 * parser}
+			 * matches only symetric combinations of block start indicator and
+			 * block end indicator, i.e. both should be brackets.
+			 */
 			Parser<Node> blockRuleParser = Parsers.or(
 					Parsers.array(pTools.getKeywParser(KW_BEGIN, PLUGIN_NAME),
 							pTools.plus(ruleParser),
-//							pTools.plus(Parsers.or(ruleParser, proceed)),
+							//							pTools.plus(Parsers.or(ruleParser, proceed)),
 							pTools.getKeywParser(KW_END, PLUGIN_NAME)),
 					Parsers.array(pTools.getOprParser("{"),
 							pTools.plus(ruleParser),
-//							pTools.plus(Parsers.or(ruleParser, proceed)),
+							//							pTools.plus(Parsers.or(ruleParser, proceed)),
 							pTools.getOprParser("}")))
 					.map(new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
@@ -982,13 +1081,13 @@ public class AoASMPlugin extends Plugin
 					pTools.getKeywParser(KW_ASPECT, this.getName()),
 					idParser.optional(),
 					Parsers.or(
-					// Alternative one - with 'begin' and 'end'
+							// Alternative one - with 'begin' and 'end'
 							Parsers.array(pTools.getKeywParser(KW_BEGIN,
-									this.getName()), 
-									pTools.star(signatureParser), 
+									this.getName()),
+									pTools.star(signatureParser),
 									pTools.star(ruleDeclaration),
 									pTools.star(namedPointcutParser),
-									pTools.star(adviceBlockParser), 
+									pTools.star(adviceBlockParser),
 									pTools.getKeywParser(KW_END, this.getName())),
 							// Alternative two - with '{' and '}'
 							Parsers.array(pTools.getOprParser("{"),
@@ -1027,12 +1126,16 @@ public class AoASMPlugin extends Plugin
 		return parsers;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.ParserPlugin#getParser(java.lang.String)
-	 * @param	nonterminal	name of the nonterminal
-	 * @return returns null, because the plugin doen not provide a parser for reuse.
-	 *
-	 * handles export requests for partial parsers of this class.
+	 * @param nonterminal
+	 *            name of the nonterminal
+	 * @return returns null, because the plugin doen not provide a parser for
+	 *         reuse.
+	 * 
+	 *         handles export requests for partial parsers of this class.
 	 */
 	@Override
 	public Parser<Node> getParser(String nonterminal) {
@@ -1053,11 +1156,14 @@ public class AoASMPlugin extends Plugin
 		return keywords;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.ParserPlugin#getOperators()
-	 *
-	 * \retval array of operators
-	 * Returns the list of operators this plugin provides. The returned value should not be null.
+	 * 
+	 *      \retval array of operators
+	 *      Returns the list of operators this plugin provides. The returned
+	 *      value should not be null.
 	 */
 	@Override
 	public String[] getOperators() {
@@ -1215,25 +1321,26 @@ public class AoASMPlugin extends Plugin
 					AspectWeaver.getInstance().weave();
 				}
 				AspectTools.writeProgramToFile(capi, "after weaving", rootnode, capi.getSpec().getAbsolutePath());
-				
+
 			}
 			else if (source == EngineMode.emParsingSpec && target != EngineMode.emIdle)//running the spec
 			{
 				//weaving if running the engine
-				if (AspectWeaver.getInstance().initialize(capi,((ASTNode)capi.getSpec().getRootNode()))) {
+				if (AspectWeaver.getInstance().initialize(capi, ((ASTNode) capi.getSpec().getRootNode()))) {
 					AspectWeaver.getInstance().weave();
 				}
 			}
-		}catch (CoreASMError e){
+		}
+		catch (CoreASMError e) {
 			AspectWeaver.getInstance().reset();
 			capi.error(e);
-		}		
-		catch (Exception e){
+		}
+		catch (Exception e) {
 			AspectWeaver.getInstance().reset();
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * create a marker and send the information to plugins that are registered
 	 * at information dispatcher
@@ -1270,13 +1377,15 @@ public class AoASMPlugin extends Plugin
 	 * @name methods implementing Vocabulary Extender
 	 */
 	//@{
-	/** {@inheritDoc}
-	 *
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getFunctions()
-	 *
-	 * 	\retval	map of functions	if extending the vocabulary with functions, initialize and return
-	 *	corresponding function elements.
-	 *	\retval	null	otherwise
+	 * 
+	 *      \retval map of functions if extending the vocabulary with functions,
+	 *      initialize and return
+	 *      corresponding function elements.
+	 *      \retval null otherwise
 	 */
 	@Override
 	public Map<String, FunctionElement> getFunctions() {
@@ -1285,11 +1394,14 @@ public class AoASMPlugin extends Plugin
 		return esp.getFunctions();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getUniverses()
-	 *
-	 * \retval	map of universes	if extending the vocabulary with universe, initialize and return corresponding universe elements.
-	 * \retval	null	otherwise
+	 * 
+	 *      \retval map of universes if extending the vocabulary with universe,
+	 *      initialize and return corresponding universe elements.
+	 *      \retval null otherwise
 	 */
 	@Override
 	public Map<String, UniverseElement> getUniverses() {
@@ -1321,11 +1433,14 @@ public class AoASMPlugin extends Plugin
 		return esp.getRules();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getBackgrounds()
-	 *
-	 * \retval map of backgrounds	if extending the vocabulary with background, initialize and return corresponding background elements.
-	 * \retval null	 otherwise
+	 * 
+	 *      \retval map of backgrounds if extending the vocabulary with
+	 *      background, initialize and return corresponding background elements.
+	 *      \retval null otherwise
 	 */
 	@Override
 	public Map<String, BackgroundElement> getBackgrounds() {
@@ -1334,11 +1449,16 @@ public class AoASMPlugin extends Plugin
 		return esp.getBackgrounds();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getFunctionNames()
-	 *
-	 *	\retval set of names of all functions that are provided by this plugin.
-	 *	\attention	The returned value should NOT be null. Plug-ins should return an empty set if they are not providing any function. Hint: use Collections.emptySet().
+	 * 
+	 *      \retval set of names of all functions that are provided by this
+	 *      plugin.
+	 *      \attention The returned value should NOT be null. Plug-ins should
+	 *      return an empty set if they are not providing any function. Hint:
+	 *      use Collections.emptySet().
 	 */
 	@Override
 	public Set<String> getFunctionNames() {
@@ -1347,11 +1467,17 @@ public class AoASMPlugin extends Plugin
 		return esp.getFunctionNames();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getUniverseNames()
-	 *
-	 *	\retval set of names of all universes that are provided by this plugin.
-	 * \attention	The returned value should NOT be null. Plug-ins should return an empty set if they are not providing any universe. Hint: use Collections.emptySet(). */
+	 * 
+	 *      \retval set of names of all universes that are provided by this
+	 *      plugin.
+	 *      \attention The returned value should NOT be null. Plug-ins should
+	 *      return an empty set if they are not providing any universe. Hint:
+	 *      use Collections.emptySet().
+	 */
 	@Override
 	public Set<String> getUniverseNames() {
 		ExcerptOfSignaturePlugin esp = new ExcerptOfSignaturePlugin();
@@ -1359,12 +1485,18 @@ public class AoASMPlugin extends Plugin
 		return esp.getUniverseNames();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getBackgroundNames()
-	 *
-	 * \retval set of names of the backgrounds that are provided by this plugin.
-	 *
-	 * \attention	The returned value should NOT be null. Plug-ins should return an empty set if they are not providing any background. Hint: use Collections.emptySet(). */
+	 * 
+	 *      \retval set of names of the backgrounds that are provided by this
+	 *      plugin.
+	 * 
+	 *      \attention The returned value should NOT be null. Plug-ins should
+	 *      return an empty set if they are not providing any background. Hint:
+	 *      use Collections.emptySet().
+	 */
 	@Override
 	public Set<String> getBackgroundNames() {
 		ExcerptOfSignaturePlugin esp = new ExcerptOfSignaturePlugin();
@@ -1372,11 +1504,16 @@ public class AoASMPlugin extends Plugin
 		return esp.getBackgroundNames();
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
+	 * 
 	 * @see org.coreasm.engine.plugin.VocabularyExtender#getRuleNames()
-	 *
-	 * \retval set of names of all rule provided be this plugin.
-	 * \attention	The returned value should NOT be null. Plug-ins should return an empty set if they are not providing any background. Hint: use Collections.emptySet(). */
+	 * 
+	 *      \retval set of names of all rule provided be this plugin.
+	 *      \attention The returned value should NOT be null. Plug-ins should
+	 *      return an empty set if they are not providing any background. Hint:
+	 *      use Collections.emptySet().
+	 */
 	@Override
 	public Set<String> getRuleNames() {
 		ExcerptOfSignaturePlugin esp = new ExcerptOfSignaturePlugin();
