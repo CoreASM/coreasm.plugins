@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
+
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -257,7 +258,7 @@ public class AspectWeaver {
 						/*
 						 * the set substituted keeps track of the named
 						 * pointcuts that have already
-						 * taken into account for during the substitution.
+						 * taken into account during the substitution.
 						 * If a named pointcut would be taken into account
 						 * twice,
 						 * the definition of named pointcuts is cyclic!
@@ -265,7 +266,7 @@ public class AspectWeaver {
 						HashSet<String> substituted = new HashSet<String>();
 						NamedPointCutDefinitionASTNode nptcdef = (NamedPointCutDefinitionASTNode) nptc;
 						substituted.add(nptcdef.getName());
-						//perfomr the substutution recursively
+						//perform the substitution recursively
 						substituteNamedPointcuts(nptcdef.getPointCut(), substituted);
 						nptcdef.removeFromTree();
 					}
@@ -434,6 +435,19 @@ public class AspectWeaver {
 		reset();
 	}
 
+	/**
+	 * replace named pointcut expressions with the righthand side of this named
+	 * pointcut definition
+	 * 
+	 * @param astnode
+	 *            node that eventually has to be replaced
+	 * @param substituted
+	 *            list of substituted named pointcuts (keep track of to avoid
+	 *            cyclic substitutions)
+	 * @throws BindingException
+	 *             thrown if cyclic substitution or named pointcut is not
+	 *             defined
+	 */
 	private static void substituteNamedPointcuts(ASTNode astnode, HashSet<String> substituted) throws BindingException {
 		if (astnode instanceof NamedPointCutASTNode) {
 			NamedPointCutASTNode nptc = ((NamedPointCutASTNode) astnode);
