@@ -128,14 +128,15 @@ public class Binding {
 	}
 
 	/**
-	 * returns a copy of the binding where all values are unparsed ton Strings
+	 * returns a copy of the binding where all values are unparsed to Strings
 	 * 
 	 * @return binding with values as Strings
 	 */
 	private HashMap<String, String> bindindValueToString() {
 		HashMap<String, String> output = new HashMap<String, String>();
 		for (Entry<String, ASTNode> entry : this.binding.entrySet()) {
-			output.put(entry.getKey(), entry.getValue().unparseTree());
+			if (entry.getValue() != null)
+				output.put(entry.getKey(), entry.getValue().unparseTree());
 		}
 		return output;
 	}
