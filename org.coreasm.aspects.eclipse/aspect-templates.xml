@@ -8,6 +8,6 @@
 <template id="pointcut" name="pointcut" description="full pointcut definition (CoreASM Aspect)" context="coreasm" enabled="true">pointcut ${name}(${cursor}) : call(${function}) by ${cursor} ${withOrWithout} return</template>
 <template id="pointcut2" name="pointcut" description="normal pointcut definition (CoreASM Aspect)" context="coreasm" enabled="true">pointcut ${name}(${cursor}) : call(${function})</template>
 
-<template id="advice" name="advice" description="advice definition (CoreASM Aspect)" context="coreasm" enabled="true">advice ${name}(${cursor}) ${context} : ${pointcut} {$cursor}</template>
+<template id="advice" name="advice" description="advice definition (CoreASM Aspect)" context="coreasm" enabled="true">advice ${name}(${cursor}) ${context} : ${pointcut} ${cursor}</template>
 
 </templates>
