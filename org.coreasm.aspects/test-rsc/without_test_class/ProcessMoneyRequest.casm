@@ -1,34 +1,60 @@
+/*
+ * This rule grantMoney has been taken from Börger and Stärk 2003
+ * and es extended using AoASM to demonstrate aspect oriented specification.
+ * This example has been published at 4th International ABZ 2014 Conference, Toulouse, France:
+ * Marcel Dausend and Alexander Raschke.
+ * Introducing Aspect-Oriented Specification for Abstract State Machines
+ */
 CoreASM ProcessMoneyRequest
 
+use Standard
 use TabBlocks
+use Time
 
+//current local functions interesting in the context of the advice
+function accountHolder: -> Time initially "Marcel Dausend"
+function date: -> String initially "6th of June 2014"
+
+//functions from the original specification
 function MoneyLeft: -> NUMBER
-function CurrCard: -> STRING
+function CurrCard: -> STRING initially "CardOfMarcelDausend"
 
+//dummy functions not implemented
 derived allowed(a,b) = true
 
-use Standard
 use AoASM
 
-aspect {
-advice CommunicateMoneyRequestToFinanceAuthority(currIn)
-after : call("GrantMoney", ".*" as currIn) and within("ProcessMoneyRequest", ".*"){
-	if currIn >= 10.000 then
-		InformFinanceAuthority(accountHolder, currIn, date)
-}
-}
+aspect CommunicateMoneyGrant {
 
+	rule InformFinanceAuthority(accountHolder, currIn, date) =
+		print "InformFinanceAuthority: "+currIn+"€ granted to "+accountHolder+" at "+date
+
+	pointcut ptcGrantMoney(currIn) :
+		within("ProcessMoneyRequest", ".*") and
+		call("GrantMoney", ".*") and
+		args(".*" as  currIn)
+
+	// @require "InformFinanceAuthority:"
+	// @require "GrantMoney"
+	// @maxsteps "10"
+	advice CommunicateMoneyRequestToFinanceAuthority(currIn)
+		around : ptcGrantMoney(currIn){
+		proceed
+			if currIn >= 10000 then
+				InformFinanceAuthority(accountHolder, currIn, now)
+	}
+
+}
+//definition of the initial rule
 init Money
 
-rule Money = ProcessMoneyRequest(500)
+rule Money = choose b in BOOLEAN  do if b then ProcessMoneyRequest(500) else ProcessMoneyRequest(10001)
+
+//dummy implementation for GrantMoney
+rule GrantMoney(a) = print "GrantMoney("+a+")"
 
 rule ProcessMoneyRequest(In) =
 	if allowed(In, CurrCard) then
 		GrantMoney(In)
 		MoneyLeft := MoneyLeft - In
 	else Out := {NotAllowedMsg, CurrCard}
-
-//@require "InformFinanceAuthority"
-rule InformFinanceAuthority(accountHolder, currIn, date) = abstract "InformFinanceAuthority"
-
-rule GrantMoney(a) = skip
