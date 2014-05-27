@@ -49,4 +49,22 @@
    <extension
          point="org.eclipse.ui.editors.annotationTypes">
    </extension>
+   <extension point="org.eclipse.ui.views">
+       <category
+           name="CoreASM"
+           id="org.coreasm.eclipse.CoreASM">
+       </category>
+       <view id="org.coreasm.aspects.eclipse.views.CrossReferences"
+       name="Cross References"
+       icon="icons/XRefIcon.gif"
+       category="org.coreasm.eclipse.CoreASM"
+       class="org.coreasm.aspects.eclipse.ui.views.XReferenceView"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.templates">
+	  <include 
+	  		file="aspect-templates.xml" 
+	  		translations="aspect-templates.xml">
+	  </include>
+   </extension>
 </plugin>

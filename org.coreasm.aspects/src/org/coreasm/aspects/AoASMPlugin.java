@@ -16,6 +16,7 @@
  */
 package org.coreasm.aspects;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1199,7 +1200,11 @@ public class AoASMPlugin extends Plugin
 		try {
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
-
+				// Serialize the root node and send it to the plugin
+				ASTNode rootNode = capi.getParser().getRootNode();
+				info.createInformation(AspectTools.anySerialize(rootNode), VerbosityLevel.INFO, null);
+				
+				// clear markers
 				info.clearInformation("clear now!");
 				// TODO create marker for all aspects and submit them via IInformation to Observers
 
@@ -1242,15 +1247,22 @@ public class AoASMPlugin extends Plugin
 	 */
 	public static void createMarker(ControlAPI capi, ASTNode functionRuleTermNode, Binding binding) {
 		Map<String, String> data = new HashMap<String, String>();
+		
 		Specification spec = capi.getSpec();
 		CharacterPosition charPos = functionRuleTermNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
+		
 		data.put("file", spec.getAbsolutePath());
 		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
+		data.put("advicePos", "" + binding.getPointcutASTNode().getAdvice().getScannerInfo().charPosition);
 		data.put("aspect", binding.getPointcutASTNode().getAspect().getName());
-		data.put("line", "" + spec.getLine(charPos.line).line);
+		data.put("aspectPos", "" + binding.getPointcutASTNode().getAspect().getScannerInfo().charPosition);
 		data.put("column", "" + charPos.column);
 		data.put("length", "" + functionRuleTermNode.getFirst().getToken().length());
-		data.put("name", binding.toString());
+		data.put("name", binding.toString());	
+		data.put("functionPos", "" + functionRuleTermNode.getScannerInfo().charPosition);
+		data.put("function", functionRuleTermNode.unparseTree());
+		data.put("line", "" + spec.getLine(charPos.line).line);
+		
 		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 

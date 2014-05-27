@@ -1,22 +1,32 @@
 package org.coreasm.aspects.eclipse;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.ui.texteditor.MarkerUtilities;
 
 import org.coreasm.aspects.AoASMPlugin;
+import org.coreasm.aspects.eclipse.ui.AspectOutline;
+import org.coreasm.aspects.eclipse.ui.XReference;
+import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.eclipse.util.Utilities;
 import org.coreasm.engine.EngineProperties;
+import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
 import org.coreasm.util.information.InformationObserver;
 
 public class AopASMEclipsePlugin implements InformationObserver {
 	
+	private AspectOutline asOutline = null;	// outline
+	
 	public static final String MARKER_TYPE_POINTCUT_MATCH = "org.coreasm.aspects.eclipse.marker.PointCutMatchMarker";
 
 	public AopASMEclipsePlugin() {
+
+		asOutline = new AspectOutline();
+		
 		InformationDispatcher.addObserver(this);
 		System.setProperty(EngineProperties.PLUGIN_FOLDERS_PROPERTY, Utilities.getAdditionalPluginsFolders());
 	}
@@ -28,7 +38,25 @@ public class AopASMEclipsePlugin implements InformationObserver {
 			System.err.println("AopASMEclipsePlugin:" + information);
 			break;
 		case INFO:
-			System.out.println("AopASMEclipsePlugin:" + information.getMessage());
+			if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+				try {
+					// deserialize and check if message was a serialized node
+					ASTNode n = (ASTNode)AspectTools.anyDeserialize(information.getMessage());
+					if (n != null) {
+						XReference.setRootNode(n);
+						
+						// create outline and send nodes to extern outline
+						asOutline.removeRootsFromOutline();
+						asOutline.createAspectTree(n);
+						asOutline.sendRootsToOutline();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
+			
 			break;
 		case COMMUNICATION:
 			if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
@@ -38,9 +66,13 @@ public class AopASMEclipsePlugin implements InformationObserver {
 					attributes.put("name", data.get("name"));
 					MarkerUtilities.setMessage(attributes, "PointCut Match for " + data.get("name"));
 					Utilities.createMarker(MARKER_TYPE_POINTCUT_MATCH, data.get("file"), Integer.parseInt(data.get("line")), Integer.parseInt(data.get("column")), Integer.parseInt(data.get("length")), attributes);
+					
+					// create tree objects from pointcut data
+					XReference.createTreeObjects(data);
 //				}
 			}
 			break;
+			
 		default:
 			System.out.println("AopASMEclipsePlugin:" + information);
 		}
