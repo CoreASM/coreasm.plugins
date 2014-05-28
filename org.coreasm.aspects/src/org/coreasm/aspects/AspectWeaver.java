@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
-
 import org.coreasm.aspects.errorhandling.AspectException;
 import org.coreasm.aspects.errorhandling.BindingException;
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
@@ -807,11 +806,18 @@ public class AspectWeaver {
 		auxilliaryDefintions.add(
 				"derived ExtractPattern(list) ="
 						+ "	return singleElementList in"
-						+ "		if head(list) != undef then"
+						+ "		if LIST(list) then"
 						+ "			singleElementList := toString(head(list))"
-						+ "				else singleElementList := toString(list)");
+						+ "		else"
+						+ "			singleElementList := toString(list)");
 		auxilliaryDefintions
-				.add("derived IdsIntoList(sig, patternsig) = filter(zip(sig, map(patternsig, @last)), @LastNotUndef)");
+				.add("derived IdsIntoList(sig, patternsig) = filter(zip(sig, map(patternsig, @ExtractId)), @LastNotUndef)");
+		auxilliaryDefintions.add("derived ExtractId(list) ="
+						+ "	return id in"
+						+ "		if LIST(list) then"
+						+ "			id := last(list)"
+						+ "		else"
+						+ "			id := undef");
 		auxilliaryDefintions.add("derived LastNotUndef(tuple) = last(tuple) != undef");
 
 		auxilliaryDefintions
