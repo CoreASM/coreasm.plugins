@@ -7,9 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.coreasm.aspects.AoASMPlugin;
-import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
@@ -49,9 +47,6 @@ public class CFlowASTNode extends PointCutASTNode {
 
 	@Override
 	public Binding matches(ASTNode compareToNode) {
-		FunctionRuleTermNode fnNode = (FunctionRuleTermNode) compareToNode;
-		if (!AspectTools.isRuleName(fnNode.getName()))
-			return new Binding(compareToNode, this);
 		//if this is a child of any not node that returns no match
 		ASTNode parent = this.getParent();
 		while (parent != null && !(parent instanceof NotASTNode) && !"and".equals(parent.getToken()))
