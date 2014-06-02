@@ -5,9 +5,52 @@
 	${cursor}
 }</template>
 
-<template id="pointcut" name="pointcut" description="full pointcut definition (CoreASM Aspect)" context="coreasm" enabled="true">pointcut ${name}(${cursor}) : call(${function}) by ${cursor} ${withOrWithout} return</template>
-<template id="pointcut2" name="pointcut" description="normal pointcut definition (CoreASM Aspect)" context="coreasm" enabled="true">pointcut ${name}(${cursor}) : call(${function})</template>
+<template id="advice" name="advice" description="advice definition (CoreASM Aspect)" context="coreasm" enabled="true">advice ${name} ${locator} : ${ptc} { 
+	${skip}
+}</template>
 
-<template id="advice" name="advice" description="advice definition (CoreASM Aspect)" context="coreasm" enabled="true">advice ${name}(${cursor}) ${context} : ${pointcut} ${cursor}</template>
+<template id="locator_before" name="locator" description="before locator (CoreASM Aspect)" context="coreasm" enabled="true">before</template>
+<template id="locator_before1" name="before" description="before locator (CoreASM Aspect)" context="coreasm" enabled="true">before</template>
+
+<template id="locator_around" name="locator" description="around locator (CoreASM Aspect)" context="coreasm" enabled="true">around</template>
+<template id="locator_around1" name="around" description="around locator (CoreASM Aspect)" context="coreasm" enabled="true">around</template>
+
+<template id="locator_after" name="locator" description="after locator (CoreASM Aspect)" context="coreasm" enabled="true">after</template>
+<template id="locator_after1" name="after" description="after locator (CoreASM Aspect)" context="coreasm" enabled="true">after</template>
+
+<template id="pointcut" name="ptc" description="definition of a named pointcut (CoreASM Aspect)" context="coreasm" enabled="true">pointcut ${name} : ${ptc}</template>
+
+<template id="and" name="ptc" description="and pointcut (CoreASM Aspect)" context="coreasm" enabled="true">${ptc_1} and ${ptc_2}</template>
+<template id="and1" name="and pointcut" description="and pointcut (CoreASM Aspect)" context="coreasm" enabled="true">${ptc_1} and ${ptc_2}</template>
+
+<template id="or" name="ptc" description="or pointcut (CoreASM Aspect)" context="coreasm" enabled="true">${ptc_1} or ${ptc_2}</template>
+<template id="or1" name="or pointcut" description="or pointcut (CoreASM Aspect)" context="coreasm" enabled="true">${ptc_1} or ${ptc_2}</template>
+
+<template id="not" name="ptc" description="not pointcut (CoreASM Aspect)" context="coreasm" enabled="true">not ( ${ptc} )</template>
+<template id="not1" name="not pointcut" description="not pointcut (CoreASM Aspect)" context="coreasm" enabled="true">not ( ${ptc} )</template>
+
+<template id="call" name="ptc" description="call pointcut (CoreASM Aspect)" context="coreasm" enabled="true">call(${regex})</template>
+<template id="call1" name="call" description="call pointcut (CoreASM Aspect)" context="coreasm" enabled="true">call(${regex})</template>
+
+<template id="within" name="ptc" description="within pointcut (CoreASM Aspect)" context="coreasm" enabled="true">within(${regex})</template>
+<template id="within1" name="within" description="within pointcut (CoreASM Aspect)" context="coreasm" enabled="true">within(${regex})</template>
+
+
+<template id="args" name="ptc" description="args pointcut (CoreASM Aspect)" context="coreasm" enabled="true">args(${regex})</template>
+<template id="args1" name="args" description="args pointcut (CoreASM Aspect)" context="coreasm" enabled="true">args(${regex})</template>
+
+<template id="set" name="ptc" description="set pointcut (CoreASM Aspect)" context="coreasm" enabled="true">set(${regex})</template>
+<template id="set1" name="set" description="set pointcut (CoreASM Aspect)" context="coreasm" enabled="true">set(${regex})</template>
+
+<template id="get" name="ptc" description="get pointcut (CoreASM Aspect)" context="coreasm" enabled="true">get(${regex})</template>
+<template id="get1" name="get" description="get pointcut (CoreASM Aspect)" context="coreasm" enabled="true">get(${regex})</template>
+
+<template id="cflow" name="ptc" description="cflow pointcut (CoreASM Aspect)" context="coreasm" enabled="true">cflow(${regex})</template>
+<template id="cflow1" name="cflow" description="cflow pointcut (CoreASM Aspect)" context="coreasm" enabled="true">cflow(${regex})</template>
+
+<template id="agent" name="ptc" description="agent pointcut (CoreASM Aspect)" context="coreasm" enabled="true">agent(${regex})</template>
+<template id="agent1" name="agent" description="agent pointcut (CoreASM Aspect)" context="coreasm" enabled="true">agent(${regex})</template>
+
+<template id="pattern_with_binding" name="pattern with binding" description="pointcut pattern with binding (CoreASM Aspect)" context="coreasm" enabled="true">${regex} as ${variable}</template>
 
 </templates>
