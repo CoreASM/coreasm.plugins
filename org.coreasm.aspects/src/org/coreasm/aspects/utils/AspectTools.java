@@ -505,6 +505,7 @@ public class AspectTools {
 	 * \dot digraph collectASTNodesByGrammar { node [shape=circle]; node1
 	 * [fillcolor=lightblue,style=filled,label="" ] start -> node1; node1 ->
 	 * start [label="if node" ]
+	 * \enddot
 	 * 
 	 * @param currentNode
 	 *            is used to start the search

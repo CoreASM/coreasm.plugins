@@ -51,11 +51,11 @@ public class WithinASTNode extends PointCutASTNode {
 			ruleDeclaration = ruleDeclaration.getParent();
 		if (ruleDeclaration == null)
 			return new Binding(compareToNode, this);
-        String pointCutToken = null;
+		String pointCutToken = null;
 		Binding resultingBinding = null;
 		Node node;
 		ASTNode astn = ruleDeclaration.getFirst().getFirst();
-        // \todo add bindings
+
 		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
 		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
 			if (node instanceof PointCutParameterNode) {

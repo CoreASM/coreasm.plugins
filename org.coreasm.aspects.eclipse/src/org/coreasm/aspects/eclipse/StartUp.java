@@ -6,7 +6,7 @@ public class StartUp implements IStartup {
 
 	@Override
 	public void earlyStartup() {
-		new AopASMEclipsePlugin();
+		new AoASMEclipsePlugin();
 	}
 
 }

@@ -3,13 +3,6 @@ package org.coreasm.aspects.eclipse.ui.views;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.coreasm.aspects.eclipse.ui.XReference;
-import org.coreasm.aspects.eclipse.ui.providers.TreeObject;
-import org.coreasm.aspects.eclipse.ui.providers.XReferenceContentProvider;
-import org.coreasm.aspects.eclipse.ui.providers.XReferenceLabelProvider;
-import org.coreasm.eclipse.editors.ASMEditor;
-import org.coreasm.eclipse.editors.ui.ILinkedWithASMEditorView;
-import org.coreasm.eclipse.editors.ui.LinkWithEditorPartListener;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -22,6 +15,14 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.part.ViewPart;
+
+import org.coreasm.aspects.eclipse.ui.XReference;
+import org.coreasm.aspects.eclipse.ui.providers.TreeObject;
+import org.coreasm.aspects.eclipse.ui.providers.XReferenceContentProvider;
+import org.coreasm.aspects.eclipse.ui.providers.XReferenceLabelProvider;
+import org.coreasm.eclipse.editors.ASMEditor;
+import org.coreasm.eclipse.editors.ui.ILinkedWithASMEditorView;
+import org.coreasm.eclipse.editors.ui.LinkWithEditorPartListener;
 
 /**
  * @author Tobias

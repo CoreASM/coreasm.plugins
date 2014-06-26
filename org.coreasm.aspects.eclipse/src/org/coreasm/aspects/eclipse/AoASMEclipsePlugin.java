@@ -16,13 +16,13 @@ import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
 import org.coreasm.util.information.InformationObserver;
 
-public class AopASMEclipsePlugin implements InformationObserver {
+public class AoASMEclipsePlugin implements InformationObserver {
 	
 	private AspectOutline asOutline = null;	// outline
 	
 	public static final String MARKER_TYPE_POINTCUT_MATCH = "org.coreasm.aspects.eclipse.marker.PointCutMatchMarker";
 
-	public AopASMEclipsePlugin() {
+	public AoASMEclipsePlugin() {
 
 		asOutline = new AspectOutline();
 		

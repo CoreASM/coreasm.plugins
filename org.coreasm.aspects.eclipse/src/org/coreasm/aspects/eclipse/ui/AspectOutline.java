@@ -3,20 +3,21 @@ package org.coreasm.aspects.eclipse.ui;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
+import org.osgi.framework.FrameworkUtil;
+
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.AspectASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.utils.AspectTools;
 import org.coreasm.eclipse.editors.AstTools;
-import org.coreasm.eclipse.editors.outlining.OutlineTreeNode;
-import org.coreasm.eclipse.editors.outlining.RootOutlineTreeNode;
+import org.coreasm.eclipse.editors.outlining.util.OutlineTreeNode;
+import org.coreasm.eclipse.editors.outlining.util.RootOutlineTreeNode;
 import org.coreasm.eclipse.util.Utilities;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.plugins.modularity.IncludeNode;
-import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.Path;
-import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Tobias
@@ -30,6 +31,10 @@ import org.osgi.framework.FrameworkUtil;
  */
 public class AspectOutline {
 	
+	public AspectOutline() {
+
+	}
+
 	// list with aspect roots
 	private ArrayList<RootOutlineTreeNode> rootList = new ArrayList<RootOutlineTreeNode>(); 
 	
