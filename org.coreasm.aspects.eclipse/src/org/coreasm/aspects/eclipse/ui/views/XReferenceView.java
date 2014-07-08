@@ -1,8 +1,5 @@
 package org.coreasm.aspects.eclipse.ui.views;
 
-import java.util.Observable;
-import java.util.Observer;
-
 import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -14,15 +11,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPartListener2;
+import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.ui.editors.text.TextEditor;
 
 import org.coreasm.aspects.eclipse.ui.XReference;
 import org.coreasm.aspects.eclipse.ui.providers.TreeObject;
 import org.coreasm.aspects.eclipse.ui.providers.XReferenceContentProvider;
 import org.coreasm.aspects.eclipse.ui.providers.XReferenceLabelProvider;
-import org.coreasm.eclipse.editors.ASMEditor;
-import org.coreasm.eclipse.editors.ui.ILinkedWithASMEditorView;
-import org.coreasm.eclipse.editors.ui.LinkWithEditorPartListener;
 
 /**
  * @author Tobias
@@ -32,14 +28,16 @@ import org.coreasm.eclipse.editors.ui.LinkWithEditorPartListener;
  * Implements Observer to get notified after parsing is finished,
  * ILinkedWithASMEditorView to get notified when editor has changed (e.g when switching between files)
  */
-public class XReferenceView extends ViewPart implements ILinkedWithASMEditorView, ISelectionChangedListener, Observer {
+public class XReferenceView extends ViewPart implements IPartListener2, ISelectionChangedListener {
 
 	private TreeViewer viewer;
-	private IPartListener2 linkWithEditorPartListener  = new LinkWithEditorPartListener(this);
-	private ASMEditor asmEditor = null;
+	private TextEditor asmEditor = null;
 	
 	@Override
 	public void createPartControl(Composite parent) {
+		// set the view
+		XReference.xRefView = this;
+		
 		// Create viewer
 	    viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 	    viewer.setContentProvider(new XReferenceContentProvider());
@@ -48,27 +46,7 @@ public class XReferenceView extends ViewPart implements ILinkedWithASMEditorView
 		viewer.addSelectionChangedListener(this);
 		
 		getSite().setSelectionProvider(viewer);
-		getSite().getPage().addPartListener(linkWithEditorPartListener);	// to get called when editor is activated
-	}
-	
-	@Override
-	public void editorActivated(IEditorPart activeEditor) {
-		if (activeEditor instanceof ASMEditor){	
-			
-			// add/remove from parser observer
-			if (asmEditor != null) {
-				if (asmEditor.equals((ASMEditor)activeEditor))
-					return;
-			
-				asmEditor.getParser().deleteObserver(this);
-			}
-			asmEditor = (ASMEditor)activeEditor;
-			asmEditor.getParser().addObserver(this);
-			
-			
-			// refresh the view
-			refresh();
-		}	
+		getSite().getPage().addPartListener(this);	// to get called when editor is activated
 	}
 	
     /**
@@ -79,10 +57,9 @@ public class XReferenceView extends ViewPart implements ILinkedWithASMEditorView
 		Display.getDefault().syncExec(new Runnable() {
 			@Override
 			public void run() {
-				if (asmEditor != null)
+				if (asmEditor != null) {
 					viewer.setInput(XReference.getTreeForFile(asmEditor.getPartName()));
-				
-				XReference.resetTree();
+				}
 			}
 		});	
 	}
@@ -96,23 +73,14 @@ public class XReferenceView extends ViewPart implements ILinkedWithASMEditorView
 	public void dispose() {
 		super.dispose();
 		
-		if (asmEditor != null)
-			asmEditor.getParser().deleteObserver(this);
-		
-		getSite().getPage().removePartListener(linkWithEditorPartListener);
-		
-		linkWithEditorPartListener = null;
+		getSite().getPage().removePartListener(this);
+
 		asmEditor = null;
 		
 		viewer.getTree().dispose();
 		if (viewer.getContentProvider() != null)
 			viewer.getContentProvider().dispose();
 		viewer.getLabelProvider().dispose();
-	}
-
-	@Override
-	public void update(Observable arg0, Object arg1) {
-		refresh();
 	}
 
 	@Override
@@ -132,5 +100,68 @@ public class XReferenceView extends ViewPart implements ILinkedWithASMEditorView
 					asmEditor.setHighlightRange(pos, 1, true);
 			}
 		}
+	}
+
+	@Override
+	public void partActivated(IWorkbenchPartReference partRef) {
+		IEditorPart activeEditor = partRef.getPage().getActiveEditor();
+		if (activeEditor != null){	
+			
+			// add/remove from parser observer
+			if (asmEditor != null) {
+				if (asmEditor.equals((TextEditor)activeEditor))
+					return;
+
+			}
+			asmEditor = (TextEditor)activeEditor;
+			
+			// set the filename in logic part
+			XReference.currentFileName = asmEditor.getPartName();
+			
+			// refresh the view
+			refresh();
+		}
+	}
+
+	@Override
+	public void partBroughtToTop(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partClosed(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partDeactivated(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partOpened(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partHidden(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partVisible(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void partInputChanged(IWorkbenchPartReference partRef) {
+		// TODO Auto-generated method stub
+		
 	}
 }

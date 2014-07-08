@@ -1306,10 +1306,6 @@ public class AoASMPlugin extends Plugin
 		try {
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
-				// Serialize the root node and send it to the plugin
-				ASTNode rootNode = capi.getParser().getRootNode();
-				info.createInformation(AspectTools.anySerialize(rootNode), VerbosityLevel.INFO, null);
-				
 				// clear markers
 				info.clearInformation("clear now!");
 				// TODO create marker for all aspects and submit them via IInformation to Observers
@@ -1321,6 +1317,9 @@ public class AoASMPlugin extends Plugin
 					AspectWeaver.getInstance().weave();
 				}
 				AspectTools.writeProgramToFile(capi, "after weaving", rootnode, capi.getSpec().getAbsolutePath());
+				
+				// Serialize the root node and send it to the plugin
+				info.createInformation(AspectTools.anySerialize(rootnode), VerbosityLevel.INFO, null);
 
 			}
 			else if (source == EngineMode.emParsingSpec && target != EngineMode.emIdle)//running the spec

@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.coreasm.aspects.eclipse.ui.providers.TreeObject;
+import org.coreasm.aspects.eclipse.ui.views.XReferenceView;
 import org.coreasm.aspects.utils.AspectTools;
-import org.coreasm.eclipse.editors.AstTools;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 
@@ -22,8 +22,13 @@ public class XReference {
 	// the root node of the parser
 	public static ASTNode rootNode;
 	
+	// connection to the view
+	public static XReferenceView xRefView;
+	
 	// Holds the cross reference root nodes for each file
 	private static HashMap<String, TreeObject> rootNodesPerFile = new HashMap<String, TreeObject>();
+	
+	public static String currentFileName;
 	
 	/**
 	 * @param data	The data send by the createMarker() function
@@ -62,7 +67,7 @@ public class XReference {
 	 * so when parsing starts again we have a clean tree and no duplicates
 	 */
 	public static void resetTree() {
-		rootNodesPerFile.clear();
+		rootNodesPerFile.get(currentFileName).getChildren().clear();
 	}
 	
 	/**
@@ -104,7 +109,7 @@ public class XReference {
 		// extract description
 		if (n instanceof ASTNode) {
 			ASTNode astNode = (ASTNode) n;
-			if (astNode.getGrammarRule().equals(AstTools.GRAMMAR_RULE)) {
+			if (astNode.getGrammarRule().equals("RuleDeclaration")) {
 				description = astNode.getChildNodes().get(1).getChildNodes().get(0).getToken();
 				icon = "rule.gif";
 			}
@@ -159,10 +164,13 @@ public class XReference {
 	}
 	
 	public static TreeObject getTreeForFile(String fileName) {
-		if (rootNodesPerFile != null)
-			return rootNodesPerFile.get(fileName);
-		else
-			return null;
+		TreeObject root = rootNodesPerFile.get(fileName);
+		if (root == null) {
+			root = addInvisibleRoot(fileName);
+			addNode("Cross references are showing after parsing", "aspect.gif", root);
+		}
+		
+		return root;
 	}
 	
 	public static void setRootNode(ASTNode node) {

@@ -9,11 +9,10 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.coreasm.eclipse
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.coreasm.eclipse.editors,
- org.coreasm.eclipse.editors.ui,
+Import-Package: org.coreasm.eclipse.editors.outlining.util,
  org.coreasm.eclipse.util,
- org.coreasm.eclipse.editors.outlining.util,
  org.coreasm.util,
  org.coreasm.util.information,
  org.eclipse.jface.text,
+ org.eclipse.ui.editors.text,
  org.eclipse.ui.texteditor

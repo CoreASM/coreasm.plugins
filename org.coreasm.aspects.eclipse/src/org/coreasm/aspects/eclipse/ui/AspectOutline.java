@@ -11,7 +11,6 @@ import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.AspectASTNode;
 import org.coreasm.aspects.pointcutmatching.NamedPointCutDefinitionASTNode;
 import org.coreasm.aspects.utils.AspectTools;
-import org.coreasm.eclipse.editors.AstTools;
 import org.coreasm.eclipse.editors.outlining.util.OutlineTreeNode;
 import org.coreasm.eclipse.editors.outlining.util.RootOutlineTreeNode;
 import org.coreasm.eclipse.util.Utilities;
@@ -42,10 +41,8 @@ public class AspectOutline {
 	 * remove and send aspect roots to the outline view of
 	 * coreasm
 	 */
-	public void removeRootsFromOutline() {
-		for (RootOutlineTreeNode rootNode : rootList) {
-			Utilities.removeExternOutlineRoot(rootNode);
-		}
+	public void clearRootsFromOutline() {
+		Utilities.clearExternOutlineRootList();
 	}
 	
 	public void sendRootsToOutline() {
@@ -99,12 +96,12 @@ public class AspectOutline {
 				aspectRoot.addNode(new OutlineTreeNode.UseTreeNode(astNode.toString(), description));
 			}
 			
-			else if (astNode.getGrammarRule().equals(AstTools.GRAMMAR_RULE)) {
+			else if (astNode.getGrammarRule().equals("RuleDeclaration")) {
 				String description = astNode.getChildNodes().get(1).getChildNodes().get(0).getToken();
 				aspectRoot.addNode(new OutlineTreeNode.RuleTreeNode(astNode.toString(), description));
 			}
 			
-			else if (astNode.getGrammarRule().equals(AstTools.GRAMMAR_INIT)) {
+			else if (astNode.getGrammarRule().equals("Initialization")) {
 				String description = astNode.getChildNodes().get(1).getToken();
 				aspectRoot.addNode(new OutlineTreeNode.InitTreeNode(astNode.toString(), description));
 			}

@@ -43,9 +43,9 @@ public class AoASMEclipsePlugin implements InformationObserver {
 					ASTNode n = (ASTNode)AspectTools.anyDeserialize(information.getMessage());
 					if (n != null) {
 						XReference.setRootNode(n);
+						XReference.xRefView.refresh();
 						
 						// create outline and send nodes to extern outline
-						asOutline.removeRootsFromOutline();
 						asOutline.createAspectTree(n);
 						asOutline.sendRootsToOutline();
 					}
@@ -63,7 +63,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 					Map<String, String> data = information.getData();
 					HashMap<String, Object> attributes = new HashMap<String, Object>();
 					attributes.put("name", data.get("name"));
-				MarkerUtilities.setMessage(attributes, "Pointcut matching between\n" + data.get("name"));
+					MarkerUtilities.setMessage(attributes, "Pointcut matching between\n" + data.get("name"));
 					Utilities.createMarker(MARKER_TYPE_POINTCUT_MATCH, data.get("file"), Integer.parseInt(data.get("line")), Integer.parseInt(data.get("column")), Integer.parseInt(data.get("length")), attributes);
 					
 					// create tree objects from pointcut data
@@ -82,6 +82,8 @@ public class AoASMEclipsePlugin implements InformationObserver {
 		if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
 //			if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage()))
 				Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH);
+				XReference.resetTree();
+				asOutline.clearRootsFromOutline();
 		}
 	}
 }

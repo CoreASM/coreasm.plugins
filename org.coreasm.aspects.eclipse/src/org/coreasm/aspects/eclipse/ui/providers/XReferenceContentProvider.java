@@ -31,7 +31,7 @@ public class XReferenceContentProvider implements ITreeContentProvider {
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement instanceof TreeObject)
-			return ((TreeObject)parentElement).getChildren();
+			return ((TreeObject)parentElement).getChildrenAsArray();
 		
 		return new Object[0];
 	}

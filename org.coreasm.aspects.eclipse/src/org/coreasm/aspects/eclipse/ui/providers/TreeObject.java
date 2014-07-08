@@ -83,9 +83,13 @@ public class TreeObject {
 		return null;
 	}
 	
-	public TreeObject[] getChildren() {
+	public TreeObject[] getChildrenAsArray() {
 		return (TreeObject[]) children.toArray(
 			new TreeObject[children.size()]);
+	}
+	
+	public ArrayList<TreeObject> getChildren() {
+		return children;
 	}
 	
 	public boolean hasChildren() {
