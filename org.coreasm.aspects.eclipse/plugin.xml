@@ -67,4 +67,17 @@
 	  		translations="aspect-templates.xml">
 	  </include>
    </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.coreasm.eclipse.perspective">
+         <view
+               id="org.coreasm.aspects.eclipse.views.CrossReferences"
+               minimized="false"
+               relationship="stack"
+               relative="right_bottom"
+               visible="true">
+         </view>
+      </perspectiveExtension>
+   </extension>
 </plugin>

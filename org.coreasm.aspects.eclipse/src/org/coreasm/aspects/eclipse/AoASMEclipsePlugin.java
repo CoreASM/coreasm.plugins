@@ -43,6 +43,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 					ASTNode n = (ASTNode)AspectTools.anyDeserialize(information.getMessage());
 					if (n != null) {
 						XReference.setRootNode(n);
+						if (XReference.xRefView != null)
 						XReference.xRefView.refresh();
 						
 						// create outline and send nodes to extern outline
@@ -82,7 +83,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 		if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
 //			if (AopASMPlugin.MESSAGE_POINTCUT_MATCH.equals(information.getMessage()))
 				Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH);
-				XReference.resetTree();
+					XReference.resetTree();
 				asOutline.clearRootsFromOutline();
 		}
 	}

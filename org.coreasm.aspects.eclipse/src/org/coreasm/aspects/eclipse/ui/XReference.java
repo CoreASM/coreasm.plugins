@@ -67,7 +67,8 @@ public class XReference {
 	 * so when parsing starts again we have a clean tree and no duplicates
 	 */
 	public static void resetTree() {
-		rootNodesPerFile.get(currentFileName).getChildren().clear();
+		if (currentFileName != null)
+			rootNodesPerFile.get(currentFileName).getChildren().clear();
 	}
 	
 	/**
