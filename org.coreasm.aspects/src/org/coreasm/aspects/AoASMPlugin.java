@@ -1082,19 +1082,28 @@ public class AoASMPlugin extends Plugin
 					idParser.optional(),
 					Parsers.or(
 							// Alternative one - with 'begin' and 'end'
-							Parsers.array(pTools.getKeywParser(KW_BEGIN,
+							Parsers.array(
+									pTools.getKeywParser(KW_BEGIN,
 									this.getName()),
-									pTools.star(signatureParser),
-									pTools.star(ruleDeclaration),
-									pTools.star(namedPointcutParser),
-									pTools.star(adviceBlockParser),
+									pTools.star(
+										Parsers.or(
+											signatureParser,
+											ruleDeclaration,
+											namedPointcutParser,
+											adviceBlockParser
+										)
+									),
 									pTools.getKeywParser(KW_END, this.getName())),
 							// Alternative two - with '{' and '}'
 							Parsers.array(pTools.getOprParser("{"),
-									pTools.star(signatureParser),
-									pTools.star(ruleDeclaration),
-									pTools.star(namedPointcutParser),
-									pTools.star(adviceBlockParser),
+									pTools.star(
+											Parsers.or(
+												signatureParser,
+												ruleDeclaration,
+												namedPointcutParser,
+												adviceBlockParser
+											)
+										),
 									pTools.getOprParser("}")))).map(
 					new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 						@Override
