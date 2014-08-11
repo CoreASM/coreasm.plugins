@@ -32,6 +32,6 @@ rule StartRule =
 rule DoSomething =
 	print "DoSomething"
 
-rule DoSomethingElse =
-	return res in 
+derived DoSomethingElse =
+	return res in
 		res := "DoSomethingElse"

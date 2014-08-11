@@ -6,8 +6,8 @@ init TestRuleCalls
 
 rule X = print "x"
 rule Y(a) = print a
-rule Z = return res in res := "z"
-rule W(a) = return res in res := a
+derived Z = return res in res := "z"
+derived W(a) = return res in res := a
 
 /*
  * @require "x\nx\ny\ny\nz\nz\nw\nw\n"
