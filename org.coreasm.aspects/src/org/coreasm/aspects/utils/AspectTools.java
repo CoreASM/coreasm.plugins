@@ -40,7 +40,7 @@ import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
 import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
-import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
+import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 import org.coreasm.util.Tools;
 
 /**
@@ -626,7 +626,7 @@ public class AspectTools {
 	}
 
 	// create AST constructs for weaving
-	public final static String SEQBLOCKRULE = "SeqBlockRule";
+	public final static String SEQBLOCKRULE = "SeqRule";
 	public final static String BLOCKRULE = "BlockRule";
 	public final static String MACROCALLRULE = "MacroCallRule";
 	public final static String RETURNRULE = "ReturnRule";
@@ -754,8 +754,8 @@ public class AspectTools {
 	 *            scanner info
 	 * @return new seqblock rule element
 	 */
-	private static SeqBlockRuleNode createSeqBlockRuleNode(ScannerInfo info) {
-		SeqBlockRuleNode seqBlockRuleNode = new SeqBlockRuleNode(info);
+	private static SeqRuleNode createSeqBlockRuleNode(ScannerInfo info) {
+		SeqRuleNode seqBlockRuleNode = new SeqRuleNode(info);
 		Node seqBlock = new Node(AoASMPlugin.PLUGIN_NAME, "seqblock", info, Node.KEYWORD_NODE);
 		seqBlockRuleNode.addChild(seqBlock);
 		return seqBlockRuleNode;
@@ -771,7 +771,7 @@ public class AspectTools {
 	 * @param node
 	 * @return the seqblock which has not yet a second child (next part)
 	 */
-	private static SeqBlockRuleNode addChildToSeqBlockRuleNode(SeqBlockRuleNode seqblock, ASTNode node) {
+	private static SeqRuleNode addChildToSeqBlockRuleNode(SeqRuleNode seqblock, ASTNode node) {
 		if (seqblock.getFirstRule() == null) {
 			seqblock.addChild(node);
 			return seqblock;
@@ -779,7 +779,7 @@ public class AspectTools {
 		}
 		else if (seqblock.getFirstRule() != null && seqblock.getSecondRule() == null) {
 			// add new seqblock with node as first child
-			SeqBlockRuleNode newSeqBlockRule = new SeqBlockRuleNode(seqblock.getScannerInfo());
+			SeqRuleNode newSeqBlockRule = new SeqRuleNode(seqblock.getScannerInfo());
 			newSeqBlockRule.addChild(node);
 			seqblock.addChild(newSeqBlockRule);
 			return newSeqBlockRule;
@@ -797,9 +797,9 @@ public class AspectTools {
 	 */
 	public static void close(ASTNode astNode, ASTNode node) {
 		if (astNode.getGrammarRule().equals(SEQBLOCKRULE)) {
-			SeqBlockRuleNode seqBlock;
-			if (astNode instanceof SeqBlockRuleNode) {
-				seqBlock = (SeqBlockRuleNode) astNode;
+			SeqRuleNode seqBlock;
+			if (astNode instanceof SeqRuleNode) {
+				seqBlock = (SeqRuleNode) astNode;
 				if (seqBlock.getFirstRule() != null && seqBlock.getSecondRule() == null) {
 					if (node == null) {
 						seqBlock.addChild(new SkipRuleNode(seqBlock.getScannerInfo()));
@@ -845,8 +845,8 @@ public class AspectTools {
 			AspectTools.addChildAfter(node, node.getFirstCSTNode(), Node.DEFAULT_NAME, insertion);
 		}
 		else if (node.getGrammarRule().equals(SEQBLOCKRULE)) {
-			if (node instanceof SeqBlockRuleNode)
-				return (A) AspectTools.addChildToSeqBlockRuleNode((SeqBlockRuleNode) node, insertion);
+			if (node instanceof SeqRuleNode)
+				return (A) AspectTools.addChildToSeqBlockRuleNode((SeqRuleNode) node, insertion);
 		}
 		return (A) node;
 	}
@@ -867,7 +867,7 @@ public class AspectTools {
 			}
 		}
 		else if (node.getGrammarRule().equals(SEQBLOCKRULE)) {
-			if (node instanceof SeqBlockRuleNode)
+			if (node instanceof SeqRuleNode)
 				if (insertionsList.size() > 1) {
 					return AspectTools.insert(AspectTools.insert(node, insertionsList.remove()), insertionsList);
 				}

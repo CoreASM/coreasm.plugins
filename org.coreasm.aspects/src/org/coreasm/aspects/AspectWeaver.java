@@ -39,7 +39,6 @@ import org.coreasm.engine.plugins.conditionalrule.ConditionalRuleNode;
 import org.coreasm.engine.plugins.letrule.LetRuleNode;
 import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
-import org.coreasm.engine.plugins.turboasm.SeqBlockRuleNode;
 import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 
 public class AspectWeaver {
@@ -348,11 +347,11 @@ public class AspectWeaver {
 
 				// insert nodes into a new seqblock
 				// which will replace the current MacroCallRule
-				SeqBlockRuleNode rootNodeOfSeqBlockSequence = AspectTools
+				SeqRuleNode rootNodeOfSeqBlockSequence = AspectTools
 						.create(AspectTools.SEQBLOCKRULE,
 								candidate.getScannerInfo());// new
 															// SeqBlockRuleNode(candidate.getScannerInfo());
-				SeqBlockRuleNode seqBlockNode = rootNodeOfSeqBlockSequence;
+				SeqRuleNode seqBlockNode = rootNodeOfSeqBlockSequence;
 
 				// get the parent of candidate and remove the candidate from its
 				// parent but store its insertion reference for the replacement
