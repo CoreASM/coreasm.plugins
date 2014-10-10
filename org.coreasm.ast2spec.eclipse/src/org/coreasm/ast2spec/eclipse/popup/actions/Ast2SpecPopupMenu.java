@@ -1,4 +1,4 @@
-package org.coreasm.ast2spec.popup.actions;
+package org.coreasm.ast2spec.eclipse.popup.actions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -10,13 +10,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.coreasm.ast2spec.Ast2SpecPlugin;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IActionDelegate;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IFileEditorInput;
@@ -125,22 +124,20 @@ public class Ast2SpecPopupMenu implements IObjectActionDelegate {
 			{
 				if (existsOpenEditor()) {
 					closeEditor();//editor should be closed before the input will be changed
-					insertUseDeclarationIntoFile(openedFile,
-							Ast2SpecPlugin.class.getSimpleName());
+					insertUseDeclarationIntoFile(openedFile, "Ast2SpecPlugin");
 					openEditor();
 					closeEditor();
 					removeUseDeclarationFromFile(currentlySelectedFile
 							.getRawLocation().makeAbsolute().toFile(),
-							Ast2SpecPlugin.class.getSimpleName());
+							"Ast2SpecPlugin");
 					openEditor(); //reopen the editor
 				} else {
-					insertUseDeclarationIntoFile(openedFile,
-							Ast2SpecPlugin.class.getSimpleName());
+					insertUseDeclarationIntoFile(openedFile, "Ast2SpecPlugin");
 					openEditor();
 					closeEditor();
 					removeUseDeclarationFromFile(currentlySelectedFile
 							.getRawLocation().makeAbsolute().toFile(),
-							Ast2SpecPlugin.class.getSimpleName());
+							"Ast2SpecPlugin");
 				}
 			}
 		}
@@ -278,9 +275,9 @@ public class Ast2SpecPopupMenu implements IObjectActionDelegate {
 
 				// clean up/remove line if it contains the use statement
 				for (int i = 0; i < lines.size();i++){
-					if ( lines.get(i).matches("^[\\s\\t]*use[\\t\\s]{1}"+Ast2SpecPlugin.class.getSimpleName()))
+					if ( lines.get(i).matches("^[\\s\\t]*use[\\t\\s]{1}"+"Ast2SpecPlugin"))
 					{
-						lines.add(i, lines.get(i).replaceFirst("^[\\s\\t]*use[\\t\\s]{1}"+Ast2SpecPlugin.class.getSimpleName(), ""));
+						lines.add(i, lines.get(i).replaceFirst("^[\\s\\t]*use[\\t\\s]{1}"+"Ast2SpecPlugin", ""));
 						if (lines.get(i).length()==0)
 							lines.remove(i);
 						lines.remove(i);

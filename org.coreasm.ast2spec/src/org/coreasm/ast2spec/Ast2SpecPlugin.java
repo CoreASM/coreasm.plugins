@@ -18,10 +18,13 @@ import org.coreasm.engine.EngineException;
 import org.coreasm.engine.VersionInfo;
 import org.coreasm.engine.absstorage.BooleanElement;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.plugin.ExtensionPointPlugin;
 import org.coreasm.engine.plugin.InitializationFailedException;
 import org.coreasm.engine.plugin.Plugin;
+import org.coreasm.engine.plugins.signature.DerivedFunctionNode;
+import org.coreasm.engine.plugins.signature.FunctionNode;
 
 public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 	public static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "alpha");
@@ -31,7 +34,7 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 	private static final LinkedList<String> UNIVERSES = new LinkedList<String>();
 	private static final String[] FUNCTIONS = { "parent: NODE -> NODE", "firstChild: NODE -> NODE",
 			"nextSibling: NODE -> NODE", "class: NODE -> STRING", "grammarRule: NODE -> STRING",
-			"concreteType: NODE -> STRING", "token: NODE -> STRING",
+			"concreteType: NODE -> STRING", "token: NODE -> STRING", "fkind: STRING -> FUNCTIONKIND", "fname: NODE -> STRING",
 			//auxiliary functions
 			"file: NODE -> STRING", "spec: NODE -> STRING", "lineNumber: NODE -> NUMBER", "indentation: NODE -> NUMBER"
 	};
@@ -69,7 +72,6 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 
 	@Override
 	public void fireOnModeTransition(EngineMode source, EngineMode target) throws EngineException {
-		;
 		if (source.equals(EngineMode.emParsingSpec) && target.equals(EngineMode.emIdle))
 			writeParseTreeToFile("created by ast2spec", capi.getParser().getRootNode(), new File(capi.getSpec()
 					.getAbsolutePath()));
@@ -185,42 +187,6 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		printNode(stream, node);
 	}
 
-	private int indexOfCasmFilename(String context) {
-		int index;
-		if (context.contains(".coreasm"))
-			index = context.substring(0, context.indexOf(".coreasm")).lastIndexOf(' ') + 1;
-		else if (context.contains(".casm"))
-			index = context.substring(0, context.indexOf(".casm")).lastIndexOf(' ') + 1;
-		else
-			return -1;
-		if (index < 0)
-			return 0;
-		return index;
-	}
-
-	private int parseLineNumber(String context) {
-		int beginIndex = indexOfCasmFilename(context);
-
-		if (beginIndex < 0)
-			return -1;
-
-		context = context.substring(beginIndex);
-
-		return Integer.parseInt(context.substring(context.indexOf(":") + 1, context.indexOf(",")));
-	}
-
-	private int parseIndentation(String context) {
-		int beginIndex = indexOfCasmFilename(context);
-
-		if (beginIndex < 0)
-			return -1;
-
-		context = context.substring(beginIndex);
-
-		return Integer
-				.parseInt(context.substring(context.indexOf(",") + 1, context.indexOf(":", context.indexOf(","))));
-	}
-
 	private void printNode(PrintStream stream, Node node) {
 
 		// Add node name to String of nodeNames
@@ -273,23 +239,6 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			if (this.rootnode.getChildNodes().get(1).getToken() != null)
 				printAssignment(stream, "file", nodeToString(node), "\""
 						+ this.rootnode.getChildNodes().get(1).getToken() + "\"", 2);
-
-			/*
-			 * \bugfix capi.getSpec() not initialized by Parser of the
-			 * SlimEngine - try to get file from ASMParser.parentEditor
-			 */
-			/*
-			 * int linenumber =
-			 * parseLineNumber(node.getContext(capi.getParser(),
-			 * capi.getSpec()));
-			 * printAssignment(stream, "lineNumber", nodeToString(node),
-			 * Integer.toString(linenumber), 2);
-			 * int indentation =
-			 * parseIndentation(node.getContext(capi.getParser(),
-			 * capi.getSpec()));
-			 * printAssignment(stream, "indentation", nodeToString(node),
-			 * Integer.toString(indentation), 2);
-			 */
 		}
 
 		/**
@@ -300,6 +249,22 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			// Add node to universe ASTNODE
 			printAssignment(stream, "ASTNODE", nodeToString(astnode),
 					BooleanElement.TRUE_NAME, 2);
+			
+			if ((astnode.getGrammarRule() != null) && astnode.getGrammarRule().equals("Signature")) {
+                ASTNode signature = astnode.getFirst();
+                if (signature instanceof DerivedFunctionNode)
+                	printAssignment(stream, "fkind", signature.getFirst().getFirst().getToken(), "DERIVED", 2);
+                else if (signature instanceof FunctionNode) {
+                	FunctionNode function = (FunctionNode)signature;
+                	printAssignment(stream, "fkind", function.getName(), function.getFunctionClass().toString().substring(2).toUpperCase(), 2);
+                }
+			}
+			
+			if (astnode instanceof FunctionRuleTermNode) {
+				FunctionRuleTermNode frNode = (FunctionRuleTermNode)astnode;
+				if (frNode.hasName())
+					printAssignment(stream, "fname", nodeToString(astnode), frNode.getName(), 2);
+			}
 
 			// functions which have no content for getGrammarRule()
 			if (astnode.getGrammarRule().length() == 0) {

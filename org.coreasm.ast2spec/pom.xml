@@ -2,8 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>org.coreasm.ast2spec</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>CoreASM AST 2 CoreASM Specification</name>
-	<packaging>eclipse-plugin</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -11,11 +11,10 @@
 
 	<parent>
 		<groupId>org.coreasm</groupId>
-		<artifactId>org.coreasm.eclipse.parent</artifactId>
-		<version>1.1.1-SNAPSHOT</version>
-		<relativePath>../org.coreasm.eclipse.parent</relativePath>
+		<artifactId>org.coreasm.parent</artifactId>
+		<version>1.7.1-SNAPSHOT</version>
+		<relativePath>../../coreasm.core/org.coreasm.parent/pom.xml</relativePath>
 	</parent>
-	
 	<dependencies>
 		<dependency>
 			<groupId>org.coreasm</groupId>
@@ -23,5 +22,71 @@
 			<version>1.6.5-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>.</directory>
+				<includes>
+					<include>CoreASMPlugin.id</include>
+				</includes>
+			</resource>
+		</resources>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.4</version>
+				<executions>
+					<execution>
+						<id>process-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>resources</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+				<executions>
+					<execution>
+					<id>compile</id>
+					<phase>compile</phase>
+					<goals>
+						<goal>compile</goal>
+					</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<appendAssemblyId>false</appendAssemblyId>
+							<finalName>Ast2SpecPlugin</finalName>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
