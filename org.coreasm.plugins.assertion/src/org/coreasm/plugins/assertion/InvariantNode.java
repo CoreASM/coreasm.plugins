@@ -9,7 +9,7 @@ public class InvariantNode extends ASTNode {
 		super(AssertionPlugin.PLUGIN_NAME, ASTNode.DECLARATION_CLASS, "InvariantDeclaration", null, info);
 	}
 	
-	public InvariantNode(AssertNode node) {
+	public InvariantNode(InvariantNode node) {
 		super(node);
 	}
 
