@@ -1,13 +1,9 @@
 package org.coreasm.aspects.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -20,7 +16,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.xml.bind.DatatypeConverter;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.AspectWeaver;
@@ -34,8 +29,8 @@ import org.coreasm.engine.CoreASMIssue;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
-import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.interpreter.Node.NameNodeTuple;
+import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
@@ -896,127 +891,5 @@ public class AspectTools {
 				}
 		}
 		return (A) node;
-	}
-	
-	public static ASTNode findRuleDeclaration(ASTNode startingPoint, String ruleName) {
-		for (ASTNode astNode : startingPoint.getAbstractChildNodes()) {
-			if (astNode.getGrammarRule().equals(Kernel.GR_RULEDECLARATION) &&
-					astNode.getFirst().getFirst().getToken().equals(ruleName))
-				return astNode;
-			else if (!astNode.getAbstractChildNodes().isEmpty())
-				findRuleDeclaration(astNode, ruleName);
-		}
-		return null;
-	}
-	
-	/**
-	 * @param o		Object to serialize
-	 * @return		Serialized object as string
-	 * @throws IOException
-	 * 
-	 * Serializes any object
-	 */
-	public static String anySerialize(Object o) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-        ObjectOutputStream oos = new ObjectOutputStream(baos); 
-        oos.writeObject(o); 
-        oos.close(); 
-        return DatatypeConverter.printBase64Binary(baos.toByteArray()); 
-	} 
-	
-	/**
-	 * @param s		String to be deserialized
-	 * @return		Deserialized string as object
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * 
-	 * Deserializes any string
-	 */
-	public static Object anyDeserialize(String s) throws IOException, ClassNotFoundException { 
-        ByteArrayInputStream bais = new ByteArrayInputStream(DatatypeConverter.parseBase64Binary(s)); 
-        ObjectInputStream ois = new ObjectInputStream(bais); 
-        Object o = ois.readObject(); 
-        ois.close(); 
-        return o; 
-    } 
-	
-	/**
-	 * Search recursively through the syntax tree until an ID node is found (pre-order)
-	 * @param node	The node where the search is started (the root of the recursion)
-	 * @return	The ID of the first ID node being found.
-	 */
-	public static String findId(Node node) {
-		Node idNode = findIdNode(node);
-		if ( idNode != null )
-			return idNode.getToken();
-		else 
-			return null;
-	}
-	
-	/**
-	 * Helper function of findId
-	 */
-	public static Node findIdNode(Node node) {
-		if (node instanceof ASTNode) {
-			ASTNode astNode = (ASTNode) node;
-			if (astNode.getGrammarRule().equals("ID"))
-				return astNode;
-		}
-		
-		List<Node> children = node.getChildNodes();
-		for (Node child: children) {
-			Node idNode = findIdNode(child);
-			if (idNode != null)
-				return idNode;
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * @param nodePos	Position of the node in the editor
-	 * @param rootNode	Should be the root node of the editor
-	 * @return			Child of the root
-	 * 
-	 * Runs through the children of the root node and checks if
-	 * the nodePos is in one of them
-	 */
-	public static Node getParentNode(int nodePos, Node rootNode) {
-		int start = 0;
-		int end = 0;
-		int count = 0;
-		
-		if (rootNode != null) {
-			for (Node n : rootNode.getChildNodes()) {
-				Node lastNode = getLastNode(n);
-				count = lastNode.getToken().length();
-				
-				start = n.getScannerInfo().charPosition;
-				end = lastNode.getScannerInfo().charPosition + count;
-					
-				if (nodePos >= start && nodePos <= end) {
-					return n;
-				}
-			}
-		}
-		
-		return null;
-	}
-
-	/**
-	 * @param n		node
-	 * @return		last node in node :)
-	 * 
-	 * Helper function to get the last node from the children of n
-	 */
-	private static Node getLastNode(Node n) {
-		List<Node> children = n.getChildNodes();
-		int size = children.size();
-		
-		if (size >= 1) {
-			return getLastNode(children.get(size - 1));
-		} else {
-			return n;
-		}
 	}
 }

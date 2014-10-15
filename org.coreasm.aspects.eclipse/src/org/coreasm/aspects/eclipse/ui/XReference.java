@@ -6,9 +6,6 @@ import java.util.Map;
 
 import org.coreasm.aspects.eclipse.ui.providers.TreeObject;
 import org.coreasm.aspects.eclipse.ui.views.XReferenceView;
-import org.coreasm.aspects.utils.AspectTools;
-import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.Node;
 
 /**
  * @author Tobias
@@ -18,10 +15,6 @@ import org.coreasm.engine.interpreter.Node;
  * supported it should work. 
  */
 public class XReference {
-	
-	// the root node of the parser
-	public static ASTNode rootNode;
-	
 	// connection to the view
 	public static XReferenceView xRefView;
 	
@@ -56,10 +49,13 @@ public class XReference {
 		addNodeWithPos(function, null, functionPos, advicesObj);
 		
 		// create a tree which shows from who the function is adviced by
-		TreeObject functionParentObj = addFunctionParent(functionPos, invisibleRootObj);
+		TreeObject functionParentObj = addNodeWithPos(data.get("ruleName"), "rule.gif", Integer.parseInt(data.get("rulePos")), invisibleRootObj);
 		TreeObject functionObj = addNodeWithPos(function, null, functionPos, functionParentObj);
 		TreeObject advicedByObj = addNode("adviced by", "arrow.gif", functionObj);
 		addNodeWithPos(advice, "advice.gif", advicePos, advicedByObj);
+
+		if (xRefView != null)
+			xRefView.refresh();
 	}
 	
 	/**
@@ -88,42 +84,6 @@ public class XReference {
 		rootObj.addChild(nodeObj);
 		
 		return nodeObj;
-	}
-	
-	/**
-	 * @param functionPos	Position of the function in the editor
-	 * @param rootObj		Root in the cross reference
-	 * @return				Cross reference node
-	 * 
-	 * Gets the parent node from the function that is at functionPos.
-	 * Extract the name of that node
-	 * Create and return cross reference node
-	 */
-	private static TreeObject addFunctionParent(int functionPos, TreeObject rootObj) {
-		String description = "FunctionParent";
-		String icon = "";
-		int parentPos = 0;
-		
-		// get parent node
-		Node n = AspectTools.getParentNode(functionPos, rootNode);
-		
-		// extract description
-		if (n instanceof ASTNode) {
-			ASTNode astNode = (ASTNode) n;
-			if (astNode.getGrammarRule().equals("RuleDeclaration")) {
-				description = astNode.getChildNodes().get(1).getChildNodes().get(0).getToken();
-				icon = "rule.gif";
-			}
-			else if (astNode.getGrammarRule().equals("Signature")) {
-				description = AspectTools.findId(astNode);
-				icon = "sign.gif";
-			}
-			
-			parentPos = astNode.getScannerInfo().charPosition;
-		} 
-		
-		// create and return crossref node
-		return addNodeWithPos(description, icon, parentPos, rootObj);
 	}
 	
 	/**
@@ -172,9 +132,5 @@ public class XReference {
 		}
 		
 		return root;
-	}
-	
-	public static void setRootNode(ASTNode node) {
-		rootNode = node;
 	}
 }

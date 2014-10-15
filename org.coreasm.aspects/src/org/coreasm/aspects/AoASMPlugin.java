@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
-
 import org.coreasm.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.aspects.pointcutmatching.AgentPointCutASTNode;
 import org.coreasm.aspects.pointcutmatching.ArgsASTNode;
@@ -1326,10 +1325,6 @@ public class AoASMPlugin extends Plugin
 					AspectWeaver.getInstance().weave();
 				}
 				AspectTools.writeProgramToFile(capi, "after weaving", rootnode, capi.getSpec().getAbsolutePath());
-				
-				// Serialize the root node and send it to the plugin
-				info.createInformation(AspectTools.anySerialize(rootnode), VerbosityLevel.INFO, null);
-
 			}
 			else if (source == EngineMode.emParsingSpec && target != EngineMode.emIdle)//running the spec
 			{
@@ -1374,10 +1369,16 @@ public class AoASMPlugin extends Plugin
 		data.put("column", "" + charPos.column);
 		data.put("length", "" + functionRuleTermNode.getFirst().getToken().length());
 		data.put("name", binding.toString());	
-		data.put("functionPos", "" + functionRuleTermNode.getScannerInfo().charPosition);
 		data.put("function", functionRuleTermNode.unparseTree());
+		data.put("functionPos", "" + functionRuleTermNode.getScannerInfo().charPosition);
 		data.put("line", "" + spec.getLine(charPos.line).line);
 		
+		ASTNode parentRule = functionRuleTermNode.getParent();
+		while (parentRule != null && !Kernel.GR_RULEDECLARATION.equals(parentRule.getGrammarRule()))
+			parentRule = parentRule.getParent();
+		data.put("rulePos", "" + parentRule.getScannerInfo().charPosition);
+		data.put("ruleName", parentRule.getFirst().getFirst().getToken());
+
 		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 
