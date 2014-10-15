@@ -35,11 +35,13 @@ import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
+import org.coreasm.engine.interpreter.Node.NameNodeTuple;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
 import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
+import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 import org.coreasm.util.Tools;
 
@@ -76,12 +78,26 @@ public class AspectTools {
 		return AspectTools.capi;
 	}
 
+	public static String getNodeName(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if ( parent == null ) throw new CoreASMError("Name of node cannot be returned because it has no parent.",node);
+		//find name of node which will be replaced
+		String nodeName = Node.DEFAULT_NAME;
+		for (NameNodeTuple tuple : parent.getChildNodesWithNames()) {
+			if (node == tuple.node)
+				nodeName = tuple.name;
+		}
+		return nodeName;
+	}
+
 	/**
 	 * wrapper method for methods from node that are used to insert code for
 	 * debugging purposes, e.g. create dot graph after insertions
 	 */
 	///@{
 	public static void addChildAfter(Node parent, Node insertionReference, String name, Node node) {
+		if (parent instanceof LocalRuleNode && !"alpha".equals(name))
+			System.out.println();
 		// original call
 		parent.addChildAfter(insertionReference, name, node);
 
@@ -95,6 +111,8 @@ public class AspectTools {
 	}
 
 	public static void addChild(Node parent, String name, Node node) {
+		if (parent instanceof LocalRuleNode && !"alpha".equals(name))
+			System.out.println();
 		// original call depending on the argument 'name'
 		if (name == null)
 			parent.addChild(node);
@@ -119,7 +137,7 @@ public class AspectTools {
 	/** variable used for createDotGraph */
 	private static String timestamp = null;
 	private static int currentDot = 0;
-	private static final boolean CREATE_DOT_FILES = true;
+	private static final boolean CREATE_DOT_FILES = false;
 
 	///@}
 
@@ -415,6 +433,7 @@ public class AspectTools {
 	 * @return dot graph as String
 	 */
 	public synchronized static String nodes2dot(Node node) {
+		if ( !CREATE_DOT_FILES ) return null;
 		String dot = "";
 		java.util.Date today = new java.util.Date();
 		dot += "//" + new java.sql.Timestamp(today.getTime()) + "\n";
@@ -897,7 +916,7 @@ public class AspectTools {
 	 * 
 	 * Serializes any object
 	 */
-	public static String anySerialize(Object o) throws IOException { 
+	public static String anySerialize(Object o) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
         ObjectOutputStream oos = new ObjectOutputStream(baos); 
         oos.writeObject(o); 

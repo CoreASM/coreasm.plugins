@@ -368,7 +368,9 @@ public class AspectWeaver {
 					insertionContext = insertionContext.getParent();
 				
 				ASTNode parentOfInsertionContext = insertionContext.getParent();
+				String nodeName = AspectTools.getNodeName(insertionContext);
 				Node insertionReference = insertionContext.removeFromTree();
+
 
 				// change macroCallRule if there is exactly one around advice,
 				// else insert nodes into seqblockrule
@@ -376,7 +378,7 @@ public class AspectWeaver {
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
 						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
-								Node.DEFAULT_NAME,
+								nodeName,
 								aroundNodes.getFirst());
 					else
 						AspectTools.addChild(parentOfInsertionContext, aroundNodes.getFirst());
@@ -716,11 +718,14 @@ public class AspectWeaver {
 			//until this block is no local rule or return rule
 			while (ruleBody.getGrammarRule().equals(AspectTools.LOCALRULE) ||
 					ruleBody.getGrammarRule().equals(AspectTools.RETURNRULE)) {
-				ruleBody = ruleBody.getAbstractChildNodes().get(1);
+				if ( ruleBody instanceof LocalRuleNode)
+					ruleBody = ((LocalRuleNode)ruleBody).getRuleNode();
+				else ruleBody = ((ReturnRuleNode)ruleBody).getRuleNode();
 			}
 
 			//store insertion reference and parent before potentially packing this ruleBody into a par block
 			parent = ruleBody.getParent();
+			String nodeName = AspectTools.getNodeName(ruleBody);
 			insertionReference = ruleBody.removeFromTree();
 
 			//if the rule body is not a block rule then pack it into a new par-block
@@ -765,7 +770,7 @@ public class AspectWeaver {
 			seqblockList.add(updateASTNodeEnd);
 			ASTNode seqBlockASTNode = AspectTools.create(AspectTools.SEQBLOCKRULE, seqblockList);
 
-			AspectTools.addChildAfter(parent, insertionReference, Node.DEFAULT_NAME, seqBlockASTNode);
+			AspectTools.addChildAfter(parent, insertionReference, nodeName, seqBlockASTNode);
 		}
 
 		//step 2

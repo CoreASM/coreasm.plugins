@@ -132,7 +132,7 @@ public class AoASMPlugin extends Plugin
 		ExtensionPointPlugin {
 
 	/** version of the aspect-oriented CoreASM-Plugin */
-	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 2,
+	private static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 3,
 			"alpha");
 	/** name of the aspect-oriented CoreASM-Plugin */
 	public static final String PLUGIN_NAME = AoASMPlugin.class
