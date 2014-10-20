@@ -15,7 +15,7 @@ public class AspectASTNode extends ASTNode {
 
 	private static final long serialVersionUID = 1L;
 	/** NODE_TYPE - shortcut for class.getSimpleName() */
-	private static final String NODE_TYPE = AspectASTNode.class.getSimpleName();
+	public static final String NODE_TYPE = AspectASTNode.class.getSimpleName();
 
 	public AspectASTNode(AspectASTNode self){
 		super(self);

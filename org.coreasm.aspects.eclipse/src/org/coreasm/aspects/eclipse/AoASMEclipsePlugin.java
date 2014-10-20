@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.coreasm.aspects.AoASMPlugin;
 import org.coreasm.aspects.eclipse.ui.XReference;
+import org.coreasm.aspects.eclipse.ui.providers.AspectOutlineContentProvider;
 import org.coreasm.eclipse.util.Utilities;
 import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject;
@@ -17,6 +18,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 
 	public AoASMEclipsePlugin() {
 		InformationDispatcher.addObserver(this);
+		Utilities.addOutlineContentProvider(new AspectOutlineContentProvider());
 	}
 
 	@Override
