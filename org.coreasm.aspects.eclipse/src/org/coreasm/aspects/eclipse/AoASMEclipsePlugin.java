@@ -48,7 +48,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 	@Override
 	public void clearInformation(InformationObject information) {
 		if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
-			Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH);
+			Utilities.removeMarkers(MARKER_TYPE_POINTCUT_MATCH, information.getMessage());
 			XReference.resetTree();
 		}
 	}

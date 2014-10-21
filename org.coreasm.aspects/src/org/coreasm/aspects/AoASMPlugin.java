@@ -1315,7 +1315,7 @@ public class AoASMPlugin extends Plugin
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
 				// clear markers
-				info.clearInformation("clear now!");
+				info.clearInformation(capi.getSpec().getAbsolutePath());
 				// TODO create marker for all aspects and submit them via IInformation to Observers
 
 				//weave with cloned tree to get warnings for current CoreASM specification
