@@ -45,7 +45,7 @@ public class AspectOutlineContentProvider implements OutlineContentProvider {
 	}
 
 	@Override
-	public boolean hasChildren(String grammarRule) {
+	public boolean hasDeclarations(String grammarRule) {
 		return AspectASTNode.NODE_TYPE.equals(grammarRule);
 	}
 }

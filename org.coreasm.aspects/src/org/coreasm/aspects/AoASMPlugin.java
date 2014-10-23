@@ -1331,8 +1331,8 @@ public class AoASMPlugin extends Plugin
 				//weaving if running the engine
 				if (AspectWeaver.getInstance().initialize(capi, ((ASTNode) capi.getSpec().getRootNode()))) {
 					AspectWeaver.getInstance().weave();
+					AspectTools.writeProgramToFile(capi, "after weaving", capi.getSpec().getRootNode(), capi.getSpec().getAbsolutePath());
 				}
-				AspectTools.writeProgramToFile(capi, "after weaving", capi.getSpec().getRootNode(), capi.getSpec().getAbsolutePath());
 			}
 		}
 		catch (CoreASMError e) {
@@ -1362,7 +1362,7 @@ public class AoASMPlugin extends Plugin
 		Specification spec = capi.getSpec();
 		CharacterPosition charPos = functionRuleTermNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
 		
-		data.put("file", spec.getAbsolutePath());
+		data.put("file", spec.getLine(charPos.line).fileName);
 		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
 		data.put("advicePos", "" + binding.getPointcutASTNode().getAdvice().getScannerInfo().charPosition);
 		data.put("aspect", binding.getPointcutASTNode().getAspect().getName());
