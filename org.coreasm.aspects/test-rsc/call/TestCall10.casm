@@ -13,11 +13,11 @@ aspect {
 	*		<li>rule DoSome*</li>
 	*	</ol>
 	* @expects
-	*	no parse error & no runtime error; output before the method doSomethingElse
+	*	no parse error & no runtime error; output before the derived function doSomethingElse
 	*
 	* @require "DoSomething\nTestCall10\nDoSomethingElse"
 	*/
-	advice TestCall10 before : call( "DoSome[_a-zA-Z0-9]*" ) with return { print "TestCall10"}
+	advice TestCall10 before : get( "DoSome[_a-zA-Z0-9]*" ) { print "TestCall10"}
 
 }
 
