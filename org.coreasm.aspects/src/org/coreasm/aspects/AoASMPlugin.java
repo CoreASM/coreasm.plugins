@@ -1332,6 +1332,7 @@ public class AoASMPlugin extends Plugin
 				if (AspectWeaver.getInstance().initialize(capi, ((ASTNode) capi.getSpec().getRootNode()))) {
 					AspectWeaver.getInstance().weave();
 				}
+				AspectTools.writeProgramToFile(capi, "after weaving", capi.getSpec().getRootNode(), capi.getSpec().getAbsolutePath());
 			}
 		}
 		catch (CoreASMError e) {
