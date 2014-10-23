@@ -91,8 +91,6 @@ public class AspectTools {
 	 */
 	///@{
 	public static void addChildAfter(Node parent, Node insertionReference, String name, Node node) {
-		if (parent instanceof LocalRuleNode && !"alpha".equals(name))
-			System.out.println();
 		// original call
 		parent.addChildAfter(insertionReference, name, node);
 
@@ -106,8 +104,6 @@ public class AspectTools {
 	}
 
 	public static void addChild(Node parent, String name, Node node) {
-		if (parent instanceof LocalRuleNode && !"alpha".equals(name))
-			System.out.println();
 		// original call depending on the argument 'name'
 		if (name == null)
 			parent.addChild(node);
