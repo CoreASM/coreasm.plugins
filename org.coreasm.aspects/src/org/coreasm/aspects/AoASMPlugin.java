@@ -1375,11 +1375,10 @@ public class AoASMPlugin extends Plugin
 		data.put("line", "" + spec.getLine(charPos.line).line);
 		
 		ASTNode parentRule = functionRuleTermNode.getParent();
-		while (parentRule != null && !Kernel.GR_RULEDECLARATION.equals(parentRule.getGrammarRule()))
+		while (parentRule != null && !ASTNode.DECLARATION_CLASS.equals(parentRule.getGrammarClass()))
 			parentRule = parentRule.getParent();
 		data.put("rulePos", "" + parentRule.getScannerInfo().charPosition);
 		data.put("ruleName", parentRule.getFirst().getFirst().getToken());
-
 		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 
