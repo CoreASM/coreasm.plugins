@@ -25,7 +25,7 @@ public class AoASMEclipsePlugin implements InformationObserver {
 	public void informationCreated(InformationObject information) {
 		switch (information.getVerbosity()) {
 		case ERROR:
-			System.err.println("AopASMEclipsePlugin:" + information);
+			System.err.println("AoASMEclipsePlugin:" + information);
 			break;
 		case COMMUNICATION:
 			if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
