@@ -250,6 +250,7 @@ public class AspectTools {
 		// First step: Break lines
 		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" include ", "\ninclude ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
 		result = result.replace(" aspect ", "\naspect ");
+		result = result.replace(" assert ", "\nassert ");
 		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n").replace(" endseqblock\n", "\nendseqblock\n");
 		result = result.replace(" par ", "\npar\n").replace("\npar ", "\npar\n").replace(" endpar ", "\nendpar\n").replace("\nendpar ", "\nendpar\n").replace(" endpar\n", "\nendpar\n");
 		result = result.replace(" seq ", "\nseq\n").replace("\nseq ", "\nseq\n").replace(" next ", "\nnext\n").replace("\nnext ", "\nnext\n").replace(" endseq ", "\nendseq\n").replace("\nendseq ", "\nendseq\n").replace(" endseq\n", "\nendseq\n");
