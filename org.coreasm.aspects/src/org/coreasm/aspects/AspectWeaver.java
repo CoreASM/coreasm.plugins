@@ -35,7 +35,9 @@ import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.ParserPlugin;
+import org.coreasm.engine.plugins.chooserule.ChooseRuleNode;
 import org.coreasm.engine.plugins.conditionalrule.ConditionalRuleNode;
+import org.coreasm.engine.plugins.forallrule.ForallRuleNode;
 import org.coreasm.engine.plugins.letrule.LetRuleNode;
 import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
@@ -364,13 +366,14 @@ public class AspectWeaver {
 						&& !(insertionContext.getParent() instanceof LetRuleNode)
 						&& !(insertionContext.getParent() instanceof ReturnRuleNode)
 						&& !(insertionContext.getParent() instanceof LocalRuleNode)
+						&& !(insertionContext.getParent() instanceof ChooseRuleNode)
+						&& !(insertionContext.getParent() instanceof ForallRuleNode)
 						&& !("BlockRule".equals(insertionContext.getParent().getGrammarRule())))
 					insertionContext = insertionContext.getParent();
 				
 				ASTNode parentOfInsertionContext = insertionContext.getParent();
 				String nodeName = AspectTools.getNodeName(insertionContext);
 				Node insertionReference = insertionContext.removeFromTree();
-
 
 				// change macroCallRule if there is exactly one around advice,
 				// else insert nodes into seqblockrule
@@ -420,7 +423,7 @@ public class AspectWeaver {
 					// null, if it is the first child.
 					if (insertionReference != null)
 						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
-								Node.DEFAULT_NAME,
+								nodeName,
 								rootNodeOfSeqBlockSequence);
 					else
 						AspectTools.addChild(parentOfInsertionContext, rootNodeOfSeqBlockSequence);
