@@ -38,6 +38,8 @@ import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
 import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 import org.coreasm.util.Tools;
+import org.coreasm.util.information.InformationDispatcher;
+import org.coreasm.util.information.InformationObject.VerbosityLevel;
 
 /**
  * @author Marcel Dausend
@@ -51,6 +53,12 @@ public class AspectTools {
 	///@}
 	/** ControlAPI used to reproduce text or dot output from a given AST */
 	private static volatile ControlAPI capi;
+
+	/**
+	 * Information dispatcher used to create provide information to other
+	 * registered plugins
+	 */
+	private static InformationDispatcher info = InformationDispatcher.getInstance(AoASMPlugin.PLUGIN_NAME);
 
 	/**
 	 * set the ControlAPI used by AspectTools
@@ -897,5 +905,9 @@ public class AspectTools {
 				}
 		}
 		return (A) node;
+	}
+
+	public static InformationDispatcher getInformationDispatcher() {
+		return info;
 	}
 }

@@ -68,7 +68,6 @@ import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugin.Plugin;
 import org.coreasm.engine.plugin.VocabularyExtender;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
-import org.coreasm.util.information.InformationDispatcher;
 import org.coreasm.util.information.InformationObject.VerbosityLevel;
 
 //@formatter:off
@@ -143,12 +142,6 @@ public class AoASMPlugin extends Plugin
 	 * map of parsers defined in \link getParsers() \endlink
 	 */
 	private Map<String, GrammarRule> parsers = null;
-
-	/**
-	 * Information dispatcher used to create provide information to other
-	 * registered plugins
-	 */
-	private static InformationDispatcher info = InformationDispatcher.getInstance(PLUGIN_NAME);
 
 	/**
 	 * @name Keywords and Operators
@@ -1315,7 +1308,7 @@ public class AoASMPlugin extends Plugin
 			if (source == EngineMode.emParsingSpec && target == EngineMode.emIdle)//only parsing
 			{
 				// clear markers
-				info.clearInformation(capi.getSpec().getAbsolutePath());
+				AspectTools.getInformationDispatcher().clearInformation(capi.getSpec().getAbsolutePath());
 				// TODO create marker for all aspects and submit them via IInformation to Observers
 
 				//weave with cloned tree to get warnings for current CoreASM specification
@@ -1379,7 +1372,7 @@ public class AoASMPlugin extends Plugin
 			parentRule = parentRule.getParent();
 		data.put("rulePos", "" + parentRule.getScannerInfo().charPosition);
 		data.put("ruleName", parentRule.getFirst().getFirst().getToken());
-		info.createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
+		AspectTools.getInformationDispatcher().createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 
 	/**
