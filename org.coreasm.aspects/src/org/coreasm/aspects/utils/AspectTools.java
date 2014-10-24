@@ -36,7 +36,6 @@ import org.coreasm.engine.kernel.MacroCallRuleNode;
 import org.coreasm.engine.kernel.SkipRuleNode;
 import org.coreasm.engine.parser.CharacterPosition;
 import org.coreasm.engine.plugins.blockrule.BlockRulePlugin;
-import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
 import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 import org.coreasm.util.Tools;
 
@@ -249,12 +248,14 @@ public class AspectTools {
 
 	private static String getCoreASMProgram(Node rootNode) {
 		// First step: Break lines
-		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
+		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" include ", "\ninclude ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
 		result = result.replace(" aspect ", "\naspect ");
-		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n");
-		result = result.replace(" par ", "\npar\n").replace(" endpar ", "\nendpar\n");
-		result = result.replace(" seq ", "\nseq\n").replace(" next ", "\nnext\n");
-		result = result.replace(" then ", " then\n").replace(" else ", "\nelse\n");
+		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n").replace(" endseqblock\n", "\nendseqblock\n");
+		result = result.replace(" par ", "\npar\n").replace("\npar ", "\npar\n").replace(" endpar ", "\nendpar\n").replace("\nendpar ", "\nendpar\n").replace(" endpar\n", "\nendpar\n");
+		result = result.replace(" seq ", "\nseq\n").replace("\nseq ", "\nseq\n").replace(" next ", "\nnext\n").replace("\nnext ", "\nnext\n").replace(" endseq ", "\nendseq\n").replace("\nendseq ", "\nendseq\n").replace(" endseq\n", "\nendseq\n");
+		result = result.replace(" then ", " then\n").replace(" else ", "\nelse\n").replace("\nelse ", "\nelse\n");
+		result = result.replace(" skip ", "\nskip\n").replace("\nskip ", "\nskip\n").replace(" skip\n", "\nskip\n");
+		result = result.replace(" CoreModule ", "\nCoreModule ");
 		// Second step: Add indentation
 		String[] lines = result.split("\n");
 		result = "";
@@ -264,7 +265,6 @@ public class AspectTools {
 		boolean extraIndentationNext = false;
 		int indentation = 0;
 		for (String line : lines) {
-			line = line.replace("( ", "(").replace(" )", ")").replace(" (", "(").replace(" ]", "]").replace(" |", "|").replace("| ", "|").replace("@ ", "@").replace(" ,", ",").replace(",", ", ").replace(":=", " := ").replace("  ", " ").replace("  ", " ");
 			line = line.trim();
 			if (indentation > 0 && line.isEmpty())
 				continue;
@@ -289,7 +289,7 @@ public class AspectTools {
 				if (!line.endsWith("then"))
 					extraIndentationElse = false;
 			}
-			if ("endseqblock".equals(line) || "endpar".equals(line))
+			if ("endseqblock".equals(line) || "endpar".equals(line) || "endseq".equals(line))
 				indentation--;
 			for (int i = 0; i < indentation; i++)
 				result += "\t";
