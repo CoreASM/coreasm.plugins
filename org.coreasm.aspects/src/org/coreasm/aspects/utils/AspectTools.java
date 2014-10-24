@@ -248,7 +248,7 @@ public class AspectTools {
 
 	private static String getCoreASMProgram(Node rootNode) {
 		// First step: Break lines
-		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" include ", "\ninclude ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
+		String result = rootNode.unparseTree().replace(" use ", "\nuse ").replaceFirst("\nuse ", "\n\nuse ").replace(" include ", "\ninclude ").replace(" init ", "\n\ninit ").replace(" rule ", "\n\nrule ").replace(" function ", "\nfunction ").replace(" derived ",  "\n\nderived ").replace(" universe ", "\nuniverse ").replace(" enum ", "\nenum ");
 		result = result.replace(" aspect ", "\naspect ");
 		result = result.replace(" assert ", "\nassert ");
 		result = result.replace(" seqblock ", "\nseqblock\n").replace(" endseqblock ", "\nendseqblock\n").replace(" endseqblock\n", "\nendseqblock\n");
@@ -256,7 +256,7 @@ public class AspectTools {
 		result = result.replace(" seq ", "\nseq\n").replace("\nseq ", "\nseq\n").replace(" next ", "\nnext\n").replace("\nnext ", "\nnext\n").replace(" endseq ", "\nendseq\n").replace("\nendseq ", "\nendseq\n").replace(" endseq\n", "\nendseq\n");
 		result = result.replace(" then ", " then\n").replace(" else ", "\nelse\n").replace("\nelse ", "\nelse\n");
 		result = result.replace(" skip ", "\nskip\n").replace("\nskip ", "\nskip\n").replace(" skip\n", "\nskip\n");
-		result = result.replace(" CoreModule ", "\nCoreModule ");
+		result = result.replace(" CoreModule ", "\n\nCoreModule ");
 		// Second step: Add indentation
 		String[] lines = result.split("\n");
 		result = "";
@@ -271,6 +271,13 @@ public class AspectTools {
 				continue;
 			if (line.startsWith("use") && line.contains("TabBlocks"))
 				continue;
+			if (line.startsWith("use ") || line.startsWith("include ") || line.startsWith("init ") || line.startsWith("rule ") || line.startsWith("function ") || line.startsWith("derived ") || line.startsWith("universe ") || line.startsWith("enum ")) {
+				extraIndentationThen = false;
+				extraIndentationElse = false;
+				extraIndentationSeq = false;
+				extraIndentationNext = false;
+				indentation = 0;
+			}
 			if (extraIndentationNext) {
 				result += "\t";
 				extraIndentationNext = false;
@@ -279,6 +286,8 @@ public class AspectTools {
 				extraIndentationSeq = false;
 				extraIndentationNext = true;
 			}
+			else if ("endseq".equals(line))
+				extraIndentationSeq = false;
 			if (extraIndentationSeq)
 				result += "\t";
 			if (extraIndentationThen) {
