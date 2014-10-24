@@ -39,6 +39,11 @@ public class AoASMEclipsePlugin implements InformationObserver {
 				XReference.createTreeObjects(data);
 			}
 			break;
+		case INFO:
+			if (AoASMPlugin.PLUGIN_NAME.equals(information.getSender())) {
+				if ("Woven specification created.".equals(information.getMessage()))
+					Utilities.refreshFile(information.getData().get("filename"));
+			}
 			
 		default:
 			System.out.println("AopASMEclipsePlugin:" + information);

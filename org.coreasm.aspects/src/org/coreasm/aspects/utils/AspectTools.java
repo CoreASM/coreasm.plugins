@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
@@ -364,7 +365,9 @@ public class AspectTools {
 			PrintWriter out = new PrintWriter(new FileWriter(file));
 			out.write("// " + comment + "\n" + getCoreASMProgram(node));
 			out.close();
-
+			Map<String, String> data = new HashMap<String, String>();
+			data.put("filename", file.getAbsolutePath());
+			info.createInformation("Woven specification created.", VerbosityLevel.INFO, data);
 		}
 		catch (FileNotFoundException e) {
 			throw new CoreASMIssue("writeParseTreeToFile can not find file for writing!\n"
