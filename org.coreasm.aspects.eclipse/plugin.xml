@@ -58,7 +58,7 @@
        name="Cross References"
        icon="icons/XRefIcon.gif"
        category="org.coreasm.eclipse.CoreASM"
-       class="org.coreasm.aspects.eclipse.ui.views.XReferenceView"/>
+       class="org.coreasm.aspects.eclipse.ui.views.CrossReferenceView"/>
    </extension>
    <extension
          point="org.eclipse.ui.editors.templates">

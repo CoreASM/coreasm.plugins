@@ -1354,24 +1354,32 @@ public class AoASMPlugin extends Plugin
 		
 		Specification spec = capi.getSpec();
 		CharacterPosition charPos = functionRuleTermNode.getScannerInfo().getPos(capi.getParser().getPositionMap());
+		CharacterPosition charPosAspect = binding.getPointcutASTNode().getAspect().getScannerInfo().getPos(capi.getParser().getPositionMap());
+		CharacterPosition charPosAdvice = binding.getPointcutASTNode().getAdvice().getScannerInfo().getPos(capi.getParser().getPositionMap());
 		
 		data.put("file", spec.getLine(charPos.line).fileName);
-		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
-		data.put("advicePos", "" + binding.getPointcutASTNode().getAdvice().getScannerInfo().charPosition);
-		data.put("aspect", binding.getPointcutASTNode().getAspect().getName());
-		data.put("aspectPos", "" + binding.getPointcutASTNode().getAspect().getScannerInfo().charPosition);
+		data.put("line", "" + spec.getLine(charPos.line).line);
 		data.put("column", "" + charPos.column);
-		data.put("length", "" + functionRuleTermNode.getFirst().getToken().length());
+		data.put("length", "" + functionRuleTermNode.unparseTree().length());
 		data.put("name", binding.toString());	
 		data.put("function", functionRuleTermNode.unparseTree());
-		data.put("functionPos", "" + functionRuleTermNode.getScannerInfo().charPosition);
-		data.put("line", "" + spec.getLine(charPos.line).line);
+		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
+		data.put("aspect", binding.getPointcutASTNode().getAspect().getName());
+		data.put("aspectFile", spec.getLine(charPosAspect.line).fileName);
+		data.put("aspectLine", "" + spec.getLine(charPosAspect.line).line);
+		data.put("aspectColumn", "" + charPosAspect.column);
+		data.put("adviceFile", spec.getLine(charPosAdvice.line).fileName);
+		data.put("adviceLine", "" + spec.getLine(charPosAdvice.line).line);
+		data.put("adviceColumn", "" + charPosAdvice.column);
 		
-		ASTNode parentRule = functionRuleTermNode.getParent();
-		while (parentRule != null && !ASTNode.DECLARATION_CLASS.equals(parentRule.getGrammarClass()))
-			parentRule = parentRule.getParent();
-		data.put("rulePos", "" + parentRule.getScannerInfo().charPosition);
-		data.put("ruleName", parentRule.getFirst().getFirst().getToken());
+		ASTNode parent = functionRuleTermNode.getParent();
+		while (parent != null && !ASTNode.DECLARATION_CLASS.equals(parent.getGrammarClass()))
+			parent = parent.getParent();
+		CharacterPosition charPosParent = parent.getScannerInfo().getPos(capi.getParser().getPositionMap());
+		data.put("parent", parent.getFirst().getFirst().getToken());
+		data.put("parentFile", spec.getLine(charPosParent.line).fileName);
+		data.put("parentLine", "" + spec.getLine(charPosParent.line).line);
+		data.put("parentColumn", "" + charPosParent.column);
 		AspectTools.getInformationDispatcher().createInformation("create now!", VerbosityLevel.COMMUNICATION, data);
 	}
 
