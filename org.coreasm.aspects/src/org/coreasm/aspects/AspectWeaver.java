@@ -421,12 +421,9 @@ public class AspectWeaver {
 					// candidate
 					// the position is indicated by its previous sibling node or
 					// null, if it is the first child.
-					if (insertionReference != null)
-						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
-								nodeName,
-								rootNodeOfSeqBlockSequence);
-					else
-						AspectTools.addChild(parentOfInsertionContext, rootNodeOfSeqBlockSequence);
+					AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
+							nodeName,
+							rootNodeOfSeqBlockSequence);
 				}
 			}
 			/**
