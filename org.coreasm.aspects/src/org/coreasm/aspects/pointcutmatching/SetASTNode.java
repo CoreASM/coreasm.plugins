@@ -64,7 +64,7 @@ public class SetASTNode extends PointCutASTNode {
 				try {
 					//check if the pointcut token is a regular expression
 					if ( Pattern.compile(pointCutToken) != null ){
-						if (!Pattern.matches(pointCutToken, astn.unparseTree().trim()))
+						if (!Pattern.matches(pointCutToken, astn.unparseTree()))
 							return new Binding(compareToNode, this);
 						
 						String name = parameterNode.getName();
