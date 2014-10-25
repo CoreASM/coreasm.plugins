@@ -17,6 +17,7 @@ import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.RuleOrFuncElementNode;
 import org.coreasm.engine.kernel.UpdateRuleNode;
+import org.coreasm.engine.plugins.turboasm.ReturnResultNode;
 
 /**
  * @author Marcel Dausend
@@ -43,7 +44,7 @@ public class GetASTNode extends PointCutASTNode {
 	public Binding matches(ASTNode compareToNode) throws AspectException {
         FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode;
 		if (AspectTools.isRuleName(fnNode.getName())
-				|| fnNode.getParent() instanceof UpdateRuleNode
+				|| (fnNode.getParent() instanceof UpdateRuleNode || fnNode.getParent() instanceof ReturnResultNode)
 				&& fnNode.equals(fnNode.getParent().getFirst()))
 			return new Binding(compareToNode, this);
         Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
