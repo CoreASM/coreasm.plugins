@@ -29,15 +29,21 @@ import org.coreasm.engine.plugin.InterpreterPlugin;
 import org.coreasm.engine.plugin.ParserPlugin;
 import org.coreasm.engine.plugin.Plugin;
 
+/**
+ * Plugin that introduces the concept of assertions into CoreASM
+ * @author Michael Stegmaier
+ *
+ */
 public class AssertionPlugin extends Plugin implements ParserPlugin, InterpreterPlugin, ExtensionPointPlugin {
 	static final String PLUGIN_NAME = AssertionPlugin.class.getSimpleName();
 	static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "beta");
 	
 	public static final String KEYWORD_ASSERT = "assert";
 	public static final String KEYWORD_INVARIANT = "invariant";
+	public static final String OPERATOR_MESSAGE = ":";
 	
 	private static final String[] KEYWORDS = new String[] { KEYWORD_ASSERT, KEYWORD_INVARIANT };
-	private static final String[] OPERATORS = new String[] { };
+	private static final String[] OPERATORS = new String[] { OPERATOR_MESSAGE };
 	
 	private Map<EngineMode, Integer> targetModes;
 	
@@ -85,7 +91,10 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 			
 			Parser<Node> assertParser = Parsers.array(
 				pTools.getKeywParser(KEYWORD_ASSERT, PLUGIN_NAME),
-				termParser
+				termParser,
+				Parsers.array(
+						pTools.getOprParser(OPERATOR_MESSAGE),
+						termParser).optional()
 			).map(
 			new ArrayParseMap(PLUGIN_NAME) {
 				public Node map(Object[] vals) {
@@ -94,10 +103,13 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 					return node;
 				}
 			});
-			parsers.put("Rule", new GrammarRule("AssertRule", "'assert' Term", assertParser, PLUGIN_NAME));
+			parsers.put("Rule", new GrammarRule("AssertRule", "'assert' Term (':' Term)?", assertParser, PLUGIN_NAME));
 			Parser<Node> invariantParser = Parsers.array(
 				pTools.getKeywParser(KEYWORD_INVARIANT, PLUGIN_NAME),
-				termParser
+				termParser,
+				Parsers.sequence(
+						pTools.getOprParser(OPERATOR_MESSAGE),
+						termParser).optional()
 			).map(
 			new ArrayParseMap(PLUGIN_NAME) {
 				public Node map(Object[] vals) {
@@ -106,7 +118,7 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 					return node;
 				}
 			});
-			parsers.put(Kernel.GR_HEADER, new GrammarRule("InvariantDeclaration", "'invariant' Term", invariantParser, PLUGIN_NAME));
+			parsers.put(Kernel.GR_HEADER, new GrammarRule("InvariantDeclaration", "'invariant' Term (':' Term)?", invariantParser, PLUGIN_NAME));
 		}
 		return parsers;
 	}
@@ -120,8 +132,13 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 			if (!(assertNode.getTerm().getValue() instanceof BooleanElement))
 				throw new CoreASMError("The value of an assertion term must be a BooleanElement but was " + assertNode.getTerm().getValue() + ".", assertNode.getTerm());
 			BooleanElement value = (BooleanElement)assertNode.getTerm().getValue();
-			if (!value.getValue())
-				throw new CoreASMError("Assertion " + assertNode.getTerm().unparseTree() + " failed.", assertNode);
+			if (!value.getValue()) {
+				if (assertNode.getMessageTerm() == null)
+					throw new CoreASMError("Assertion " + assertNode.getTerm().unparseTree() + " failed.", assertNode);
+				if (!assertNode.getMessageTerm().isEvaluated())
+					return assertNode.getMessageTerm();
+				throw new CoreASMError("Assertion " + assertNode.getTerm().unparseTree() + " failed with message: " + assertNode.getMessageTerm().getValue(), assertNode);
+			}
 			capi.getInterpreter().getInterpreterInstance().clearTree(assertNode);
 		}
 		pos.setNode(null, new UpdateMultiset(), null);
@@ -163,8 +180,12 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 					throw new CoreASMError("The value of an invariant term must be a BooleanElement but was " + invariant.getTerm().getValue() + ".", invariant.getTerm());
 				BooleanElement value = (BooleanElement)invariant.getTerm().getValue();
 				capi.getInterpreter().getInterpreterInstance().clearTree(invariant);
-				if (!value.getValue())
-					throw new CoreASMError("Invariant " + invariant.getTerm().unparseTree() + " violated.", invariant);
+				if (!value.getValue()) {
+					if (invariant.getMessageTerm() == null)
+						throw new CoreASMError("Invariant " + invariant.getTerm().unparseTree() + " violated.", invariant);
+					interpreter.interpret(invariant.getMessageTerm(), interpreter.getSelf());
+					throw new CoreASMError("Invariant " + invariant.getTerm().unparseTree() + " violated with message: " + invariant.getMessageTerm().getValue(), invariant);
+				}
 			}
 			break;
 		default:

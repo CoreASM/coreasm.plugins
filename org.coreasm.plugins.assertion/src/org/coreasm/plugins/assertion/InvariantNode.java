@@ -3,6 +3,11 @@ package org.coreasm.plugins.assertion;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
+/**
+ * A node representing the declaration of an invariant
+ * @author Michael Stegmaier
+ *
+ */
 @SuppressWarnings("serial")
 public class InvariantNode extends ASTNode {
 	public InvariantNode(ScannerInfo info) {
@@ -15,5 +20,9 @@ public class InvariantNode extends ASTNode {
 
 	public ASTNode getTerm() {
 		return getFirst();
+	}
+
+	public ASTNode getMessageTerm() {
+		return getTerm().getNext();
 	}
 }
