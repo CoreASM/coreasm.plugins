@@ -1360,7 +1360,7 @@ public class AoASMPlugin extends Plugin
 		data.put("file", spec.getLine(charPos.line).fileName);
 		data.put("line", "" + spec.getLine(charPos.line).line);
 		data.put("column", "" + charPos.column);
-		data.put("length", "" + functionRuleTermNode.unparseTree().length());
+		data.put("length", "" + functionRuleTermNode.getFirst().unparse().length());
 		data.put("name", binding.toString());	
 		data.put("function", functionRuleTermNode.unparseTree());
 		data.put("advice", binding.getPointcutASTNode().getAdvice().getRealName());
