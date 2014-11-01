@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<extension
+         id="org.coreasm.plugins.aspects.eclipse.marker.PointCutMatchMarker"
+         name="PointCutMatch Marker"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.textmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+      <attribute name="name" />
+   </extension>
+   <extension
+         id="org.coreasm.plugins.aspects.eclipse.StartUp"
+         name="org.coreasm.plugins.aspects.eclipse.StartUp"
+         point="org.eclipse.ui.startup">
+         <startup
+            class="org.coreasm.plugins.aspects.eclipse.StartUp">
+         </startup>
+   </extension>
+   <extension point="org.eclipse.ui.editors.annotationTypes">
+        <type markerSeverity="0"
+            super="org.eclipse.ui.workbench.texteditor.info"
+            name="org.coreasm.plugins.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+            markerType="org.coreasm.plugins.aspects.eclipse.marker.PointCutMatchMarker"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification"
+         id="org.coreasm.plugins.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+         name="PointCutMatch Marker Annotation">
+         <specification annotationType="org.coreasm.plugins.aspects.eclipse.marker.PointCutMatchMarkerAnnotation"
+         	label="PointCut Match"
+         	icon="icons/pointcutmatchmarker.gif"
+			overviewRulerPreferenceKey="clruler"
+			overviewRulerPreferenceValue="true"
+			colorPreferenceKey="clcolor"
+			colorPreferenceValue="0,0,255"
+			textPreferenceKey="cltext"
+			textPreferenceValue="true"
+			verticalRulerPreferenceKey="clvertical"
+			verticalRulerPreferenceValue="true"
+			textStylePreferenceKey="clstyle"
+			textStylePreferenceValue="BOX">
+		</specification>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+   </extension>
+   <extension point="org.eclipse.ui.views">
+       <category
+           name="CoreASM"
+           id="org.coreasm.eclipse.CoreASM">
+       </category>
+       <view id="org.coreasm.plugins.aspects.eclipse.views.CrossReferences"
+       name="Cross References"
+       icon="icons/XRefIcon.gif"
+       category="org.coreasm.eclipse.CoreASM"
+       class="org.coreasm.plugins.aspects.eclipse.ui.views.CrossReferenceView"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.templates">
+	  <include 
+	  		file="aspect-templates.xml" 
+	  		translations="aspect-templates.xml">
+	  </include>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.coreasm.eclipse.perspective">
+         <view
+               id="org.coreasm.plugins.aspects.eclipse.views.CrossReferences"
+               minimized="false"
+               relationship="stack"
+               relative="right_bottom"
+               visible="true">
+         </view>
+      </perspectiveExtension>
+   </extension>
+</plugin>
