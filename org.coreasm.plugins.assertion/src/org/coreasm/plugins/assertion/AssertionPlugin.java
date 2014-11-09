@@ -107,7 +107,7 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 			Parser<Node> invariantParser = Parsers.array(
 				pTools.getKeywParser(KEYWORD_INVARIANT, PLUGIN_NAME),
 				termParser,
-				Parsers.sequence(
+				Parsers.array(
 						pTools.getOprParser(OPERATOR_MESSAGE),
 						termParser).optional()
 			).map(
