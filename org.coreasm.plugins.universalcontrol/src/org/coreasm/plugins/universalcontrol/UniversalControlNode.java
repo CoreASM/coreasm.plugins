@@ -43,9 +43,9 @@ public class UniversalControlNode extends ASTNode {
 	
 	public boolean isStepwise() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_SEQUENTIALY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_SEQUENTIALLY.equals(child.getToken()))
 				return false;
-			if (UniversalControlPlugin.KEYWORD_PARALLELY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_PARALLELLY.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return true;
@@ -55,9 +55,9 @@ public class UniversalControlNode extends ASTNode {
 
 	public boolean isSequential() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_SEQUENTIALY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_SEQUENTIALLY.equals(child.getToken()))
 				return true;
-			if (UniversalControlPlugin.KEYWORD_PARALLELY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_PARALLELLY.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return false;
@@ -91,10 +91,10 @@ public class UniversalControlNode extends ASTNode {
 
 	public String getSelectionKeyword() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_WHOLE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ANY.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_SINGLE.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_ALL.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ANY.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_SINGLE.equals(child.getToken()))
 				return child.getToken();
 		}
-		return UniversalControlPlugin.KEYWORD_WHOLE;
+		return UniversalControlPlugin.KEYWORD_ALL;
 	}
 
 	public ASTNode getRuleBlock() {

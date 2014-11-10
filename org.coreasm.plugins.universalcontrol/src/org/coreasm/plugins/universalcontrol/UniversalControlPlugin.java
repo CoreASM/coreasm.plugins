@@ -1,5 +1,6 @@
 package org.coreasm.plugins.universalcontrol;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 
 	public static final String KEYWORD_DO = "do";
 
-	public static final String KEYWORD_WHOLE = "whole";
+	public static final String KEYWORD_ALL = "all";
 	public static final String KEYWORD_ANY = "any";
 	public static final String KEYWORD_SINGLE = "single";
 
@@ -57,8 +58,8 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	public static final String KEYWORD_RESETTING = "resetting";
 	public static final String KEYWORD_ON = "on";
 
-	public static final String KEYWORD_PARALLELY = "parallely";
-	public static final String KEYWORD_SEQUENTIALY = "sequentialy";
+	public static final String KEYWORD_PARALLELLY = "parallelly";
+	public static final String KEYWORD_SEQUENTIALLY = "sequentially";
 	public static final String KEYWORD_STEPWISE = "stepwise";
 
 	public static final String KEYWORD_IF = "if";
@@ -67,11 +68,11 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	public static final String KEYWORD_END = "end";
 
 	private static final String[] KEYWORDS = new String[] { KEYWORD_DO,
-															KEYWORD_WHOLE, KEYWORD_ANY, KEYWORD_SINGLE,
+															KEYWORD_ALL, KEYWORD_ANY, KEYWORD_SINGLE,
 															KEYWORD_VARIABLE, KEYWORD_FIXED, KEYWORD_SELECTION,
 															KEYWORD_ONCE, KEYWORD_FOREVER, KEYWORD_TIMES,
 															KEYWORD_RESETTING, KEYWORD_ON,
-															KEYWORD_PARALLELY, KEYWORD_SEQUENTIALY, KEYWORD_STEPWISE,
+															KEYWORD_PARALLELLY, KEYWORD_SEQUENTIALLY, KEYWORD_STEPWISE,
 															KEYWORD_IF, KEYWORD_WHILE,
 															KEYWORD_END };
 	private static final String[] OPERATORS = new String[] { };
@@ -162,23 +163,61 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			Parser<Node> termParser = kernel.getTermParser();
 			Parser<Node> ruleParser = kernel.getRuleParser();
 			ParserTools pTools = ParserTools.getInstance(capi);
+			
+			Parser<Serializable> selectionParser = Parsers.or(
+					pTools.getKeywParser(KEYWORD_ALL, PLUGIN_NAME),
+					Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_ANY, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_SINGLE, PLUGIN_NAME)),
+									Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_VARIABLE, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_FIXED, PLUGIN_NAME)).optional(),
+													pTools.getKeywParser(KEYWORD_SELECTION, PLUGIN_NAME))));
+			Parser<Object[]> repetitionParser = Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_FOREVER, PLUGIN_NAME),
+																			pTools.getKeywParser(KEYWORD_ONCE, PLUGIN_NAME),
+																			Parsers.array(constantTermParser, pTools.getKeywParser(KEYWORD_TIMES, PLUGIN_NAME))),
+																Parsers.array(pTools.getKeywParser(KEYWORD_RESETTING, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_ON, PLUGIN_NAME), termParser).optional());
+			Parser<Node> computationParser = Parsers.or(pTools.getKeywParser(KEYWORD_PARALLELLY, PLUGIN_NAME),
+														pTools.getKeywParser(KEYWORD_SEQUENTIALLY, PLUGIN_NAME),
+														pTools.getKeywParser(KEYWORD_STEPWISE, PLUGIN_NAME));
+			Parser<Object[]> conditionParser = Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_IF, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_WHILE, PLUGIN_NAME)),
+																termParser);
+			
+			Parser<Object[]> parser1 = Parsers.array(
+					selectionParser,
+					repetitionParser.optional().atomic(),
+					computationParser.optional().atomic());
+			
+			Parser<Object[]> parser2 = Parsers.array(
+					selectionParser,
+					computationParser.optional().atomic(),
+					repetitionParser.optional().atomic());
+			
+			Parser<Object[]> parser3 = Parsers.array(
+					repetitionParser,
+					selectionParser.optional().atomic(),
+					computationParser.optional().atomic());
+			
+			Parser<Object[]> parser4 = Parsers.array(
+					repetitionParser,
+					computationParser.optional().atomic(),
+					selectionParser.optional().atomic());
+			
+			Parser<Object[]> parser5 = Parsers.array(
+					computationParser,
+					selectionParser.optional().atomic(),
+					repetitionParser.optional().atomic());
+			
+			Parser<Object[]> parser6 = Parsers.array(
+					computationParser,
+					repetitionParser.optional().atomic(),
+					selectionParser.optional().atomic());
 
 			Parser<Node> parser = Parsers.array(
 				pTools.getKeywParser(KEYWORD_DO, PLUGIN_NAME),
-				Parsers.or( pTools.getKeywParser(KEYWORD_WHOLE, PLUGIN_NAME),
-							pTools.getKeywParser(KEYWORD_ANY, PLUGIN_NAME),
-							pTools.getKeywParser(KEYWORD_SINGLE, PLUGIN_NAME)).optional(),
-				Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_VARIABLE, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_FIXED, PLUGIN_NAME)),
-								pTools.getKeywParser(KEYWORD_SELECTION, PLUGIN_NAME)).optional(),
-				Parsers.or( pTools.getKeywParser(KEYWORD_FOREVER, PLUGIN_NAME),
-							pTools.getKeywParser(KEYWORD_ONCE, PLUGIN_NAME),
-							Parsers.array(constantTermParser, pTools.getKeywParser(KEYWORD_TIMES, PLUGIN_NAME))).optional(),
-				Parsers.array(pTools.getKeywParser(KEYWORD_RESETTING, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_ON, PLUGIN_NAME), termParser).optional(),
-				Parsers.or(	pTools.getKeywParser(KEYWORD_PARALLELY, PLUGIN_NAME),
-							pTools.getKeywParser(KEYWORD_SEQUENTIALY, PLUGIN_NAME),
-							pTools.getKeywParser(KEYWORD_STEPWISE, PLUGIN_NAME)).optional(),
-				Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_IF, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_WHILE, PLUGIN_NAME)),
-								termParser).optional(),
+				Parsers.or(	parser1,
+							parser2,
+							parser3,
+							parser4,
+							parser5,
+							parser6).optional(),
+				conditionParser.optional(),
 				pTools.plus(ruleParser),
 				pTools.getKeywParser(KEYWORD_END, PLUGIN_NAME).optional()
 			).map(
@@ -189,7 +228,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					return node;
 				}
 			});
-			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'do' ('whole' | 'any' | 'single')? (('variable' | 'fixed') 'selection')? ('once' | 'forever' | (ConstantTerm 'times'))? ('resetting' 'on' Term)? ('parallely' | 'sequentialy' | 'stepwise')? (('if' | 'while) Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
+			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'do' ('all' | (('any' | 'single') ('variable' | 'fixed')? 'selection'))? ('once' | 'forever' | (ConstantTerm 'times'))? ('resetting' 'on' Term)? ('parallely' | 'sequentialy' | 'stepwise')? (('if' | 'while) Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
 		}
 		return parsers;
 	}
@@ -257,7 +296,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					for (ASTNode rule = node.getRuleBlock(); rule != null; rule = rule.getNext())
 						rules.add(rule);
 					int selectionSize = 1;
-					if (KEYWORD_WHOLE.equals(node.getSelectionKeyword()))
+					if (KEYWORD_ALL.equals(node.getSelectionKeyword()))
 						selectionSize = rules.size();
 					else if (KEYWORD_ANY.equals(node.getSelectionKeyword()))
 						selectionSize = Tools.randInt(rules.size() + 1);
