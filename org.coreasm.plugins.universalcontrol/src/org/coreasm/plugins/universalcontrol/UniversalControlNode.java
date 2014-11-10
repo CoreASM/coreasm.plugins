@@ -19,14 +19,18 @@ public class UniversalControlNode extends ASTNode {
 		super(node);
 	}
 
-	public int getRepetitionCount() {
+	public Node getRepetitionNode() {
+		Node prevChild = null;
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
 			if (UniversalControlPlugin.KEYWORD_FOREVER.equals(child.getToken()))
-				return -1;
+				return null;
 			if (UniversalControlPlugin.KEYWORD_ONCE.equals(child.getToken()))
-				return 1;
+				return child;
+			if (UniversalControlPlugin.KEYWORD_TIMES.equals(child.getToken()))
+				return prevChild;
+			prevChild = child;
 		}
-		return -1;
+		return null;
 	}
 
 	public ASTNode getResetCondition() {
@@ -36,12 +40,26 @@ public class UniversalControlNode extends ASTNode {
 		}
 		return null;
 	}
+	
+	public boolean isStepwise() {
+		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
+			if (UniversalControlPlugin.KEYWORD_SEQUENTIALY.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_PARALLELY.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
+				return true;
+		}
+		return false;
+	}
 
 	public boolean isSequential() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_SEQUENTIAL.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_SEQUENTIALY.equals(child.getToken()))
 				return true;
-			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_PARALLELY.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return false;
 		}
 		return false;
@@ -73,10 +91,10 @@ public class UniversalControlNode extends ASTNode {
 
 	public String getSelectionKeyword() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_ALL.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ANY.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ONE.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_WHOLE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ANY.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_SINGLE.equals(child.getToken()))
 				return child.getToken();
 		}
-		return UniversalControlPlugin.KEYWORD_ALL;
+		return UniversalControlPlugin.KEYWORD_WHOLE;
 	}
 
 	public ASTNode getRuleBlock() {
