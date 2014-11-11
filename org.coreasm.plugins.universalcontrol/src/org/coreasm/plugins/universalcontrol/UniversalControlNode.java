@@ -86,7 +86,7 @@ public class UniversalControlNode extends ASTNode {
 			if (UniversalControlPlugin.KEYWORD_VARIABLE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_FIXED.equals(child.getToken()))
 				return UniversalControlPlugin.KEYWORD_VARIABLE.equals(child.getToken());
 		}
-		return false;
+		return true;
 	}
 
 	public String getSelectionKeyword() {
@@ -99,7 +99,7 @@ public class UniversalControlNode extends ASTNode {
 
 	public ASTNode getRuleBlock() {
 		ASTNode ruleBlock = getFirst();
-		while (ruleBlock == getCondition() || ruleBlock == getResetCondition())
+		while (ruleBlock == getCondition() || ruleBlock == getResetCondition() || ruleBlock == getRepetitionNode())
 			ruleBlock = ruleBlock.getNext();
 		return ruleBlock;
 	}
