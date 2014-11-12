@@ -1,4 +1,4 @@
-package org.coreasm.ast2spec.ui;
+package org.coreasm.plugins.ast2spec.ui;
 
 import java.io.File;
 

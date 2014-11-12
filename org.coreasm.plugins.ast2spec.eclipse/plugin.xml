@@ -5,7 +5,7 @@
          id="CoreASM AST into CoreASM Spec"
          point="org.eclipse.ui.popupMenus">
       <objectContribution
-            id="org.coreasm.ast2spec.eclipse.Ast2SpecPlugin"
+            id="org.coreasm.plugins.ast2spec.eclipse.Ast2SpecPlugin"
             nameFilter="*.coreasm"
             objectClass="org.eclipse.core.resources.IFile">
          <menu
@@ -18,17 +18,17 @@
             </separator>
          </menu>
          <action
-               class="org.coreasm.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
+               class="org.coreasm.plugins.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
                enablesFor="1"
                icon="rsc/icons/CoreASM-Logo.png"
-               id="org.coreasm.ast2spec.eclipse.popup"
+               id="org.coreasm.plugins.ast2spec.eclipse.popup"
                label="export file&apos;s AST as CoreASM specification "
                menubarPath="org.coreasm.menu/group"
                tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
          </action>
       </objectContribution>
       <objectContribution
-            id="org.coreasm.ast2spec.eclipse.Ast2SpecPlugin"
+            id="org.coreasm.plugins.ast2spec.eclipse.Ast2SpecPlugin"
             nameFilter="*.casm"
             objectClass="org.eclipse.core.resources.IFile">
          <menu
@@ -41,17 +41,17 @@
             </separator>
          </menu>
          <action
-               class="org.coreasm.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
+               class="org.coreasm.plugins.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
                enablesFor="1"
                icon="rsc/icons/CoreASM-Logo.png"
-               id="org.coreasm.ast2spec.eclipse.popup"
+               id="org.coreasm.plugins.ast2spec.eclipse.popup"
                label="export file&apos;s AST as CoreASM specification "
                menubarPath="org.coreasm.menu/group"
                tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
          </action>
       </objectContribution>
       <objectContribution
-            id="org.coreasm.ast2spec.eclipse.Ast2SpecPlugin"
+            id="org.coreasm.plugins.ast2spec.eclipse.Ast2SpecPlugin"
             nameFilter="*.coreasm"
             objectClass="org.eclipse.ui.IEditorInput">
          <menu
@@ -64,17 +64,17 @@
             </separator>
          </menu>
          <action
-               class="org.coreasm.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
+               class="org.coreasm.plugins.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
                enablesFor="1"
                icon="rsc/icons/CoreASM-Logo.png"
-               id="org.coreasm.ast2spec.eclipse.popup"
+               id="org.coreasm.plugins.ast2spec.eclipse.popup"
                label="export file&apos;s AST as CoreASM specification "
                menubarPath="org.coreasm.menu/group"
                tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">
          </action>
       </objectContribution>
       <objectContribution
-            id="org.coreasm.ast2spec.eclipse.Ast2SpecPlugin"
+            id="org.coreasm.plugins.ast2spec.eclipse.Ast2SpecPlugin"
             nameFilter="*.casm"
             objectClass="org.eclipse.ui.IEditorInput">
          <menu
@@ -87,10 +87,10 @@
             </separator>
          </menu>
          <action
-               class="org.coreasm.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
+               class="org.coreasm.plugins.ast2spec.eclipse.popup.actions.Ast2SpecPopupMenu"
                enablesFor="1"
                icon="rsc/icons/CoreASM-Logo.png"
-               id="org.coreasm.ast2spec.eclipse.popup"
+               id="org.coreasm.plugins.ast2spec.eclipse.popup"
                label="export file&apos;s AST as CoreASM specification "
                menubarPath="org.coreasm.menu/group"
                tooltip="&quot;The AST of the selected CoreASM file will  be exported as CoreASM specification and will be stored at a destination of your choice.&quot;">

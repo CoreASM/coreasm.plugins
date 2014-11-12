@@ -1,4 +1,4 @@
-package org.coreasm.ast2spec.eclipse.popup.actions;
+package org.coreasm.plugins.ast2spec.eclipse.popup.actions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
