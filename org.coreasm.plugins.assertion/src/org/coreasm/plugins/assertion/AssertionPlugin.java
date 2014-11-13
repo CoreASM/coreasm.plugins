@@ -51,13 +51,7 @@ public class AssertionPlugin extends Plugin implements ParserPlugin, Interpreter
 	private Map<String, GrammarRule> parsers;
 	
 	private Set<InvariantNode> invariants;
-
-	private final CompilerPlugin compilerPlugin = new CompilerAssertionPlugin(this);
 	
-	@Override
-	public CompilerPlugin getCompilerPlugin(){
-		return compilerPlugin;
-	}
 	@Override
 	public VersionInfo getVersionInfo() {
 		return VERSION_INFO;
