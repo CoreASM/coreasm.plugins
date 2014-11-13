@@ -1,4 +1,4 @@
-package org.coreasm.ast2spec;
+package org.coreasm.plugins.ast2spec;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,7 +11,7 @@ import java.util.Map;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.coreasm.ast2spec.ui.ExportAstDialog;
+import org.coreasm.plugins.ast2spec.ui.ExportAstDialog;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMIssue;
 import org.coreasm.engine.EngineException;
@@ -38,6 +38,7 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			//auxiliary functions
 			"file: NODE -> STRING", "spec: NODE -> STRING", "lineNumber: NODE -> NUMBER", "indentation: NODE -> NUMBER"
 	};
+	private static final String[] ENUMS = {"FUNCTIONKIND = {DERIVED_FUNCTION, MONITORED_FUNCTION}"};
 
 	private String nodeNames = "";
 
@@ -129,6 +130,7 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		printSpecHeader(stream, rootnode);
 		stream.println();
 		printFunctions(stream, rootnode);
+		printEnums(stream, rootnode);
 		//		stream.println();
 		//		printAuxiliaryRules(stream);
 		stream.println();
@@ -161,18 +163,10 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		for (String function : FUNCTIONS)
 			stream.println("function " + function);
 	}
-
-	private void printAuxiliaryRules(PrintStream stream) {
-		stream.println("rule root(spec) = return res in {\n" +
-				"\tchoose r in NODE with\n" +
-				"\t\tparent(r) = undef\n" +
-				"\tdo\n" +
-				"\t\tres := r\n" +
-				"}");
-		stream.println();
-		stream.println("rule children(node) = return res in {\n" +
-				"\tres := {n | n in NODE with parent(n) = node}\n" +
-				"}");
+	
+	private void printEnums(PrintStream stream, Node rootnode) {
+		for (String enumerate : ENUMS)
+			stream.println("enum " + enumerate);
 	}
 
 	private void printInitRule(PrintStream stream, Node node) {
@@ -249,21 +243,21 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			// Add node to universe ASTNODE
 			printAssignment(stream, "ASTNODE", nodeToString(astnode),
 					BooleanElement.TRUE_NAME, 2);
-			
+
 			if ((astnode.getGrammarRule() != null) && astnode.getGrammarRule().equals("Signature")) {
-                ASTNode signature = astnode.getFirst();
-                if (signature instanceof DerivedFunctionNode)
-                	printAssignment(stream, "fkind", signature.getFirst().getFirst().getToken(), "DERIVED", 2);
-                else if (signature instanceof FunctionNode) {
-                	FunctionNode function = (FunctionNode)signature;
-                	printAssignment(stream, "fkind", function.getName(), function.getFunctionClass().toString().substring(2).toUpperCase(), 2);
-                }
+				ASTNode signature = astnode.getFirst();
+				if (signature instanceof DerivedFunctionNode)
+					printAssignment(stream, "fkind", nodeToString(astnode), "DERIVED_FUNCTION", 2);
+				else if (signature instanceof FunctionNode) {
+					FunctionNode function = (FunctionNode)signature;
+					printAssignment(stream, "fkind", nodeToString(astnode), "\""+function.getFunctionClass().toString().substring(2).toUpperCase()+"_FUNCTION\"", 2);
+				}
 			}
-			
+
 			if (astnode instanceof FunctionRuleTermNode) {
 				FunctionRuleTermNode frNode = (FunctionRuleTermNode)astnode;
 				if (frNode.hasName())
-					printAssignment(stream, "fname", nodeToString(astnode), frNode.getName(), 2);
+					printAssignment(stream, "fname", nodeToString(astnode), "\""+frNode.getName()+"\"", 2);
 			}
 
 			// functions which have no content for getGrammarRule()

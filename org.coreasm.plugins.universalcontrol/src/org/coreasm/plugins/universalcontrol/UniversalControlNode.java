@@ -24,7 +24,7 @@ public class UniversalControlNode extends ASTNode {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
 			if (UniversalControlPlugin.KEYWORD_FOREVER.equals(child.getToken()))
 				return null;
-			if (UniversalControlPlugin.KEYWORD_ONCE.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_ONCE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_NO_UPDATES.equals(child.getToken()))
 				return child;
 			if (UniversalControlPlugin.KEYWORD_TIMES.equals(child.getToken()))
 				return prevChild;
@@ -43,9 +43,9 @@ public class UniversalControlNode extends ASTNode {
 	
 	public boolean isStepwise() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_SEQUENTIALLY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_SEQUENCE.equals(child.getToken()))
 				return false;
-			if (UniversalControlPlugin.KEYWORD_PARALLELLY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return true;
@@ -55,9 +55,9 @@ public class UniversalControlNode extends ASTNode {
 
 	public boolean isSequential() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_SEQUENTIALLY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_SEQUENCE.equals(child.getToken()))
 				return true;
-			if (UniversalControlPlugin.KEYWORD_PARALLELLY.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return false;

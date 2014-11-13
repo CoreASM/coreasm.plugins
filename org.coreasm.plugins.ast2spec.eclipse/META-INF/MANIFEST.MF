@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CoreASM ast2spec Eclipse Plugin
-Bundle-SymbolicName: org.coreasm.ast2spec.eclipse;singleton:=true
+Bundle-SymbolicName: org.coreasm.plugins.ast2spec.eclipse;singleton:=true
 Bundle-Version: 1.7.1.qualifier
 Bundle-Vendor: coreasm.org
 Require-Bundle: org.eclipse.ui,
