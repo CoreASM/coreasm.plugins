@@ -11,6 +11,8 @@ import org.coreasm.engine.interpreter.ScannerInfo;
  */
 @SuppressWarnings("serial")
 public class UniversalControlNode extends ASTNode {
+	private ASTNode trueGuard;
+	
 	public UniversalControlNode(ScannerInfo info) {
 		super(UniversalControlPlugin.PLUGIN_NAME, ASTNode.RULE_CLASS, "UniversalControlRule", null, info);
 	}
@@ -47,7 +49,7 @@ public class UniversalControlNode extends ASTNode {
 				return false;
 			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
-			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_RULE_BY_RULE.equals(child.getToken()))
 				return true;
 		}
 		return false;
@@ -59,7 +61,7 @@ public class UniversalControlNode extends ASTNode {
 				return true;
 			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
-			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_RULE_BY_RULE.equals(child.getToken()))
 				return false;
 		}
 		return false;
@@ -69,14 +71,27 @@ public class UniversalControlNode extends ASTNode {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
 			if (UniversalControlPlugin.KEYWORD_IF.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken()))
 				return (ASTNode)child.getNextCSTNode();
+			if (UniversalControlPlugin.KEYWORD_ITERATE.equals(child.getToken())) {
+				if (trueGuard == null)
+					trueGuard = new TrueGuardNode(this);
+				return trueGuard;
+			}
 		}
 		return null;
 	}
 
 	public boolean shouldLoop() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
-			if (UniversalControlPlugin.KEYWORD_IF.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken()))
-				return UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken());
+			if (UniversalControlPlugin.KEYWORD_IF.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ITERATE.equals(child.getToken()))
+				return UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ITERATE.equals(child.getToken());
+		}
+		return false;
+	}
+	
+	public boolean isIterate() {
+		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
+			if (UniversalControlPlugin.KEYWORD_IF.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_WHILE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_ITERATE.equals(child.getToken()))
+				return UniversalControlPlugin.KEYWORD_ITERATE.equals(child.getToken());
 		}
 		return false;
 	}
@@ -95,6 +110,14 @@ public class UniversalControlNode extends ASTNode {
 				return child.getToken();
 		}
 		return UniversalControlPlugin.KEYWORD_ALL;
+	}
+	
+	public boolean isNonEmptySelection() {
+		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
+			if (UniversalControlPlugin.KEYWORD_NON_EMPTY.equals(child.getToken()))
+				return true;
+		}
+		return false;
 	}
 
 	public ASTNode getRuleBlock() {

@@ -41,7 +41,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	static final String PLUGIN_NAME = UniversalControlPlugin.class.getSimpleName();
 	static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "beta");
 
-	public static final String KEYWORD_DO = "do";
+	public static final String KEYWORD_PERFORM = "perform";
 
 	public static final String KEYWORD_ALL = "all";
 	public static final String KEYWORD_ANY = "any";
@@ -49,10 +49,13 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 
 	public static final String KEYWORD_FIXED = "fixed";
 	public static final String KEYWORD_VARIABLE = "variable";
+	public static final String KEYWORD_NON_EMPTY = "nonempty";
 	public static final String KEYWORD_SELECTION = "selection";
 
 	public static final String KEYWORD_FOREVER = "forever";
 	public static final String KEYWORD_ONCE = "once";
+	
+	public static final String KEYWORD_ATMOST = "atmost";
 	public static final String KEYWORD_TIMES = "times";
 	public static final String KEYWORD_UNTIL = "until";
 	public static final String KEYWORD_NO_UPDATES = "noupdates";
@@ -63,20 +66,22 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	public static final String KEYWORD_IN = "in";
 	public static final String KEYWORD_PARALLEL = "parallel";
 	public static final String KEYWORD_SEQUENCE = "sequence";
-	public static final String KEYWORD_STEPWISE = "stepwise";
+	public static final String KEYWORD_RULE_BY_RULE = "rulebyrule";
 
 	public static final String KEYWORD_IF = "if";
 	public static final String KEYWORD_WHILE = "while";
+	public static final String KEYWORD_ITERATE = "iterate";
 	
 	public static final String KEYWORD_END = "end";
 
-	private static final String[] KEYWORDS = new String[] { KEYWORD_DO,
-															KEYWORD_ALL, KEYWORD_ANY, KEYWORD_SINGLE,
+	private static final String[] KEYWORDS = new String[] { KEYWORD_PERFORM,
+															KEYWORD_ALL, KEYWORD_ANY, KEYWORD_NON_EMPTY, KEYWORD_SINGLE,
 															KEYWORD_VARIABLE, KEYWORD_FIXED, KEYWORD_SELECTION,
-															KEYWORD_ONCE, KEYWORD_FOREVER, KEYWORD_TIMES, KEYWORD_UNTIL, KEYWORD_NO_UPDATES,
+															KEYWORD_ONCE, KEYWORD_FOREVER,
+															KEYWORD_ATMOST, KEYWORD_TIMES, KEYWORD_UNTIL, KEYWORD_NO_UPDATES,
 															KEYWORD_RESETTING, KEYWORD_ON,
-															KEYWORD_IN, KEYWORD_PARALLEL, KEYWORD_SEQUENCE, KEYWORD_STEPWISE,
-															KEYWORD_IF, KEYWORD_WHILE,
+															KEYWORD_IN, KEYWORD_PARALLEL, KEYWORD_SEQUENCE, KEYWORD_RULE_BY_RULE,
+															KEYWORD_IF, KEYWORD_WHILE, KEYWORD_UNTIL, KEYWORD_ITERATE,
 															KEYWORD_END };
 	private static final String[] OPERATORS = new String[] { };
 
@@ -86,6 +91,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	private Map<Element, Map<Node, ASTNode[]>> selections;
 	private Map<Element, Map<Node, Integer>> currentRules;
 	private ThreadLocal<Map<Node, UpdateMultiset>> composedUpdates;
+	private ThreadLocal<Map<Node, Object>> stepLocks;
 
 	@Override
 	public VersionInfo getVersionInfo() {
@@ -101,6 +107,12 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			@Override
 			protected Map<Node, UpdateMultiset> initialValue() {
 				return new IdentityHashMap<Node, UpdateMultiset>();
+			}
+		};
+		stepLocks = new ThreadLocal<Map<Node, Object>>() {
+			@Override
+			protected Map<Node, Object> initialValue() {
+				return new IdentityHashMap<Node, Object>();
 			}
 		};
 	}
@@ -134,6 +146,15 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 
 	private Map<Node, UpdateMultiset> getComposedUpdates() {
 		return composedUpdates.get();
+	}
+	
+	private void lockStep(Node node) {
+		Map<Node, Object> locks = stepLocks.get();
+		locks.put(node, null);
+	}
+	
+	private boolean isStepLocked(Node node) {
+		return stepLocks.get().containsKey(node);
 	}
 
 	@Override
@@ -169,19 +190,22 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			
 			Parser<Serializable> selectionParser = Parsers.or(
 					pTools.getKeywParser(KEYWORD_ALL, PLUGIN_NAME),
-					Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_ANY, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_SINGLE, PLUGIN_NAME)),
-									Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_VARIABLE, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_FIXED, PLUGIN_NAME)).optional(),
+					Parsers.array(	Parsers.or(	Parsers.array(pTools.getKeywParser(KEYWORD_ANY, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_NON_EMPTY, PLUGIN_NAME).optional()), 
+												pTools.getKeywParser(KEYWORD_SINGLE, PLUGIN_NAME)),
+									Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_VARIABLE, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_FIXED, PLUGIN_NAME)),
 													pTools.getKeywParser(KEYWORD_SELECTION, PLUGIN_NAME))));
 			Parser<Object[]> repetitionParser = Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_FOREVER, PLUGIN_NAME),
 																			pTools.getKeywParser(KEYWORD_ONCE, PLUGIN_NAME),
-																			Parsers.array(constantTermParser, pTools.getKeywParser(KEYWORD_TIMES, PLUGIN_NAME)),
+																			Parsers.array(pTools.getKeywParser(KEYWORD_ATMOST, PLUGIN_NAME), constantTermParser, pTools.getKeywParser(KEYWORD_TIMES, PLUGIN_NAME)),
 																			Parsers.array(pTools.getKeywParser(KEYWORD_UNTIL, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_NO_UPDATES, PLUGIN_NAME))),
 																Parsers.array(pTools.getKeywParser(KEYWORD_RESETTING, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_ON, PLUGIN_NAME), termParser).optional());
 			Parser<Serializable> computationParser = Parsers.or(Parsers.array(	pTools.getKeywParser(KEYWORD_IN, PLUGIN_NAME),
 																				Parsers.or(pTools.getKeywParser(KEYWORD_PARALLEL, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_SEQUENCE, PLUGIN_NAME))),
-																pTools.getKeywParser(KEYWORD_STEPWISE, PLUGIN_NAME));
-			Parser<Object[]> conditionParser = Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_IF, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_WHILE, PLUGIN_NAME)),
-																termParser);
+																pTools.getKeywParser(KEYWORD_RULE_BY_RULE, PLUGIN_NAME));
+			Parser<Serializable> conditionParser = Parsers.or(	Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_IF, PLUGIN_NAME),
+																							pTools.getKeywParser(KEYWORD_WHILE, PLUGIN_NAME)),
+																				termParser),
+																pTools.getKeywParser(KEYWORD_ITERATE, PLUGIN_NAME));
 			
 			Parser<Object[]> parser1 = Parsers.array(
 					selectionParser,
@@ -214,7 +238,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					selectionParser.optional().atomic());
 
 			Parser<Node> parser = Parsers.array(
-				pTools.getKeywParser(KEYWORD_DO, PLUGIN_NAME),
+				pTools.getKeywParser(KEYWORD_PERFORM, PLUGIN_NAME),
 				Parsers.or(	parser1,
 							parser2,
 							parser3,
@@ -232,7 +256,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					return node;
 				}
 			});
-			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'do' ('all' | (('any' | 'single') ('variable' | 'fixed')? 'selection'))? ('once' | 'forever' | (ConstantTerm 'times') | 'until' 'noupdates')? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'stepwise')? (('if' | 'while) Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
+			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'perform' ('all' | ((('any' 'nonempty'?) | 'single') ('variable' | 'fixed') 'selection'))? ('once' | 'forever' | ('atmost' ConstantTerm 'times') | 'until' 'noupdates')? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'rulebyrule')? (('if' | 'while' | 'iterate') Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
 		}
 		return parsers;
 	}
@@ -242,6 +266,11 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 		AbstractStorage storage = capi.getStorage();
 		if (pos instanceof UniversalControlNode) {
 			UniversalControlNode node = (UniversalControlNode)pos;
+			
+//			if (isStepLocked(node)) {
+//				pos.setNode(null, new UpdateMultiset(), null);
+//				return pos;
+//			}
 
 			Integer repetitions = getRepetitions().get(pos);
 			if (repetitions == null)
@@ -304,8 +333,12 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					int selectionSize = 1;
 					if (KEYWORD_ALL.equals(node.getSelectionKeyword()))
 						selectionSize = rules.size();
-					else if (KEYWORD_ANY.equals(node.getSelectionKeyword()))
-						selectionSize = Tools.randInt(rules.size() + 1);
+					else if (KEYWORD_ANY.equals(node.getSelectionKeyword())) {
+						if (node.isNonEmptySelection())
+							selectionSize = Tools.randInt(rules.size()) + 1;
+						else
+							selectionSize = Tools.randInt(rules.size() + 1);
+					}
 					selection = new ASTNode[selectionSize];
 					getSelections().put(pos, selection);
 					for (int rulesToRemove = rules.size() - selectionSize; rulesToRemove > 0; rulesToRemove--)
@@ -352,17 +385,23 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 				}
 
 				if (node.shouldLoop()) {
-					UpdateMultiset composedUpdates = getComposedUpdates().get(pos);
-					if (composedUpdates == null)
-						composedUpdates = new UpdateMultiset();
-					Set<Update> aggregatedUpdates = storage.performAggregation(updates);
-					if (!storage.isConsistent(aggregatedUpdates))
-						throw new CoreASMError("Inconsistent updates computed in loop.", pos);
-					storage.apply(aggregatedUpdates);
-					getComposedUpdates().put(pos, storage.compose(composedUpdates, updates));
-					interpreter.getInterpreterInstance().clearTree(node.getCondition());
-					for (ASTNode rule : selection)
-						interpreter.getInterpreterInstance().clearTree(rule);
+					if (!node.isIterate() || !updates.isEmpty()) {
+						UpdateMultiset composedUpdates = getComposedUpdates().get(pos);
+						if (composedUpdates == null)
+							composedUpdates = new UpdateMultiset();
+						Set<Update> aggregatedUpdates = storage.performAggregation(updates);
+						if (!storage.isConsistent(aggregatedUpdates))
+							throw new CoreASMError("Inconsistent updates computed in loop.", pos);
+						storage.apply(aggregatedUpdates);
+						getComposedUpdates().put(pos, storage.compose(composedUpdates, updates));
+						interpreter.getInterpreterInstance().clearTree(node.getCondition());
+						for (ASTNode rule : selection)
+							interpreter.getInterpreterInstance().clearTree(rule);
+					}
+					else {
+						storage.popState();
+						pos.setNode(null, getComposedUpdates().remove(pos), null);
+					}
 					return pos;
 				}
 			}
@@ -378,6 +417,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			pos.setNode(null, updates, null);
 			
 			if (conditionMet && node.isStepwise()) {
+//				lockStep(pos);
 				int currentRule = getCurrentRules().get(pos) + 1;
 				getCurrentRules().put(pos, currentRule);
 				if (currentRule < getSelections().get(pos).length)
@@ -387,11 +427,15 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			if (node.isVariableSelection())
 				getSelections().remove(pos);
 			
-			if (KEYWORD_NO_UPDATES.equals(repetitionNode.getToken()))
+			if (repetitionNode != null && KEYWORD_NO_UPDATES.equals(repetitionNode.getToken()))
 				getRepetitions().put(pos, (updates.isEmpty() ? 1 : 0));
 			else
 				getRepetitions().put(pos, repetitions + 1);
 
+			return pos;
+		}
+		else if (pos instanceof TrueGuardNode) {
+			pos.setNode(null, null, BooleanElement.TRUE);
 			return pos;
 		}
 		pos.setNode(null, new UpdateMultiset(), null);
