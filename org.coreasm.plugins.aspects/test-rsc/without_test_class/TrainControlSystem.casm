@@ -14,7 +14,7 @@
  * @require " starts"
  * @require " cannot be reserved to the train "
  * @require ": enqueue"
- * @maxsteps "10"
+ * @maxsteps "20"
  */
 
 CoreASM ControlStation

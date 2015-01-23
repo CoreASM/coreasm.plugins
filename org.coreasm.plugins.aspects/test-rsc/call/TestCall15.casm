@@ -1,0 +1,33 @@
+CoreASM TestCall14
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 14
+	* the binding to a seems to be consistent for looking to the pointcut definition, but it is not consistent "@DoSomething" vs. "DoSomething", so that no matching will be found.
+	*
+	* @precondition
+
+	* @expects
+	*	output this advice instead of doSomething
+	*
+	* @require "DoSomething with parameter str = \"DoSomething\""
+\n"
+	*/
+	advice TestCall14(a) around : call("DoSomething" as a,"DoSomething" as a) {
+		print "TestCall 14 with parameter a = "+ a
+	}
+
+}
+
+init StartRule
+
+rule StartRule = {
+	DoSomething("DoSomething")
+}
+
+rule DoSomething(str) = {
+	print "DoSomething with parameter str = \""+ str+ "\""
+}

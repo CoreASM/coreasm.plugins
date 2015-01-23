@@ -1,0 +1,34 @@
+CoreASM TestCall14
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 15
+	* the binding to a seems to be consistent for looking to the pointcut definition, but it is not consistent "@DoSomething" vs. "DoSomething", so that no matching will be found.
+	*
+	* @precondition
+
+	* @expects
+	*	output this advice instead of doSomething
+	*
+	* @require "TestCall 15 with parameter nmb = 2\nDoSomething with parameters nmb1 = 2, nmb2 = 2\n"
+	*/
+	advice TestCall15(nmb) before : call("DoSomething",".*" as nmb, ".*" as nmb) {
+		print "TestCall 15 with parameter nmb = "+ nmb
+	}
+
+}
+
+init StartRule
+
+rule StartRule =
+	let a = 2, b = 2 in
+	//seq
+			DoSomething(a, a)
+	//next
+	//	DoSomething(a, b)//no pointcut matching, because a binding between nmb=a and nmb=b is not consistent by definition
+
+rule DoSomething(nmb1, nmb2) =
+	print "DoSomething with parameters nmb1 = "+nmb1+ ", nmb2 = "+nmb2

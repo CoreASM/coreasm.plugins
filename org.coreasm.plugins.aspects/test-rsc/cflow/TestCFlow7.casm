@@ -7,7 +7,7 @@ init Test
 
 aspect TestAspect {
 
-	//@require "Output\nTestCFlow7: [[adv0], [CFlow], [Test]]\nCFlowCaller\nOutput\nTestCFlow7: [[adv0], [CFlow], [CFlowCaller], [Test]]\nTestCFlow7: [[adv0], [CFlowCaller], [Test]]"
+	//@require "Output\nTestCFlow7: [[TestCFlow7], [CFlow], [Test]]\nCFlowCaller\nOutput\nTestCFlow7: [[TestCFlow7], [CFlow], [CFlowCaller], [Test]]\nTestCFlow7: [[TestCFlow7], [CFlowCaller], [Test]]"
 	advice TestCFlow7 after : cflow("CFlow") or cflow("CFlowCaller") {
 		print "TestCFlow7: "+callStack(self)
 	}

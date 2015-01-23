@@ -1376,7 +1376,7 @@ public class AoASMPlugin extends Plugin
 		while (parent != null && !ASTNode.DECLARATION_CLASS.equals(parent.getGrammarClass()))
 			parent = parent.getParent();
 		CharacterPosition charPosParent = parent.getScannerInfo().getPos(capi.getParser().getPositionMap());
-		data.put("parent", parent.getFirst().getFirst().getToken());
+		data.put("parent", parent.unparseTree());
 		data.put("parentFile", spec.getLine(charPosParent.line).fileName);
 		data.put("parentLine", "" + spec.getLine(charPosParent.line).line);
 		data.put("parentColumn", "" + charPosParent.column);

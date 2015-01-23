@@ -48,16 +48,18 @@ public class CallASTNode extends PointCutASTNode {
 	/** \TODO init rule is a problem!!! */
 	@Override
 	public Binding matches(ASTNode compareToNode) throws AspectException {
-        FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode;
-        if (!AspectTools.isRuleName(fnNode.getName()))
-        	return new Binding(compareToNode, this);
-        Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
-        String pointCutToken = null;
+		FunctionRuleTermNode fnNode = (FunctionRuleTermNode)compareToNode;
+		//if the compareToNode is not a rule call, then no binding is possible => a "null-Binding" is created.
+		if (!AspectTools.isRuleName(fnNode.getName()))
+			return new Binding(compareToNode, this);
+		Iterator<ASTNode> argIterator = fnNode.getArguments().iterator();
+		String pointCutToken = null;
 		Binding resultingBinding = null;
 		Node node;
+		//start with the name of the called rule
 		ASTNode astn = fnNode.getFirst();
-        // \todo add bindings
-		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
+		//\todo add bindings
+		//step through all children of the call pointcut
 		for (node = this.getFirstCSTNode(); node != null && astn != null; node = node.getNextCSTNode()) {
 			if (node instanceof PointCutParameterNode) {
 				//check if the name/regEx of the pointcut matches the compareToNode
@@ -70,9 +72,10 @@ public class CallASTNode extends PointCutASTNode {
 				try {
 					//check if the pointcut token is a regular expression
 					if ( Pattern.compile(pointCutToken) != null ){
+						//if the pointcut token does not match the regular expression
 						if (!Pattern.matches(pointCutToken, astn.unparseTree()))
 							return new Binding(compareToNode, this);
-						
+
 						String name = parameterNode.getName();
 						if (name == null) {
 							if (resultingBinding == null)

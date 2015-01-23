@@ -35,7 +35,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	public NamedPointCutDefinitionASTNode(ScannerInfo scannerInfo) {
 		super(AoASMPlugin.PLUGIN_NAME, Node.OTHER_NODE, NamedPointCutDefinitionASTNode.NODE_TYPE, null, scannerInfo);
 	}
-	
+
 	/**
 	 * get the name of the pointcut
 	 * @return token as name of the pointut
@@ -60,11 +60,11 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 		}
 		return params;
 	}
-	
+
 	/**
 	 * according to the general CoreASM definition, 
 	 * a definition of a named pointcut has to have a uniq name.
-	 * Under that premise, a NamedPointCutASTNode belongs is defined by exactly one
+	 * Under that premise, a NamedPointCutASTNode is defined by exactly one
 	 * NamedPointCutDefinitionASTNode with the same name.
 	 * @param nptc
 	 * @return true, if the usage and the defintion of the named pointcut have the same name
@@ -75,7 +75,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 		//check parameter number
 		return this.getPointCutParameters().size() == nptc.getPointCutParameters().size();
 	}
-	
+
 	/**
 	 * returns the pointcut defined as direct child of this node
 	 * @return BinorASTNode as the root of a maybe complex pointcut expression
@@ -87,7 +87,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 		//\todo exception no pointcut (BinOrASTNode) defined by this NamedPointCutASTNode
 		return null;
 	}
-	
+
 	public Set<PointCutParameterNode> getUnboundPointCutParameters() {
 		Set<PointCutParameterNode> unboundParams = new HashSet<PointCutParameterNode>();
 		Set<String> params = new HashSet<String>();
@@ -96,7 +96,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 		collectUnboundPointCutParamters(this, unboundParams, params);
 		return unboundParams;
 	}
-	
+
 	private static void collectUnboundPointCutParamters(ASTNode node, Set<PointCutParameterNode> unboundParams, Set<String> params) {
 		if (node instanceof PointCutParameterNode) {
 			PointCutParameterNode param = (PointCutParameterNode)node;
@@ -119,7 +119,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	public List<ASTNode> requiredParametersContained() {
 		List<ASTNode> parameters = this.getPointCutParameters();
 		for (ASTNode child : this.getAbstractChildNodes()) {
-			parameters = checkIsRequiredParameterExists(parameters, child);
+			parameters = checkIfRequiredParameterExists(parameters, child);
 			//param from signature has been found on right side
 			if (parameters.isEmpty())
 				break;
@@ -135,7 +135,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 	 * @param node
 	 * @return
 	 */
-	private List<ASTNode> checkIsRequiredParameterExists(List<ASTNode> parameters, ASTNode node) {
+	private List<ASTNode> checkIfRequiredParameterExists(List<ASTNode> parameters, ASTNode node) {
 		List<ASTNode> parametersOutput = new LinkedList<ASTNode>(parameters);
 		for (ASTNode astNode : parameters) {
 			if (node instanceof PointCutParameterNode)
@@ -150,7 +150,7 @@ public class NamedPointCutDefinitionASTNode extends ASTNode {
 				if (parametersOutput.isEmpty())
 					break;
 				else
-					parametersOutput = checkIsRequiredParameterExists(parametersOutput, child);
+					parametersOutput = checkIfRequiredParameterExists(parametersOutput, child);
 			}
 		}
 		return parametersOutput;

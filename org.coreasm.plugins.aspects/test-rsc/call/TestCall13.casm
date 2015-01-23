@@ -15,12 +15,12 @@ aspect {
 	* @expects
 	*	output this advice instead of doSomething
 	*
-	* @require "DoSomething TestCall3"
+	* @require "DoSomething TestCall 13"
 	* @refuse "DoSomething\n"
 	*/
 	advice TestCall3(pro, p1) around : call("DoSomething" as pro,"[0-9]*" as p1) {
 		if p1 = 42 then
-			pro("TestCall3")
+			pro("TestCall 13")
 	}
 
 }

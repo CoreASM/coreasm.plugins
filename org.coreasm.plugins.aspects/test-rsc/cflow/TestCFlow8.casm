@@ -1,4 +1,4 @@
-CoreASM TestCFlow7
+CoreASM TestCFlow8
 
 use Standard
 use AoASMPlugin
@@ -7,9 +7,9 @@ init Test
 
 aspect TestAspect {
 
-	//@require "Output\nTestCFlow7: [[adv0], [CFlow], [Test]]\nCFlowCaller\nOutput\nTestCFlow7: [[adv0], [CFlow], [CFlowCaller], [Test]]\nTestCFlow7: [[adv0], [CFlowCaller], [Test]]"
-	advice TestCFlow7 after : cflow("CFlow") or cflow("CFlowCaller") {
-		print "TestCFlow7: "+callStack(self)
+	//@require "Output\nTestCFlow8: [[TestCFlow8], [CFlow], [Test]]\nCFlowCaller\nOutput\nTestCFlow8: [[TestCFlow8], [CFlow], [CFlowCaller], [Test]]\nTestCFlow8: [[TestCFlow8], [CFlowCaller], [Test]]"
+	advice TestCFlow8 after : cflow("CFlow") or cflow("CFlowCaller") {
+		print "TestCFlow8: "+callStack(self)
 	}
 }
 

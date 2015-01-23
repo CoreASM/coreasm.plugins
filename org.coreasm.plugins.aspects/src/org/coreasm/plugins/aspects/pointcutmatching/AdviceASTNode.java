@@ -78,7 +78,7 @@ public class AdviceASTNode extends ASTNode {
 		//real name cannot be set, when e.g. using cloneTree, because children do not exist at this time
 		if (node instanceof ASTNode && realName == null) {
 			this.realName = this.getName();
-			this.getFirst().getFirst().setToken(adviceId);
+			//this.getFirst().getFirst().setToken(adviceId);
 		}
 	}
 

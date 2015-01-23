@@ -243,10 +243,10 @@ public class AspectWeaver {
 		 * try to match the pointcuts
 		 */
 		if (this.initialize) {
-			
+
 			//check the specification statically for errors
 			PerformStaticChecks();
-			
+
 			///@{
 			/** Preprocessing **/
 			//substitute all named pointcuts by referenced pointcut expressions (transitively)
@@ -271,7 +271,7 @@ public class AspectWeaver {
 						nptcdef.removeFromTree();
 					}
 				}
-			
+
 			//substitute the named pointcuts used inside an advices
 			//there can be no cyclic definitions if the substitution of the named pointcuts (above) was successful
 			LinkedList<ASTNode> adviceAstNode = AspectWeaver.getInstance().getAstNodes().get(AdviceASTNode.NODE_TYPE);
@@ -282,7 +282,7 @@ public class AspectWeaver {
 					}
 				}
 			///@}
-			
+
 			/** pointcut matching **/
 			try {
 				weavingCandidates = pointCutMatching(getAstNodes());
@@ -370,7 +370,7 @@ public class AspectWeaver {
 						&& !(insertionContext.getParent() instanceof ForallRuleNode)
 						&& !("BlockRule".equals(insertionContext.getParent().getGrammarRule())))
 					insertionContext = insertionContext.getParent();
-				
+
 				ASTNode parentOfInsertionContext = insertionContext.getParent();
 				String nodeName = AspectTools.getNodeName(insertionContext);
 				Node insertionReference = insertionContext.removeFromTree();
@@ -508,7 +508,7 @@ public class AspectWeaver {
 		ASTNode pointcut = (ASTNode) def.getPointCut().cloneTree();
 		//replacement of the variables within pointcut according to the binding
 		cloneWithBinding(pointcut, binding);
-				
+
 		return pointcut;
 	}
 
