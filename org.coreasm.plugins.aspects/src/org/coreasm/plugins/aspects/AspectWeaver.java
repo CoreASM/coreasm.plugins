@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
+import org.codehaus.jparsec.Terminals;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
@@ -305,6 +306,7 @@ public class AspectWeaver {
 				LinkedList<ASTNode> beforeNodes = new LinkedList<ASTNode>();
 				LinkedList<ASTNode> aroundNodes = new LinkedList<ASTNode>();
 				LinkedList<ASTNode> afterNodes = new LinkedList<ASTNode>();
+				LinkedList<ASTNode> parallelNodes = new LinkedList<ASTNode>();
 
 				//each advice which had been matched to the current candidate
 				//requires weaving
@@ -330,20 +332,20 @@ public class AspectWeaver {
 					if (boundAdvice.getLocator().equals("before")) {
 						beforeNodes.add(AspectTools.create(
 								AspectTools.MACROCALLRULE, boundAdvice));
-						//break;
 					}
 					else if (boundAdvice.getLocator().equals("after")) {
 						afterNodes.add(AspectTools.create(
 								AspectTools.MACROCALLRULE, boundAdvice));
-						//break;
 					}
 					else if (boundAdvice.getLocator().equals("around")) {
 						aroundNodes.add(AspectTools.create(
 								AspectTools.MACROCALLRULE, boundAdvice));
-						//break;
+					}
+					else if (boundAdvice.getLocator().equals("parallel")) {
+						parallelNodes.add(AspectTools.create(
+								AspectTools.MACROCALLRULE, boundAdvice));
 					}
 					else {
-						//break;
 					}
 				}
 
@@ -368,6 +370,7 @@ public class AspectWeaver {
 						&& !(insertionContext.getParent() instanceof LocalRuleNode)
 						&& !(insertionContext.getParent() instanceof ChooseRuleNode)
 						&& !(insertionContext.getParent() instanceof ForallRuleNode)
+						&& !(insertionContext.getParent() instanceof FunctionRuleTermNode)
 						&& !("BlockRule".equals(insertionContext.getParent().getGrammarRule())))
 					insertionContext = insertionContext.getParent();
 
@@ -377,7 +380,7 @@ public class AspectWeaver {
 
 				// change macroCallRule if there is exactly one around advice,
 				// else insert nodes into seqblockrule
-				if (aroundNodes.size() == 1 && beforeNodes.isEmpty()
+				/*if (aroundNodes.size() == 1 && beforeNodes.isEmpty()
 						&& afterNodes.isEmpty()) {
 					if (insertionReference != null)
 						AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
@@ -386,7 +389,7 @@ public class AspectWeaver {
 					else
 						AspectTools.addChild(parentOfInsertionContext, aroundNodes.getFirst());
 				}
-				else {
+				else {*/
 					// add before nodes
 					if (!beforeNodes.isEmpty()) {
 						ASTNode beforeRuleBlock = AspectTools.create(
@@ -394,16 +397,38 @@ public class AspectWeaver {
 						seqBlockNode = AspectTools.insert(seqBlockNode,
 								beforeRuleBlock);
 					}
-					// add around nodes if existing or insert candidate again
-					if (aroundNodes.isEmpty()) {
+					ASTNode middleRuleBLock = AspectTools
+							.create(AspectTools.BLOCKRULE,
+									candidate.getScannerInfo());
+					// if weather around nodes nor parallel nodes exist, insert the candidate here
+					if (aroundNodes.isEmpty() && parallelNodes.isEmpty()) {
 						seqBlockNode = AspectTools.insert(seqBlockNode,
 								insertionContext);
 					}
+					//add around and parallel nodes to middleBlockRule node
 					else {
-						ASTNode aroundRuleBlock = AspectTools.create(
-								AspectTools.BLOCKRULE, aroundNodes);
+						// add around nodes
+						if (!aroundNodes.isEmpty()){
+							ASTNode aroundRuleBlock = AspectTools.create(
+									AspectTools.BLOCKRULE, aroundNodes);
+							middleRuleBLock = AspectTools.insert(middleRuleBLock,
+									aroundRuleBlock);
+						}else { //insert candidate if no around advice exists
+							middleRuleBLock = AspectTools.insert(middleRuleBLock,
+									insertionContext);
+						}
+						// add parallel nodes to middle block
+						if (!parallelNodes.isEmpty()) {
+							ASTNode parallelRuleBlock = AspectTools.create(
+									AspectTools.BLOCKRULE, parallelNodes);
+							middleRuleBLock = AspectTools.insert(middleRuleBLock,
+									parallelRuleBlock);
+						}
+						//close middle block
+						AspectTools.close(middleRuleBLock, null);
+						//add middle block to seqblock
 						seqBlockNode = AspectTools.insert(seqBlockNode,
-								aroundRuleBlock);
+								middleRuleBLock);
 					}
 					// add after nodes
 					if (!afterNodes.isEmpty()) {
@@ -424,7 +449,7 @@ public class AspectWeaver {
 					AspectTools.addChildAfter(parentOfInsertionContext, insertionReference,
 							nodeName,
 							rootNodeOfSeqBlockSequence);
-				}
+				//} end else
 			}
 			/**
 			 * \todo remove non matching advices and shift all definitions to

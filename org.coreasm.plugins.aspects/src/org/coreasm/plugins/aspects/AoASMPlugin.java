@@ -153,6 +153,7 @@ public class AoASMPlugin extends Plugin
 	private static final String KW_ADVICE = "advice";
 	private static final String KW_BEFORE = "before";
 	private static final String KW_AFTER = "after";
+	private static final String KW_PARALLEL = "parallel";
 	private static final String KW_AROUND = "around";
 	private static final String KW_BEGIN = "begin";
 	private static final String KW_END = "end";
@@ -185,7 +186,7 @@ public class AoASMPlugin extends Plugin
 	 * getParsers() \endlink
 	 */
 	private final String[] keywords = { KW_ASPECT, KW_ADVICE, KW_BEFORE,
-			KW_AFTER, KW_AROUND, KW_BEGIN, KW_END, KW_RULECALL, KW_GET, KW_SET, KW_WITHIN,
+			KW_AFTER, KW_AROUND, KW_PARALLEL, KW_BEGIN, KW_END, KW_RULECALL, KW_GET, KW_SET, KW_WITHIN,
 			KW_ARGS, KW_CFLOW, KW_CFLOWBELOW, KW_CFLOWTOP, KW_BY, KW_WITHOUT, OP_AND, OP_OR,
 			OP_NOT, KW_AS, KW_POINTCUT, KW_AGENT };
 
@@ -988,7 +989,8 @@ public class AoASMPlugin extends Plugin
 			Parser<Node> locatorParser = Parsers.or(
 					pTools.getKeywParser(KW_BEFORE, PLUGIN_NAME),
 					pTools.getKeywParser(KW_AFTER, PLUGIN_NAME),
-					pTools.getKeywParser(KW_AROUND, PLUGIN_NAME));
+					pTools.getKeywParser(KW_AROUND, PLUGIN_NAME),
+					pTools.getKeywParser(KW_PARALLEL, PLUGIN_NAME));
 			parsers.put("locator", new GrammarRule("locator",
 					"'before | around | after'", locatorParser, PLUGIN_NAME));
 
