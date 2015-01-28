@@ -1,0 +1,40 @@
+CoreASM TestCall18
+
+use Standard
+
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 18
+	*
+	* @precondition
+	* @expects
+	*	counts 3 times and not 4 times, as the parallel advice produces a consistent update with the update rule of StartRule
+	*
+	* @requires "before 0\nparallel 1\nafter 2\n"
+	*/
+	advice TestCall18Before before : set("a") {
+		a := a + 1
+		print "before "+ a
+	}
+
+	advice TestCall18Parallel parallel : set("a") {
+		a := a + 1
+		print "parallel "+a
+	}
+	
+	advice TestCall18After after : set("a") {
+		a := a + 1
+		print "after "+a
+	}
+
+}
+
+function a : -> NUMBER initially 0
+
+init StartRule
+
+rule StartRule = {
+	a := a + 1
+}

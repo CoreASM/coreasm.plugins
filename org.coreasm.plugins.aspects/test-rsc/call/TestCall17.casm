@@ -1,0 +1,33 @@
+CoreASM TestCall17
+
+use Standard
+
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 17
+	*
+	* @precondition
+	* @expects
+	*	The update rule is removed by the around advise, because it is selected as insertion context. around advice and and parallel advice are executed in parallel.
+	*
+	* @requires "parallel 0\naround 0\n"
+	*/
+	advice TestCall17Parallel parallel : set("a") {
+		print "parallel "+a
+	}
+
+	advice TestCall17Around around : set("a") {
+		print "around "+a
+	}
+
+}
+
+function a : -> NUMBER initially 0
+
+init StartRule
+
+rule StartRule = {
+	a := a + 1
+}

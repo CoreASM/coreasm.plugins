@@ -1,0 +1,27 @@
+CoreASM TestCall16
+
+use Standard
+use AoASMPlugin
+
+aspect {
+
+	/** TEST 16
+	*
+	* @precondition
+	* @expects
+	*	inconsistent update
+	* 
+	* @refuse "StartRule\n"
+	*/
+	advice TestCall16 parallel : set("a") {
+		a := 4
+	}
+
+}
+
+init StartRule
+
+rule StartRule = {
+	a := 5
+	print "StartRule"
+}
