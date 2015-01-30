@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
-import org.coreasm.compiler.interfaces.CompilerPlugin;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.EngineException;
