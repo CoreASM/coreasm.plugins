@@ -43,6 +43,20 @@ public class UniversalControlNode extends ASTNode {
 		return null;
 	}
 	
+	public boolean isRuleByRule() {
+		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
+			if (UniversalControlPlugin.KEYWORD_SEQUENCE.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_RULE_BY_RULE.equals(child.getToken()))
+				return true;
+			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
+				return false;
+		}
+		return false;
+	}
+	
 	public boolean isStepwise() {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
 			if (UniversalControlPlugin.KEYWORD_SEQUENCE.equals(child.getToken()))
@@ -50,6 +64,8 @@ public class UniversalControlNode extends ASTNode {
 			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_RULE_BY_RULE.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return true;
 		}
 		return false;
@@ -62,6 +78,8 @@ public class UniversalControlNode extends ASTNode {
 			if (UniversalControlPlugin.KEYWORD_PARALLEL.equals(child.getToken()))
 				return false;
 			if (UniversalControlPlugin.KEYWORD_RULE_BY_RULE.equals(child.getToken()))
+				return false;
+			if (UniversalControlPlugin.KEYWORD_STEPWISE.equals(child.getToken()))
 				return false;
 		}
 		return false;

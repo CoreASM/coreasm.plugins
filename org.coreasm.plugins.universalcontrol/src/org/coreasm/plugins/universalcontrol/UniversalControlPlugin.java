@@ -67,6 +67,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	public static final String KEYWORD_PARALLEL = "parallel";
 	public static final String KEYWORD_SEQUENCE = "sequence";
 	public static final String KEYWORD_RULE_BY_RULE = "rulebyrule";
+	public static final String KEYWORD_STEPWISE = "stepwise";
 
 	public static final String KEYWORD_IF = "if";
 	public static final String KEYWORD_WHILE = "while";
@@ -80,7 +81,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 															KEYWORD_ONCE, KEYWORD_FOREVER,
 															KEYWORD_ATMOST, KEYWORD_TIMES, KEYWORD_UNTIL, KEYWORD_NO_UPDATES,
 															KEYWORD_RESETTING, KEYWORD_ON,
-															KEYWORD_IN, KEYWORD_PARALLEL, KEYWORD_SEQUENCE, KEYWORD_RULE_BY_RULE,
+															KEYWORD_IN, KEYWORD_PARALLEL, KEYWORD_SEQUENCE, KEYWORD_RULE_BY_RULE, KEYWORD_STEPWISE,
 															KEYWORD_IF, KEYWORD_WHILE, KEYWORD_UNTIL, KEYWORD_ITERATE,
 															KEYWORD_END };
 	private static final String[] OPERATORS = new String[] { };
@@ -201,7 +202,8 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 																Parsers.array(pTools.getKeywParser(KEYWORD_RESETTING, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_ON, PLUGIN_NAME), termParser).optional());
 			Parser<Serializable> computationParser = Parsers.or(Parsers.array(	pTools.getKeywParser(KEYWORD_IN, PLUGIN_NAME),
 																				Parsers.or(pTools.getKeywParser(KEYWORD_PARALLEL, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_SEQUENCE, PLUGIN_NAME))),
-																pTools.getKeywParser(KEYWORD_RULE_BY_RULE, PLUGIN_NAME));
+																				pTools.getKeywParser(KEYWORD_RULE_BY_RULE, PLUGIN_NAME),
+																				pTools.getKeywParser(KEYWORD_STEPWISE, PLUGIN_NAME));
 			Parser<Serializable> conditionParser = Parsers.or(	Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_IF, PLUGIN_NAME),
 																							pTools.getKeywParser(KEYWORD_WHILE, PLUGIN_NAME)),
 																				termParser),
@@ -256,7 +258,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					return node;
 				}
 			});
-			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'perform' ('all' | ((('any' 'nonempty'?) | 'single') ('variable' | 'fixed') 'selection'))? ('once' | 'forever' | ('atmost' ConstantTerm 'times') | 'until' 'noupdates')? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'rulebyrule')? (('if' | 'while' | 'iterate') Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
+			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'perform' ('all' | ((('any' 'nonempty'?) | 'single') ('variable' | 'fixed') 'selection'))? ('once' | 'forever' | ('atmost' ConstantTerm 'times') | 'until' 'noupdates')? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'rulebyrule' | 'stepwise')? (('if' | 'while' | 'iterate') Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
 		}
 		return parsers;
 	}
@@ -346,10 +348,19 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					for (int i = 0; i < selection.length; i++)
 						selection[i] = rules.get(i);
 				}
-				if (node.isStepwise()) {
+				if (node.isRuleByRule() || node.isStepwise()) {
 					Integer currentRule = getCurrentRules().get(pos);
 					if (currentRule == null || currentRule >= selection.length) {
+						lockStep(pos);
 						currentRule = 0;
+						getCurrentRules().put(pos, currentRule);
+					}
+					else if (node.isStepwise() && !isStepLocked(pos)) {
+						currentRule++;
+						if (currentRule < selection.length)
+							lockStep(pos);
+						else
+							selection = new ASTNode[0];
 						getCurrentRules().put(pos, currentRule);
 					}
 					if (selection.length > 0)
@@ -416,8 +427,13 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 
 			pos.setNode(null, updates, null);
 			
-			if (conditionMet && node.isStepwise()) {
-//				lockStep(pos);
+			if (conditionMet && node.isStepwise() && isStepLocked(pos)) {
+				interpreter.clearTree(getSelections().get(pos)[getCurrentRules().get(pos)]);
+				return pos;
+			}
+			
+			if (conditionMet && node.isRuleByRule()) {
+				lockStep(pos);
 				int currentRule = getCurrentRules().get(pos) + 1;
 				getCurrentRules().put(pos, currentRule);
 				if (currentRule < getSelections().get(pos).length)
