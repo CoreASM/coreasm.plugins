@@ -1,0 +1,19 @@
+CoreASM AtmostInLoop
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "0\n0\n"
+* @refuse "0\n0\n0"
+* @refuse "1"
+* @maxsteps 3
+* @minsteps 3
+*/
+rule Start = forall i in [1..3] do perform atmost 2 times in parallel
+	a := a + 1
+	print a

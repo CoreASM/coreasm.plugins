@@ -1,0 +1,14 @@
+CoreASM AnyNonEmptySelection
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "a\na\na\na\na\n"
+* @maxsteps 5
+* @minsteps 5
+*/
+rule Start = perform any nonempty variable selection
+	print "a"

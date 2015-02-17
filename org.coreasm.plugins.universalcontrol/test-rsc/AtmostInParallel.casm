@@ -1,0 +1,18 @@
+CoreASM AtmostInParallel
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "0\n1\n"
+* @refuse "2"
+* @maxsteps 3
+* @minsteps 3
+*/
+rule Start = perform atmost 2 times in parallel
+	a := a + 1
+	print a

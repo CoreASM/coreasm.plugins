@@ -1,0 +1,7 @@
+CoreASM Nothing
+
+use Standard
+
+init Start
+
+rule Start = skip

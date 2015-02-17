@@ -1,0 +1,19 @@
+CoreASM OnceInParallel
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "0\n"
+* @refuse "1"
+* @refuse "2"
+* @maxsteps 3
+* @minsteps 3
+*/
+rule Start = perform once in parallel
+	a := a + 1
+	print a

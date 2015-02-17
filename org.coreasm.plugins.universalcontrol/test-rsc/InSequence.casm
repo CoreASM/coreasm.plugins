@@ -1,0 +1,18 @@
+CoreASM InSequence
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "1\n2\n3\n"
+* @refuse "0"
+* @maxsteps 3
+* @minsteps 3
+*/
+rule Start = perform in sequence
+	a := a + 1
+	print a

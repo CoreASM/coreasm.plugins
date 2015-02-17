@@ -1,0 +1,18 @@
+CoreASM StepwiseInLoop
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "1\n1\n1\n2\n2\n2\n3\n3\n3\n"
+* @refuse "0"
+* @maxsteps 6
+* @minsteps 6
+*/
+rule Start = forall i in [1..3] do perform stepwise
+	a := a + 1
+	print a

@@ -1,0 +1,15 @@
+CoreASM VariableSelection
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "a\nb\n"
+* @require "b\na\n"
+* @maxsteps 10
+*/
+rule Start = perform single variable selection
+	print "a"
+	print "b"

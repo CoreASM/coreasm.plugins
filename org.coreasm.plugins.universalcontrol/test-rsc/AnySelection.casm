@@ -1,0 +1,15 @@
+CoreASM AnySelection
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "a\n"
+* @refuse "a\na\na\na\na\n"
+* @maxsteps 5
+* @minsteps 5
+*/
+rule Start = perform any variable selection
+	print "a"

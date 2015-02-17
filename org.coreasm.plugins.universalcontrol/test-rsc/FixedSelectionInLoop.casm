@@ -1,0 +1,16 @@
+CoreASM FixedSelection
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @refuse "a\nb"
+* @refuse "b\na"
+* @maxsteps 10
+* @minsteps 10
+*/
+rule Start = forall i in [1..3] do perform single fixed selection
+	print "a"
+	print "b"

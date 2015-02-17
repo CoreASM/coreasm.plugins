@@ -1,0 +1,23 @@
+CoreASM UntilNoUpdatesInRule
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "1\n"
+* @require "2\n"
+* @require "3\n"
+* @refuse "0"
+* @refuse "4"
+* @maxsteps 1
+* @minsteps 1
+*/
+rule Start = Rule
+
+rule Rule = forall i in [1..3] do perform until noupdates rulebyrule
+	print 1
+	print 2
+	print 3
+	skip

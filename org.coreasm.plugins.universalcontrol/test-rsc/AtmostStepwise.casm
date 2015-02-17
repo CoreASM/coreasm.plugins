@@ -1,0 +1,19 @@
+CoreASM AtmostStepwise
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "1\n2\n"
+* @refuse "0"
+* @refuse "3"
+* @maxsteps 6
+* @minsteps 6
+*/
+rule Start = perform atmost 2 times stepwise
+	a := a + 1
+	print a

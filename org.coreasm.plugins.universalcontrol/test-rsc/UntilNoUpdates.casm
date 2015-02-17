@@ -1,0 +1,19 @@
+CoreASM UntilNoUpdates
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "1\n2\n3\n"
+* @refuse "0"
+* @refuse "4"
+* @maxsteps 4
+* @minsteps 4
+*/
+rule Start = perform until noupdates rulebyrule
+	print 1
+	print 2
+	print 3
+	skip

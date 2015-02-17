@@ -1,0 +1,20 @@
+CoreASM StepwiseInRule
+
+use Standard
+use UniversalControl
+
+init Start
+
+function a : -> NUMBER initially 0
+
+/**
+* @require "1\n2\n3\n"
+* @refuse "0"
+* @maxsteps 6
+* @minsteps 6
+*/
+rule Start = Rule
+
+rule Rule = perform stepwise
+	a := a + 1
+	print a
