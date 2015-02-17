@@ -424,16 +424,22 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 				updates = getComposedUpdates().get(pos);
 			if (updates == null)
 				updates = new UpdateMultiset();
+			
+			if (node.isStepwise() && !isStepLocked(pos))
+				updates = null;
 
 			pos.setNode(null, updates, null);
 			
-			if (conditionMet && node.isStepwise() && isStepLocked(pos)) {
-				interpreter.clearTree(getSelections().get(pos)[getCurrentRules().get(pos)]);
-				return pos;
+			if (conditionMet && node.isStepwise()) {
+				int currentRule = getCurrentRules().get(pos);
+				if (currentRule < getSelections().get(pos).length) {
+					interpreter.clearTree(getSelections().get(pos)[getCurrentRules().get(pos)]);
+					return pos;
+				}
+				getCurrentRules().remove(pos);
 			}
 			
 			if (conditionMet && node.isRuleByRule()) {
-				lockStep(pos);
 				int currentRule = getCurrentRules().get(pos) + 1;
 				getCurrentRules().put(pos, currentRule);
 				if (currentRule < getSelections().get(pos).length)
