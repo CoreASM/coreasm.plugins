@@ -25,9 +25,10 @@ import org.coreasm.engine.plugin.InitializationFailedException;
 import org.coreasm.engine.plugin.Plugin;
 import org.coreasm.engine.plugins.signature.DerivedFunctionNode;
 import org.coreasm.engine.plugins.signature.FunctionNode;
+import org.coreasm.engine.plugins.string.StringElement;
 
 public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
-	public static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "alpha");
+	public static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "beta");
 
 	private static final String INIT_RULE_NAME = "initializeAST";
 
@@ -192,9 +193,13 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		printAssignment(stream, "NODE", nodeToString(node),
 				BooleanElement.TRUE_NAME, 1);
 
-		if (node.getToken() != null)
-			printAssignment(stream, "token", nodeToString(node),
-					"\"" + node.getToken() + "\"", 2);
+		if (node.getToken() != null) {
+			String token = node.getToken();
+			//escape leading and trailing quotes if necessary
+			if(token.startsWith("\"") && token.endsWith("\""))
+				token = "\\" + token.substring(0, token.length() - 1) + "\\\"";
+			printAssignment(stream, "token", nodeToString(node), "\"" + token + "\"", 2);
+		}
 
 		// set the concreteType of a node
 		if (node.getConcreteNodeType() != null) {
