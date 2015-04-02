@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+<template id="vertex" name="vertex" description="insert a new vertex (CoreASM Jung2)" context="coreasm" enabled="true">vertex "${id}" "${label}"</template>
+
+<template id="edge" name="edge" description="insert a new edge (CoreASM Jung2)" context="coreasm" enabled="true">edge "${id}" -> "${id}"</template>
+
+<template id="remove_edge" name="remove edge" description="remove an edge (CoreASM Jung2)" context="coreasm" enabled="true">remove edge "${id}" -> "${id}"</template>
+
+<template id="remove_vertex" name="remove vertex" description="remove an vertex (CoreASM Jung2)" context="coreasm" enabled="true">remove vertex "${id}"</template>
+
+</templates>
