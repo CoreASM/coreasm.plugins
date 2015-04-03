@@ -26,7 +26,9 @@ public class UniversalControlNode extends ASTNode {
 		for (Node child = getFirstCSTNode(); child != null; child = child.getNextCSTNode()) {
 			if (UniversalControlPlugin.KEYWORD_FOREVER.equals(child.getToken()))
 				return null;
-			if (UniversalControlPlugin.KEYWORD_ONCE.equals(child.getToken()) || UniversalControlPlugin.KEYWORD_NO_UPDATES.equals(child.getToken()))
+			if (UniversalControlPlugin.KEYWORD_ONCE.equals(child.getToken())
+			|| 	UniversalControlPlugin.KEYWORD_NO_UPDATES.equals(child.getToken())
+			||	UniversalControlPlugin.KEYWORD_FIXPOINT.equals(child.getToken()))
 				return child;
 			if (UniversalControlPlugin.KEYWORD_TIMES.equals(child.getToken()))
 				return prevChild;

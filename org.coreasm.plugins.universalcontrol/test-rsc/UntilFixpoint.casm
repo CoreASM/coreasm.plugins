@@ -1,0 +1,22 @@
+CoreASM UntilNoUpdates
+
+use Standard
+use UniversalControl
+
+init Start
+
+/**
+* @require "[1, 2, 3]\n[2, 3]\n[3]\n[]"
+* @refuse "0"
+* @refuse "4"
+* @refuse "[]\n[]\n"
+* @maxsteps 4
+* @minsteps 4
+*/
+
+function list : -> LIST initially [1,2,3]
+
+rule Start = perform until fixpoint {
+	print list
+	list := tail(list)
+}
