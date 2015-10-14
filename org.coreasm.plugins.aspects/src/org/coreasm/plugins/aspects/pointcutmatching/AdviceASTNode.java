@@ -5,6 +5,7 @@ package org.coreasm.plugins.aspects.pointcutmatching;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -44,9 +45,9 @@ public class AdviceASTNode extends ASTNode {
 	private static int numberOfAdviceNodes=0;
 	private final String adviceId;
 	private String realName;/*TODO String realName maybe useful for debugging*/
-	
-	private HashMap<ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
 
+	private HashMap<ASTNode, Binding> bindings = new HashMap<ASTNode, Binding>();
+	private HashSet<Integer> numberOfProceedParameters = new HashSet<Integer>();
 	/**
 	 * this constructor is needed to support duplicate
 	 * @param self this object
@@ -116,73 +117,34 @@ public class AdviceASTNode extends ASTNode {
 						throw new CoreASMError("Name p" + (numProceedParameters + 1) + " already bound to a different construct during pointcut matching between "+candidate.unparseTree()+" and "+this.unparseTree(), this);
 					numProceedParameters++;
 				}
-				ensureProceedParameters(numProceedParameters);
-				substituteProceeds(numProceedParameters, this.getRuleBlock());
+				numberOfProceedParameters.add(numProceedParameters);
+
 			}
 			bindings.put(candidate, binding);
 		}
 		return binding;
 	}
 	
-	private void substituteProceeds(int numProceedParameters, ASTNode astNode) {
-		if (astNode instanceof CaseRuleNode ){
-			CaseRuleNode caseNode = ((CaseRuleNode)astNode);
-			if ("pn".equals(caseNode.getCaseTerm().getFirst().getToken())){
-				Map<ASTNode, ASTNode> caseValues = caseNode.getCaseMap();
-				Node expression = null;
-				for (ASTNode caseValue : caseValues.keySet()) {
-					if (Integer.parseInt(caseValue.getToken()) == numProceedParameters)
-						return;
-					expression = caseValue;
-				}
-				Node newCaseValue = expression.cloneTree();
-				newCaseValue.setToken(Integer.toString(numProceedParameters));
-				caseNode.addChildAfter(expression.getNextCSTNode().getNextCSTNode(), "beta", newCaseValue);
-				Node operator = expression.getNextCSTNode().cloneTree();
-				caseNode.addChildAfter(newCaseValue, DEFAULT_NAME, operator);
-				MacroCallRuleNode proceedCall = (MacroCallRuleNode)expression.getNextCSTNode().getNextCSTNode().cloneTree();
-				caseNode.addChildAfter(operator, "gamma", proceedCall);
+	private void substituteProceeds(HashSet<Integer> numProceedParameters){
+		substituteProceeds(numProceedParameters, this.getRuleBlock());
+	}
 
-				// Add missing parameters
-				FunctionRuleTermNode fn = (FunctionRuleTermNode)proceedCall.getFirst();
-				ASTNode lastASTNode = fn.getFirst();
-				for (int i = 0; i < numProceedParameters; i++) {
-					if (lastASTNode.getNext() == null) {
-						ASTNode param = (ASTNode)lastASTNode.cloneTree();
-						if (param.getFirst() == null) {
-							FunctionRuleTermNode tmp = new FunctionRuleTermNode(param.getScannerInfo());
-							tmp.addChild(param);
-							param = tmp;
-						}
-						param.getFirst().setToken("p" + (i + 1));
-						fn.addChildAfter(lastASTNode, "lambda", param);
-						fn.addChildAfter(lastASTNode, Node.DEFAULT_NAME, new Node(null, ",", param.getScannerInfo(), Node.OPERATOR_NODE));
-						lastASTNode = param;
-					}
-					else
-						lastASTNode = lastASTNode.getNext();
-				}
-
-				// Remove unnecessary parameter
-				while (lastASTNode.getNext() != null)
-					lastASTNode.getNextCSTNode().removeFromTree();
-				if ("proceed".equals(lastASTNode.getToken()))
-					lastASTNode.getNextCSTNode().removeFromTree();
-			}
-		}
-		else if (astNode instanceof MacroCallRuleNode) {
+	private void substituteProceeds(HashSet<Integer> numProceedParameters, ASTNode astNode) {
+		if (astNode instanceof MacroCallRuleNode) {
 			FunctionRuleTermNode proceed = (FunctionRuleTermNode) astNode.getFirst();
 			if ("proceed".equals(proceed.getName()) && proceed.getNumberOfChildren() == 1) {
-				String params = "";
-				for (int i = 1; i <= numProceedParameters; i++) {
-					params += "p" + i;
-					if (i < numProceedParameters)
-						params += ", ";
-				}
 				String caseRule =
-						"case pn of\n"
-								+ numProceedParameters + ": proceed(" + params + ")\n"
-								+ "endcase";
+						"case pn of\n";
+				for (Integer paramNmb : numProceedParameters) {
+					String params = "";
+					for (int i = 1; i <= paramNmb; i++) {
+						params += "p" + i;
+						if (i < paramNmb)
+							params += ", ";
+					}
+					caseRule += paramNmb + ": proceed(" + params + ")\n";
+				}
+				caseRule += "endcase";
 				ControlAPI capi = AspectTools.getCapi();
 				Parser<Node> caseParser = ((ParserPlugin) capi
 						.getPlugin("CaseRulePlugin")).getParsers().get(
@@ -318,6 +280,11 @@ public class AdviceASTNode extends ASTNode {
 	 * 
 	 */
 	public ASTNode makeRuleDeclaration() {
+
+		for (Integer paramNmb : this.numberOfProceedParameters) {
+			ensureProceedParameters(paramNmb);
+		}
+		substituteProceeds(this.numberOfProceedParameters);
 
 		//create components for the rule declaration node
 		ASTNode ruleDeclaration;
