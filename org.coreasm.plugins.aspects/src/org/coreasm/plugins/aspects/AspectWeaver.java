@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.jparsec.Parser;
-import org.codehaus.jparsec.Terminals;
 import org.coreasm.engine.ControlAPI;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.CoreASMWarning;
