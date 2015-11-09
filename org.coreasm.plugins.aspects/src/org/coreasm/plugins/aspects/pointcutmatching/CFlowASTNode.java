@@ -57,7 +57,7 @@ public class CFlowASTNode extends PointCutASTNode {
 		Binding resultingBinding = null;
 		Node node;
 		// \todo add bindings
-		//step through all children of the call pointcut call ( regEx4name by regEx4agentOrUnivers with||without return||result )
+		//step through all children of the cflow pointcut ( regEx4name by regEx4agentOrUnivers with||without return||result )
 		for (node = this.getFirstCSTNode(); node != null; node = node.getNextCSTNode()) {
 			if (node instanceof PointCutParameterNode) {
 				//check if the name/regEx of the pointcut matches the compareToNode

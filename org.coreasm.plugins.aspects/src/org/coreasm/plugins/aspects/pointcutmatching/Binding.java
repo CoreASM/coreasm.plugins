@@ -42,6 +42,7 @@ public class Binding {
 		this.astNode = astNode;
 		binding = new HashMap<String, ASTNode>();
 		if (baseBinding.exists() && mergeBinding.exists()) {
+			//add all bindings if consistent, otherwise return as non matching
 			for (Entry<String, ASTNode> entry : baseBinding.getBinding().entrySet()) {
 				if (!addBinding(entry.getKey(), entry.getValue())) {
 					binding = null;

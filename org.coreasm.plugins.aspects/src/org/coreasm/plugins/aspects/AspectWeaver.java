@@ -807,31 +807,21 @@ public class AspectWeaver {
 		//insert derived function definitions for cflow bindings
 		List<String> auxilliaryDefintions = new ArrayList<String>();
 
-		auxilliaryDefintions.add("derived CheckConsistency(list) =\n"
-				+ "	return res in\n"
-				+ "		if list = undef then\n"
-				+ "			res := undef\n"
-				+ "		else if\n"
-				+ "			forall id in GetIds(list) holds\n"
-				+ "				AllEqual(GetValues(GetBindings(id, list)))\n"
-				+ "		then\n"
-				+ "			res := list\n"
-				+ "		else\n"
-				+ "			res := undef");
 		auxilliaryDefintions
-				.add("derived callStackMatches(ruleSignature) = CheckConsistency(foldl(zipwith(reverse(callStack(self)), replicate(ruleSignature, |callStack(self)|), @CreateBinding), @Concat, undef))");
+				.add("derived isConsistent(binding) = forall t1 in binding , t2 in binding holds last(t1) = last(t2) implies head(t1) = head(t2)");
+		auxilliaryDefintions
+				.add("derived callStackMatches(callSignature) = head(filter([CreateBinding(c, callSignature) | c in reverse(callStack(self)) with CreateBinding(c, callSignature) != undef ], @isConsistent))");
 		auxilliaryDefintions
 				.add("derived Concat(l1, l2) = return res in if l2 = undef then res := l1 else if l1 = undef then res := l2 else res := l1 + l2");
 		auxilliaryDefintions.add(
-				"derived CreateBinding(sig, ruleSignature) =\n"
-						+ "	return binding in\n"
-						+ "		let pattern = map(ruleSignature, @ExtractPattern ) in\n"
-						+ "			if |sig| = |pattern| then\n"
-						+ "				//toString to convert all parameters to Strings\n"
-						+ "				if forall c in zipwith(map(sig,@toString), pattern, @matches) holds c then\n"
-						+ "					binding := IdsIntoList(sig, ruleSignature)\n"
-						+ "				else binding := undef\n"
-						+ "			else binding := undef");
+				"derived CreateBinding(sig, ruleSignature) =\n" + "	return binding in\n" +
+						"		let pattern = map(ruleSignature, @ExtractPattern ) in\n" +
+						"			if |sig| = |pattern| then\n" +
+						"				//toString to convert all parameters to Strings\n" +
+						"				if forall c in zipwith(map(sig,@toString), pattern, @matches) holds c then\n" +
+						"					binding := IdsIntoList(sig, ruleSignature)\n" +
+						"				else binding := undef\n" + "			else binding := undef");
+
 		auxilliaryDefintions.add(
 				"derived ExtractPattern(list) ="
 						+ "	return singleElementList in"
