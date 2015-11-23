@@ -11,7 +11,7 @@ public class ExportAstDialog extends JFileChooser{
 	private static final long serialVersionUID = 1L;
 
 	private JCheckBox generateDefinitions = new JCheckBox("include definitions");
-	private JCheckBox generateLineNumbers = new JCheckBox("include line numbers");
+	private JCheckBox generateLineNumbers = new JCheckBox("include file and spec names");
 
 	private File selectedFile = null;
 
