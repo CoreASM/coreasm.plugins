@@ -11,7 +11,6 @@ import java.util.Map;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.coreasm.plugins.ast2spec.ui.ExportAstDialog;
 import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMIssue;
 import org.coreasm.engine.EngineException;
@@ -25,7 +24,7 @@ import org.coreasm.engine.plugin.InitializationFailedException;
 import org.coreasm.engine.plugin.Plugin;
 import org.coreasm.engine.plugins.signature.DerivedFunctionNode;
 import org.coreasm.engine.plugins.signature.FunctionNode;
-import org.coreasm.engine.plugins.string.StringElement;
+import org.coreasm.plugins.ast2spec.ui.ExportAstDialog;
 
 public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 	public static final VersionInfo VERSION_INFO = new VersionInfo(0, 0, 1, "beta");
@@ -235,9 +234,7 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 			else
 				printAssignment(stream, "spec", nodeToString(node), "\""
 						+ "OriginalSpecification" + "\"", 2);
-			if (this.rootnode.getChildNodes().get(1).getToken() != null)
-				printAssignment(stream, "file", nodeToString(node), "\""
-						+ this.rootnode.getChildNodes().get(1).getToken() + "\"", 2);
+				printAssignment(stream, "file", nodeToString(node), "\"" + lastChoosenFile.getName() + "\"", 2);
 		}
 
 		/**
