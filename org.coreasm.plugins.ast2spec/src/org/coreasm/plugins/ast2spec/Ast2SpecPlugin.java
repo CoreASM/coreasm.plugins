@@ -324,11 +324,15 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		Node prevChild = null;
 		for (Node child : node.getChildNodes()) {
 
-			if (prevChild != null)
-				printAssignment(stream, "nextSibling", nodeToString(prevChild),
-						nodeToString(child), 2);
-			printNode(stream, child);
-			prevChild = child;
+			//skip "use Ast2SpecPlugin" node
+			if (!(child instanceof ASTNode && "USECLAUSES".equals(((ASTNode) child).getGrammarRule().toUpperCase()) && "Ast2SpecPlugin"
+					.equals(((ASTNode) child).getFirst().getToken()))) {
+				if (prevChild != null)
+					printAssignment(stream, "nextSibling", nodeToString(prevChild),
+							nodeToString(child), 2);
+				printNode(stream, child);
+				prevChild = child;
+			}
 		}
 
 	}
