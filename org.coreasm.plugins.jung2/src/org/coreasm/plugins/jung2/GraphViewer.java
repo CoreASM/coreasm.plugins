@@ -30,23 +30,22 @@ import edu.uci.ics.jung.visualization.Layer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
-import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 
 public class GraphViewer {
 
-	private JFrame frame = new JFrame("CoreASM Graph Viewer");
+	private final JFrame frame = new JFrame("CoreASM Graph Viewer");
 
 	private Layout<Vertex, Integer> layout;
 
 	private VisualizationViewer<Vertex, Integer> vv;
 
-	private DelegateForest<Vertex, Integer> graph;
+	private final DelegateForest<Vertex, Integer> graph;
 
 	private final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
 
