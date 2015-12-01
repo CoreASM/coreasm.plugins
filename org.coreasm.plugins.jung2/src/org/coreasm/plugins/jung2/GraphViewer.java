@@ -271,18 +271,18 @@ public class GraphViewer {
 			if (tree.containsVertex(vertex))
 				result = tree;
 			else {
-				Iterator it = tree.getVertices().iterator();
+				Iterator<Vertex> it = tree.getVertices().iterator();
 				while (it.hasNext()) {
 					Object elem = it.next();
 					if (elem instanceof Tree)
-						result = getContainer(vertex, (Tree) elem);
+						result = getContainer(vertex, elem);
 				}
 			}
 		}
 		else if (container instanceof Forest) {
 			Forest f = (Forest) container;
 			for (Object t : f.getTrees()) {
-				result = getContainer(vertex, (Tree) t);
+				result = getContainer(vertex, t);
 			}
 		}
 		return result;
