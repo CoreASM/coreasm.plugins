@@ -92,8 +92,8 @@ public class Ast2SpecPlugin extends Plugin implements ExtensionPointPlugin {
 		File file;
 
 		ExportAstDialog chooser = new ExportAstDialog();
-		chooser.setToolTipText("Select a file to store the CoreASM node "
-				+ node.toString() + " as a dot graph\n" + comment);
+		chooser.setToolTipText("Select a file to store the CoreASM specification"
+				+ node.toString() + " as an AST representation\n" + comment);
 		FileNameExtensionFilter filter = new FileNameExtensionFilter(
 				"Coreasm file", new String[] { "casm", "coreasm" });
 		chooser.setFileFilter(filter);
