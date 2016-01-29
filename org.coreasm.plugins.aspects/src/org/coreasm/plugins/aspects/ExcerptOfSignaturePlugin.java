@@ -4,26 +4,53 @@
  */
 package org.coreasm.plugins.aspects;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.coreasm.engine.ControlAPI;
+import org.coreasm.engine.CoreASMEngine.EngineMode;
 import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.EngineError;
-import org.coreasm.engine.absstorage.*;
+import org.coreasm.engine.absstorage.AbstractStorage;
+import org.coreasm.engine.absstorage.BackgroundElement;
+import org.coreasm.engine.absstorage.Element;
+import org.coreasm.engine.absstorage.ElementList;
+import org.coreasm.engine.absstorage.Enumerable;
+import org.coreasm.engine.absstorage.FunctionElement;
 import org.coreasm.engine.absstorage.FunctionElement.FunctionClass;
+import org.coreasm.engine.absstorage.Location;
+import org.coreasm.engine.absstorage.MapFunction;
+import org.coreasm.engine.absstorage.RuleElement;
+import org.coreasm.engine.absstorage.Signature;
+import org.coreasm.engine.absstorage.UniverseElement;
+import org.coreasm.engine.absstorage.UnmodifiableFunctionException;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Interpreter;
 import org.coreasm.engine.interpreter.InterpreterException;
-import org.coreasm.engine.plugins.signature.*;
+import org.coreasm.engine.plugin.ExtensionPointPlugin;
+import org.coreasm.engine.plugins.signature.DerivedFunctionElement;
+import org.coreasm.engine.plugins.signature.DerivedFunctionNode;
+import org.coreasm.engine.plugins.signature.DerivedMapFunction;
+import org.coreasm.engine.plugins.signature.EnumerationBackgroundElement;
+import org.coreasm.engine.plugins.signature.EnumerationElement;
+import org.coreasm.engine.plugins.signature.EnumerationNode;
+import org.coreasm.engine.plugins.signature.FunctionNode;
+import org.coreasm.engine.plugins.signature.UniverseNode;
 import org.coreasm.plugins.aspects.pointcutmatching.AdviceASTNode;
 import org.coreasm.plugins.aspects.pointcutmatching.AspectASTNode;
-
-import java.util.*;
 
 /**
  * @author marcel
  * 
  */
-public class ExcerptOfSignaturePlugin {
+public class ExcerptOfSignaturePlugin implements ExtensionPointPlugin {
 
 	/**
 	 * storage for signatures declared within aspect constructs
@@ -35,8 +62,11 @@ public class ExcerptOfSignaturePlugin {
 	private HashMap<String, RuleElement> rules;
 	// @}
 
+	private IdentityHashMap<FunctionNode, FunctionElement> functionsWithInit;
+
 	/** Control API of engine instance this plugin is associated with */
 	private ControlAPI capi;
+	private Map<EngineMode, Integer> sourceModes = null;
 
 	/**
 	 * Sets the Control API of the instance of the engine which this plugin is
@@ -73,6 +103,9 @@ public class ExcerptOfSignaturePlugin {
 		if (rules == null) {
 			rules = new HashMap<String, RuleElement>();
 		}
+
+		if (functionsWithInit == null)
+			functionsWithInit = new IdentityHashMap<FunctionNode, FunctionElement>();
 
 		ASTNode node = capi.getParser().getRootNode().getFirst();
 
@@ -156,95 +189,32 @@ public class ExcerptOfSignaturePlugin {
 	 * @param currentSignature
 	 * @param interpreter
 	 */
-	private void createFunction(ASTNode currentSignature,
-			Interpreter interpreter) {
+	private void createFunction(ASTNode currentSignature, Interpreter interpreter) {
 		FunctionNode functionNode = (FunctionNode) currentSignature;
 		MapFunction function = null;
 
-		if (functionNode.getName()
-				.equals(AbstractStorage.PROGRAM_FUNCTION_NAME)) {
-			/**
-			 * \todo (from SignaturePlugin): check signature for correct
-			 * signature of program function
-			 */
-			function = (MapFunction) capi.getStorage().getFunction(
-					AbstractStorage.PROGRAM_FUNCTION_NAME);
-		} else {
-			function = new MapFunction();
+		if (functionNode.getName().equals(AbstractStorage.PROGRAM_FUNCTION_NAME)) {
+			// TODO: check signature for correct signature of program function
+			function = (MapFunction) capi.getStorage().getFunction(AbstractStorage.PROGRAM_FUNCTION_NAME);
 		}
+		else if (functionNode.hasInitializer())
+			function = new DerivedMapFunction(capi, functionNode.getInitializerParams(), functionNode.getInitNode());
+		else
+			function = new MapFunction();
 
-		Signature signature = new Signature();
+        Signature signature = new Signature();
 		signature.setDomain(functionNode.getDomain());
 		signature.setRange(functionNode.getRange());
 		function.setSignature(signature);
 
-		if (!functionNode.getName().equals(
-				AbstractStorage.PROGRAM_FUNCTION_NAME)) {
-			addFunction(functionNode.getName(), function, functionNode,
-					interpreter);
+		if (!functionNode.getName().equals(AbstractStorage.PROGRAM_FUNCTION_NAME)) {
+			addFunction(functionNode.getName(), function, functionNode, interpreter);
 		}
 
-		if (functionNode.getInitNode() != null) {
-			try {
-				interpreter.interpret(functionNode.getInitNode(),
-						interpreter.getSelf());
-			} catch (InterpreterException e) {
-				e.printStackTrace();
-			}
-
-			Element initValue = functionNode.getInitNode().getValue();
-
-			if (functionNode.getDomain().size() == 0) {
-				try {
-					function.setValue(ElementList.NO_ARGUMENT, initValue);
-				} catch (UnmodifiableFunctionException e) {
-					throw new EngineError(
-							"Cannot set initial value for unmodifiable function "
-									+ functionNode.getName());
-				}
-			} else {
-				if (initValue instanceof FunctionElement) {
-					FunctionElement map = (FunctionElement) initValue;
-					int dSize = functionNode.getDomain().size();
-					for (Location l : map.getLocations(functionNode.getName())) {
-						if (l.args.size() == dSize) {
-							try {
-								function.setValue(l.args, map.getValue(l.args));
-							} catch (UnmodifiableFunctionException e) {
-								throw new EngineError(
-										"Cannot set initial value for unmodifiable function "
-												+ functionNode.getName());
-							}
-						} else {
-							if (l.args.size() == 1
-									&& l.args.get(0) instanceof Enumerable
-									&& ((Enumerable) l.args.get(0)).enumerate()
-											.size() == dSize) {
-								try {
-									function.setValue(
-											ElementList
-													.create(((Enumerable) l.args
-															.get(0))
-															.enumerate()), map
-													.getValue(l.args));
-								} catch (UnmodifiableFunctionException e) {
-									throw new EngineError(
-											"Cannot set initial value for unmodifiable function "
-													+ functionNode.getName());
-								}
-							} else
-								throw new EngineError(
-										"Initial value of function "
-												+ functionNode.getName()
-												+ " does not match the function signature.");
-						}
-
-					}
-				}
-			}
-		}
-
-		function.setFClass(functionNode.getFunctionClass());
+		if (!functionNode.hasInitializer() && functionNode.getInitNode() != null)
+			functionsWithInit.put(functionNode, function);
+		else
+			function.setFClass(functionNode.getFunctionClass());
 	}
 
 	/**
@@ -540,6 +510,93 @@ public class ExcerptOfSignaturePlugin {
 	 */
 	public Set<String> getUniverseNames() {
 		return getUniverses().keySet();
+	}
+
+	public void fireOnModeTransition(EngineMode source, EngineMode target) {
+		/*if ((source == EngineMode.emAggregation) &&
+				(getTypeCheckMode() != CheckMode.cmOff)) {
+			checkUpdateSet(target == EngineMode.emStepSucceeded);
+		}*/
+
+		if (source == EngineMode.emInitializingState) {
+			Interpreter interpreter = capi.getInterpreter();
+
+			for (Entry<FunctionNode, FunctionElement> entry : functionsWithInit.entrySet()) {
+				FunctionNode functionNode = entry.getKey();
+				FunctionElement function = entry.getValue();
+				try {
+					interpreter.interpret(functionNode.getInitNode(), interpreter.getSelf());
+				}
+				catch (InterpreterException e) {
+					e.printStackTrace();
+				}
+
+				Element initValue = functionNode.getInitNode().getValue();
+
+				if (functionNode.getDomain().size() == 0) {
+					try {
+						function.setValue(ElementList.NO_ARGUMENT, initValue);
+					}
+					catch (UnmodifiableFunctionException e) {
+						throw new EngineError("Cannot set initial value for unmodifiable function " +
+								functionNode.getName());
+					}
+				}
+				else {
+					if (initValue instanceof FunctionElement) {
+						FunctionElement map = (FunctionElement) initValue;
+						int dSize = functionNode.getDomain().size();
+						for (Location l : map.getLocations(functionNode.getName())) {
+							if (l.args.size() == dSize) {
+								try {
+									function.setValue(l.args, map.getValue(l.args));
+								}
+								catch (UnmodifiableFunctionException e) {
+									throw new EngineError("Cannot set initial value for unmodifiable function " +
+											functionNode.getName());
+								}
+							}
+							else {
+								if (l.args.size() == 1
+										&& l.args.get(0) instanceof Enumerable
+										&& ((Enumerable) l.args.get(0)).enumerate().size() == dSize)
+								{
+									try {
+										function.setValue(ElementList.create(((Enumerable) l.args.get(0)).enumerate()),
+												map.getValue(l.args));
+									}
+									catch (UnmodifiableFunctionException e) {
+										throw new EngineError("Cannot set initial value for unmodifiable function " +
+												functionNode.getName());
+									}
+								}
+								else
+									throw new EngineError("Initial value of function " + functionNode.getName() +
+											" does not match the function signature.");
+							}
+
+						}
+					}
+				}
+				function.setFClass(functionNode.getFunctionClass());
+			}
+		}
+	}
+
+	@Override
+	public Map<EngineMode, Integer> getTargetModes() {
+		return Collections.emptyMap();
+	}
+
+	@Override
+	public Map<EngineMode, Integer> getSourceModes() {
+		if (sourceModes == null) {
+			sourceModes = new HashMap<EngineMode, Integer>();
+			//sourceModes.add(EngineMode.emParsingSpec);
+			//sourceModes.put(EngineMode.emAggregation, ExtensionPointPlugin.DEFAULT_PRIORITY);
+			sourceModes.put(EngineMode.emInitializingState, ExtensionPointPlugin.DEFAULT_PRIORITY);
+		}
+		return sourceModes;
 	}
 
 }

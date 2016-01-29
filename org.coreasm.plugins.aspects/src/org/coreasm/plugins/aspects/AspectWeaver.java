@@ -65,7 +65,7 @@ public class AspectWeaver {
 	 */
 	///@{
 	private static HashMap<String, LinkedList<ASTNode>> astNodes = new HashMap<String, LinkedList<ASTNode>>();
-	private HashMap<String, RuleElement> adviceRules = new HashMap<String, RuleElement>();
+	private final HashMap<String, RuleElement> adviceRules = new HashMap<String, RuleElement>();
 	///@}
 
 	/**
@@ -809,7 +809,7 @@ public class AspectWeaver {
 		auxilliaryDefintions
 				.add("derived isConsistent(binding) = forall t1 in binding , t2 in binding holds last(t1) = last(t2) implies head(t1) = head(t2)");
 		auxilliaryDefintions
-				.add("derived callStackMatches(callSignature) = head(filter([CreateBinding(c, callSignature) | c in reverse(callStack(self)) with CreateBinding(c, callSignature) != undef ], @isConsistent))");
+				.add("derived callStackMatches(callSignature) = if callStack(self) = undef then undef else head(filter([CreateBinding(c, callSignature) | c in reverse(callStack(self)) with CreateBinding(c, callSignature) != undef ], @isConsistent))");
 		auxilliaryDefintions
 				.add("derived Concat(l1, l2) = return res in if l2 = undef then res := l1 else if l1 = undef then res := l2 else res := l1 + l2");
 		auxilliaryDefintions.add(

@@ -15,13 +15,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import junit.framework.Assert;
-
+import org.coreasm.plugins.aspects.AoASMPlugin;
+import org.coreasm.util.Tools;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.coreasm.util.Tools;
+
+import junit.framework.Assert;
 
 public class TestAllCasm {
 
@@ -172,7 +173,8 @@ public class TestAllCasm {
 		try {
 			outContent.reset();
 			errContent.reset();
-			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
+			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath(),
+					Tools.getRootFolder(AoASMPlugin.class).split("target")[0] + "target/");
 			if (TestEngineDriver.TestEngineDriverStatus.stopped.equals(td.getStatus()))
 				return new TestReport(
 						testFile, "engine is stopped!", steps, false);
@@ -232,10 +234,10 @@ public class TestAllCasm {
 
 	static class TestReport {
 		private static ArrayList<TestReport> reports = new ArrayList<TestReport>();
-		private File file;
-		private String message;
-		private int steps;
-		private boolean successful;
+		private final File file;
+		private final String message;
+		private final int steps;
+		private final boolean successful;
 
 		public TestReport(File file, int steps) {
 			this(file, "", steps);

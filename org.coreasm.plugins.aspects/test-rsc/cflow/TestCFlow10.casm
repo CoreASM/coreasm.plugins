@@ -1,0 +1,26 @@
+CoreASM OriginalSpecification
+
+use Standard
+use AoASMPlugin
+
+init Test
+
+aspect TestCFlow10 {
+
+	//@require "CFlow 6\nTestCFlow10 7"
+	//@refuse  "CFlow 6\nTestCFlow10 42"
+	advice TestCFlow3(a) after : call("CFlow", ".*" as a, ".*") and cflow("BLUBBER",".*",".*") or 
+									call("CFlow", ".*" as a, ".*") and cflow("CFlowCaller",".*",".*") {
+		print "TestCFlow10 " + a
+	}
+}
+
+rule Test = {
+	CFlowCaller(42, 7)
+}
+
+rule CFlowCaller(nmb1, nmb2) =
+	CFlow(nmb1, nmb2)
+
+rule CFlow(nmb1, nmb2) =
+	print "CFlow " + nmb1 / nmb2
