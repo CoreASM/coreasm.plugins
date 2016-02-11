@@ -12,14 +12,14 @@
 	<parent>
 		<groupId>org.coreasm</groupId>
 		<artifactId>org.coreasm.parent</artifactId>
-		<version>1.7.1-SNAPSHOT</version>
+		<version>1.7.3-SNAPSHOT</version>
 		<relativePath>../../coreasm.core/org.coreasm.parent/pom.xml</relativePath>
 	</parent>
 	<dependencies>
 		<dependency>
 			<groupId>org.coreasm</groupId>
 			<artifactId>org.coreasm.engine</artifactId>
-			<version>1.6.5-SNAPSHOT</version>
+			<version>1.7.3-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

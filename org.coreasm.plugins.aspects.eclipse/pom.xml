@@ -4,7 +4,7 @@
 	<artifactId>org.coreasm.plugins.aspects.eclipse</artifactId>
 	<packaging>eclipse-plugin</packaging>
 	<name>CoreASM AopASM Eclipse Plugin</name>
-	<version>1.7.1-SNAPSHOT</version>
+	<version>1.7.3-SNAPSHOT</version>
 	<groupId>org.coreasm</groupId>
 
 	<properties>
