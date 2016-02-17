@@ -15,7 +15,8 @@ aspect ParserTest {
 
 	pointcut b(nmb) : args("[0-9]*" as nmb) and agent("InitAgent") 
 
-	//@require "Hallo Welt!\nTestArgs1(4)\n4"
+	//@require "Hallo Welt!\n"
+	//@require "TestArgs1(4)\n4"
 	advice TestArgs1(nmb) before : a(nmb) { print "TestArgs1("+ nmb +")"}
 
 }

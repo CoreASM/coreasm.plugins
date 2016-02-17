@@ -32,7 +32,7 @@ import org.coreasm.engine.plugins.conditionalrule.ConditionalRuleNode;
 import org.coreasm.engine.plugins.forallrule.ForallRuleNode;
 import org.coreasm.engine.plugins.letrule.LetRuleNode;
 import org.coreasm.engine.plugins.turboasm.LocalRuleNode;
-import org.coreasm.engine.plugins.turboasm.ReturnRuleNode;
+import org.coreasm.engine.plugins.turboasm.ReturnTermNode;
 import org.coreasm.engine.plugins.turboasm.SeqRuleNode;
 import org.coreasm.plugins.aspects.errorhandling.AspectException;
 import org.coreasm.plugins.aspects.errorhandling.BindingException;
@@ -365,7 +365,7 @@ public class AspectWeaver {
 						&& !(insertionContext.getParent() instanceof ConditionalRuleNode)
 						&& !(insertionContext.getParent() instanceof SeqRuleNode)
 						&& !(insertionContext.getParent() instanceof LetRuleNode)
-						&& !(insertionContext.getParent() instanceof ReturnRuleNode)
+						&& !(insertionContext.getParent() instanceof ReturnTermNode)
 						&& !(insertionContext.getParent() instanceof LocalRuleNode)
 						&& !(insertionContext.getParent() instanceof ChooseRuleNode)
 						&& !(insertionContext.getParent() instanceof ForallRuleNode)
@@ -744,7 +744,7 @@ public class AspectWeaver {
 					ruleBody.getGrammarRule().equals(AspectTools.RETURNRULE)) {
 				if ( ruleBody instanceof LocalRuleNode)
 					ruleBody = ((LocalRuleNode)ruleBody).getRuleNode();
-				else ruleBody = ((ReturnRuleNode)ruleBody).getRuleNode();
+				else ruleBody = ((ReturnTermNode)ruleBody).getRuleNode();
 			}
 
 			//store insertion reference and parent before potentially packing this ruleBody into a par block

@@ -7,7 +7,15 @@ init Test
 
 aspect ParserTest {
 
-	//@require "TestProceed3 a\n6\nTestProceed3 b\nTestProceed3 a\nZ\nTestProceed3 b\nTestProceed3 a\n2\nTestProceed3 b"
+	//@require "TestProceed3 a\n"
+	//@require "6\n"
+	//@require "TestProceed3 b\n"
+	//@require "TestProceed3 a\n"
+	//@require "Z\n"
+	//@require "TestProceed3 b\n"
+	//@require "TestProceed3 a\n"
+	//@require "2\n"
+	//@require "TestProceed3 b"
 	advice TestProceed3(a) around : args(".*" as a,".*") or args(".*", ".*",".*" as a) or call("Z" as a) {
 		seqblock
 			print "TestProceed3 a"

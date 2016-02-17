@@ -12,7 +12,8 @@ aspect {
 	* @expects
 	*	The update rule is removed by the around advise, because it is selected as insertion context. around advice and and parallel advice are executed in parallel.
 	*
-	* @requires "parallel 0\naround 0\n"
+	* @requires "parallel 0\n"
+	* @requires "around 0\n"
 	*/
 	advice TestCall17Parallel parallel : set("a") {
 		print "parallel "+a
