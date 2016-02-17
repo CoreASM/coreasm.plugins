@@ -16,13 +16,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import junit.framework.Assert;
-
+import org.coreasm.plugins.universalcontrol.UniversalControlPlugin;
 import org.coreasm.util.Tools;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import junit.framework.Assert;
 
 public class TestAllCasm {
 
@@ -188,7 +189,7 @@ public class TestAllCasm {
 		try {
 			outContent.reset();
 			errContent.reset();
-			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath());
+			td = TestEngineDriver.newLaunch(testFile.getAbsolutePath(), Tools.getRootFolder(UniversalControlPlugin.class).split("target")[0]+"/target");
 			if (TestEngineDriver.TestEngineDriverStatus.stopped.equals(td.getStatus()))
 				return new TestReport(
 						testFile, "engine is stopped!", steps, false);
