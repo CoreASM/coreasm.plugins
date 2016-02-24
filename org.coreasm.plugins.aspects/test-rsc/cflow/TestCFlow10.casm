@@ -7,8 +7,8 @@ init Test
 
 aspect TestCFlow10 {
 
-	//@require "CFlow 6\nTestCFlow10 7"
-	//@refuse  "CFlow 6\nTestCFlow10 42"
+	//@require "CFlow 6\nTestCFlow10 42"
+	//@refuse  "CFlow 6\nTestCFlow10 7"
 	advice TestCFlow3(a) after : call("CFlow", ".*" as a, ".*") and cflow("BLUBBER",".*",".*") or 
 									call("CFlow", ".*" as a, ".*") and cflow("CFlowCaller",".*",".*") {
 		print "TestCFlow10 " + a

@@ -741,10 +741,11 @@ public class AspectWeaver {
 			//reassign ruleBody with the rule or block its child
 			//until this block is no local rule or return rule
 			while (ruleBody.getGrammarRule().equals(AspectTools.LOCALRULE) ||
-					ruleBody.getGrammarRule().equals(AspectTools.RETURNRULE)) {
+					ruleBody.getGrammarRule().equals(AspectTools.RETURNTERM)) {
 				if ( ruleBody instanceof LocalRuleNode)
 					ruleBody = ((LocalRuleNode)ruleBody).getRuleNode();
-				else ruleBody = ((ReturnTermNode)ruleBody).getRuleNode();
+				else
+					ruleBody = ((ReturnTermNode) ruleBody).getRuleNode();
 			}
 
 			//store insertion reference and parent before potentially packing this ruleBody into a par block

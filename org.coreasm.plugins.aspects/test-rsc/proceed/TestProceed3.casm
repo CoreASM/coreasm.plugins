@@ -35,8 +35,8 @@ rule Y(a, b, c) = {
 rule Z =
 	print "Z"
 
-rule Test = {
+rule Test = seq
 	X(42,7)
-	Y(1,4,2)
 	Z
-}
+	Y(1,4,2)
+endseq

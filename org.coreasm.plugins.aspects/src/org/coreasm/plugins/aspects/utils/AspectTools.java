@@ -507,11 +507,11 @@ public class AspectTools {
 		}
 		else if (node instanceof Node) {
 			output = "";
-			if (((Node) node).getToken() != null)
-				output += Tools.convertToEscapeSqeuence(((Node) node).getToken()) + " : "
-				        + ((Node) node).getConcreteNodeType();
+			if (node.getToken() != null)
+				output += Tools.convertToEscapeSqeuence(node.getToken()) + " : "
+				        + node.getConcreteNodeType();
 			else
-				output += ((Node) node).getConcreteNodeType();
+				output += node.getConcreteNodeType();
 		}
 		else {
 			output = "\n";
@@ -660,7 +660,7 @@ public class AspectTools {
 	public final static String SEQBLOCKRULE = "SeqRule";
 	public final static String BLOCKRULE = "BlockRule";
 	public final static String MACROCALLRULE = "MacroCallRule";
-	public final static String RETURNRULE = "ReturnRule";
+	public final static String RETURNTERM = "ReturnTerm";
 	public final static String LOCALRULE = "LocalRule";
 
 	/**

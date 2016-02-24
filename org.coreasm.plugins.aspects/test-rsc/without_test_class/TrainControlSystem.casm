@@ -246,7 +246,7 @@ rule SwitchComponent(comp) =
 
 		
 rule TrackControl = 
-	forall block in Block do par
+	forall block in Block with currentOwnerRoute(block) != undef do par
 		if outInEvent(startSensor(block, currentOwnerRoute(block))) then 
 			par
 				print "Train " + label(currentTrain(currentOwnerRoute(block))) + " enters block " + label(block)

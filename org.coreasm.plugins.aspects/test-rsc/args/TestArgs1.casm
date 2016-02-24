@@ -25,7 +25,8 @@ rule X(a) = {
 	print a
 }
 
-rule TestCallPointcut = {
-	X(4)
+rule TestCallPointcut =
+seq
 	print "Hallo Welt!"
-}
+	X(4)
+endseq
