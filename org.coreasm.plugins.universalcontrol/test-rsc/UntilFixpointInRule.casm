@@ -18,7 +18,7 @@ function list : -> LIST initially [1,2,3]
 
 rule Start = Rule
 
-rule Rule = perform until fixpoint {
+rule Rule = perform until nochange {
 	print list
 	list := tail(list)
 }

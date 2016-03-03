@@ -16,7 +16,7 @@ init Start
 
 function list : -> LIST initially [1,2,3]
 
-rule Start = perform until fixpoint {
+rule Start = perform until nochange {
 	print list
 	list := tail(list)
 }

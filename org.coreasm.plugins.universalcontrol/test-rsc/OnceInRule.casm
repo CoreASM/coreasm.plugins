@@ -16,6 +16,6 @@ function a : -> NUMBER initially 0
 */
 rule Start = Rule
 
-rule Rule = perform once in parallel
+rule Rule = perform atmost 1 times in parallel
 	a := a + 1
 	print a

@@ -14,6 +14,6 @@ function a : -> NUMBER initially 0
 * @maxsteps 3
 * @minsteps 3
 */
-rule Start = perform once in parallel
+rule Start = perform atmost 1 times in parallel
 	a := a + 1
 	print a

@@ -54,14 +54,13 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	public static final String KEYWORD_NON_EMPTY = "nonempty";
 	public static final String KEYWORD_SELECTION = "selection";
 
-	public static final String KEYWORD_FOREVER = "forever";
-	public static final String KEYWORD_ONCE = "once";
+	public static final String KEYWORD_ALWAYS = "always";
 	
 	public static final String KEYWORD_ATMOST = "atmost";
 	public static final String KEYWORD_TIMES = "times";
 	public static final String KEYWORD_UNTIL = "until";
 	public static final String KEYWORD_NO_UPDATES = "noupdates";
-	public static final String KEYWORD_FIXPOINT = "fixpoint";
+	public static final String KEYWORD_NO_CHANGE = "nochange";
 
 	public static final String KEYWORD_RESETTING = "resetting";
 	public static final String KEYWORD_ON = "on";
@@ -81,8 +80,8 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 	private static final String[] KEYWORDS = new String[] { KEYWORD_PERFORM,
 															KEYWORD_ALL, KEYWORD_ANY, KEYWORD_NON_EMPTY, KEYWORD_SINGLE,
 															KEYWORD_VARIABLE, KEYWORD_FIXED, KEYWORD_SELECTION,
-															KEYWORD_ONCE, KEYWORD_FOREVER,
-															KEYWORD_ATMOST, KEYWORD_TIMES, KEYWORD_UNTIL, KEYWORD_NO_UPDATES, KEYWORD_FIXPOINT,
+															KEYWORD_ALWAYS,
+															KEYWORD_ATMOST, KEYWORD_TIMES, KEYWORD_UNTIL, KEYWORD_NO_UPDATES, KEYWORD_NO_CHANGE,
 															KEYWORD_RESETTING, KEYWORD_ON,
 															KEYWORD_IN, KEYWORD_PARALLEL, KEYWORD_SEQUENCE, KEYWORD_RULE_BY_RULE, KEYWORD_STEPWISE,
 															KEYWORD_IF, KEYWORD_WHILE, KEYWORD_UNTIL, KEYWORD_ITERATE,
@@ -198,11 +197,10 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 												pTools.getKeywParser(KEYWORD_SINGLE, PLUGIN_NAME)),
 									Parsers.array(	Parsers.or(pTools.getKeywParser(KEYWORD_VARIABLE, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_FIXED, PLUGIN_NAME)),
 													pTools.getKeywParser(KEYWORD_SELECTION, PLUGIN_NAME))));
-			Parser<Object[]> repetitionParser = Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_FOREVER, PLUGIN_NAME),
-																			pTools.getKeywParser(KEYWORD_ONCE, PLUGIN_NAME),
+			Parser<Object[]> repetitionParser = Parsers.array(	Parsers.or(	pTools.getKeywParser(KEYWORD_ALWAYS, PLUGIN_NAME),
 																			Parsers.array(pTools.getKeywParser(KEYWORD_ATMOST, PLUGIN_NAME), constantTermParser, pTools.getKeywParser(KEYWORD_TIMES, PLUGIN_NAME)),
 																			Parsers.array(pTools.getKeywParser(KEYWORD_UNTIL, PLUGIN_NAME), Parsers.or(	pTools.getKeywParser(KEYWORD_NO_UPDATES, PLUGIN_NAME),
-																																						pTools.getKeywParser(KEYWORD_FIXPOINT, PLUGIN_NAME)))),
+																																						pTools.getKeywParser(KEYWORD_NO_CHANGE, PLUGIN_NAME)))),
 																Parsers.array(pTools.getKeywParser(KEYWORD_RESETTING, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_ON, PLUGIN_NAME), termParser).optional());
 			Parser<Serializable> computationParser = Parsers.or(Parsers.array(	pTools.getKeywParser(KEYWORD_IN, PLUGIN_NAME),
 																				Parsers.or(pTools.getKeywParser(KEYWORD_PARALLEL, PLUGIN_NAME), pTools.getKeywParser(KEYWORD_SEQUENCE, PLUGIN_NAME))),
@@ -262,7 +260,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 					return node;
 				}
 			});
-			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'perform' ('all' | ((('any' 'nonempty'?) | 'single') ('variable' | 'fixed') 'selection'))? ('once' | 'forever' | ('atmost' ConstantTerm 'times') | 'until' ('noupdates' | 'fixpoint'))? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'rulebyrule' | 'stepwise')? (('if' | 'while' | 'iterate') Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
+			parsers.put("Rule", new GrammarRule("UniversalControlRule", "'perform' ('all' | ((('any' 'nonempty'?) | 'single') ('variable' | 'fixed') 'selection'))? ('always' | ('atmost' ConstantTerm 'times') | 'until' ('noupdates' | 'nochange'))? ('resetting' 'on' Term)? (('in' ('parallel' | 'sequence')) | 'rulebyrule' | 'stepwise')? (('if' | 'while' | 'iterate') Term)? Rule+ 'end'?", parser, PLUGIN_NAME));
 		}
 		return parsers;
 	}
@@ -294,9 +292,8 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			Node repetitionNode = node.getRepetitionNode();
 			if (repetitionNode != null) {
 				int repetitionCount;
-				if (KEYWORD_ONCE.equals(repetitionNode.getToken())
-				|| KEYWORD_NO_UPDATES.equals(repetitionNode.getToken())
-				|| KEYWORD_FIXPOINT.equals(repetitionNode.getToken()))
+				if (KEYWORD_NO_UPDATES.equals(repetitionNode.getToken())
+				|| KEYWORD_NO_CHANGE.equals(repetitionNode.getToken()))
 					repetitionCount = 1;
 				else {
 					if (!(repetitionNode instanceof ASTNode))
@@ -459,14 +456,14 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			if (repetitionNode != null) {
 				if (KEYWORD_NO_UPDATES.equals(repetitionNode.getToken()))
 					getRepetitions().put(pos, (updates.isEmpty() ? 1 : 0));
-				else if (KEYWORD_FIXPOINT.equals(repetitionNode.getToken())) {
-					boolean fixpoint = true;
+				else if (KEYWORD_NO_CHANGE.equals(repetitionNode.getToken())) {
+					boolean noChange = true;
 					for (Update u : updates) {
 						try {
 							FunctionElement function = capi.getStorage().getFunction(u.loc.name);
 							if (function.isReadable()) {
 								if (!u.value.equals(capi.getStorage().getValue(u.loc))) {
-									fixpoint = false;
+									noChange = false;
 									break;
 								}
 							}
@@ -474,7 +471,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 							throw new CoreASMError("Encountered invalid location: " + u.loc, pos);
 						}
 					}
-					getRepetitions().put(pos, (fixpoint ? 1 : 0));
+					getRepetitions().put(pos, (noChange ? 1 : 0));
 				}
 			}
 

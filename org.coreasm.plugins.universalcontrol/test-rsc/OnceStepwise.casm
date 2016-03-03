@@ -15,6 +15,6 @@ function a : -> NUMBER initially 0
 * @maxsteps 6
 * @minsteps 6
 */
-rule Start = perform once stepwise
+rule Start = perform atmost 1 times stepwise
 	a := a + 1
 	print a
