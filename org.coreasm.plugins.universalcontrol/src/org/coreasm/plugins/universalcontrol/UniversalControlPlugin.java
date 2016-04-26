@@ -317,7 +317,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			UpdateMultiset updates = new UpdateMultiset();
 
 			if (node.getCondition() != null && !node.getCondition().isEvaluated()) {
-				storage.pushState();
+				pushState();
 				return node.getCondition();
 			}
 
@@ -377,7 +377,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 							Set<Update> aggregatedUpdates = storage.performAggregation(prevRule.getUpdates());
 							if (!storage.isConsistent(aggregatedUpdates))
 								throw new CoreASMError("Inconsistent updates computed in sequence.", prevRule);
-							storage.pushState();
+							pushState();
 							storage.apply(aggregatedUpdates);
 						}
 						return rule;
@@ -388,7 +388,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 				if (node.isSequential()) {
 					for (int i = 0; i < selection.length; i++) {
 						if (i > 0)
-							storage.popState();
+							popState();
 						ASTNode rule = selection[i];
 						updates = storage.compose(updates, rule.getUpdates());
 					}
@@ -413,7 +413,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 							interpreter.getInterpreterInstance().clearTree(rule);
 					}
 					else {
-						storage.popState();
+						popState();
 						pos.setNode(null, getComposedUpdates().remove(pos), null);
 					}
 					return pos;
@@ -421,7 +421,7 @@ public class UniversalControlPlugin extends Plugin implements ParserPlugin, Inte
 			}
 
 			if (node.getCondition() != null)
-				storage.popState();
+				popState();
 
 			if (node.shouldLoop())
 				updates = getComposedUpdates().get(pos);
