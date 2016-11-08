@@ -1,5 +1,6 @@
 package org.coreasm.engine.plugins.adt;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +79,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			
 			//TODO insert other Parser
 			
-			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '\n' '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )*
+			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )*
 			Parser<Node> datatypeParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("datatype", PLUGIN_NAME),
@@ -86,10 +87,12 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							pTools.seq(
 								pTools.getOprParser("("),
 								pTools.csplus(idParser),
-								pTools.getOprParser(")")).optional(),
+								pTools.getOprParser(")")
+							).optional(),
 							pTools.getOprParser("="),
 							idParser,
 							pTools.seq(
+								pTools.getOprParser(","),
 								pTools.getOprParser("("),
 								pTools.csplus(
 										idParser,
@@ -98,21 +101,23 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 												idParser
 										).optional()
 								),
-								pTools.getOprParser(")")).optional(),
-							pTools.csplus(
+								pTools.getOprParser(")")
+							).optional(),
+							pTools.star(
 									pTools.seq(
-										pTools.getOprParser("\n"),
 										pTools.getOprParser("|"),
 										idParser,
-										pTools.getOprParser("("),
-										pTools.csplus(
-												idParser,
-												pTools.seq(
-														pTools.getOprParser(":"),
-														idParser
-												).optional()
-										),
-										pTools.getOprParser(")")
+										pTools.seq(
+												pTools.getOprParser("("),
+												pTools.csplus(
+														idParser,
+														pTools.seq(
+																pTools.getOprParser(":"),
+																idParser
+														).optional()
+												),
+												pTools.getOprParser(")")
+										).optional()
 									)
 							)
 							
@@ -126,7 +131,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 						
 					});
 			parsers.put("DatatypeDefinition", new GrammarRule("DatatypeDefinition", 
-					"'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '\n' '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )**", datatypeParser, PLUGIN_NAME));
+					"'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )**", datatypeParser, PLUGIN_NAME));
 			
 			
 			// SelektorDefinition : (ID '.' ID) | ( ID '(' ID ')' )
@@ -169,7 +174,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
 					"(ID '.' ID) | ( ID '(' ID ')' )", selektorParser, PLUGIN_NAME));
 
-			// PatternMatchDefinition : 'match' '(' ID ')' 'on' (( '\n' '|' ID )+ '->' ID)+)
+			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' ID )+ '->' ID)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("match", PLUGIN_NAME),
@@ -177,17 +182,20 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							idParser,
 							pTools.getOprParser(")"),
 							pTools.getKeywParser("on", PLUGIN_NAME),
-							pTools.csplus(
+							pTools.getOprParser("("),
+							pTools.plus(
 									pTools.seq(
-											pTools.getOprParser("\n"),
-											pTools.seq(
-														pTools.getOprParser("|"),
-														idParser
+											pTools.plus(
+														pTools.seq(
+																pTools.getOprParser("|"),
+																idParser
+														)
 											),
 											pTools.getOprParser("->"),
 											idParser
 									)
-							)
+							),
+							pTools.getOprParser(")")
 					}).map(
 							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 									public Node map(Object[] vals) {
@@ -199,7 +207,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							}
 					);
 			parsers.put("PatternMatchDefinition", new GrammarRule("PatternMatchDefinition", 
-				"'match' '(' ID ')' 'on' (( '\n' '|' ID )+ '->' ID)+)", patternMatchParser, PLUGIN_NAME));
+				"'match' '(' ID ')' 'on' '(' ( '|' ID )+ '->' ID)+ ')'", patternMatchParser, PLUGIN_NAME));
 
 			
 			// ADT : (DatatypeDefinition|SelektorDefinition|PatternMatchDefinition)*
@@ -244,8 +252,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 
 	@Override
 	public Set<Parser<? extends Object>> getLexers() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override
@@ -255,8 +262,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 
 	@Override
 	public Map<String, BackgroundElement> getBackgrounds() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyMap();
 	}
 
 	@Override
@@ -266,20 +272,17 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 
 	@Override
 	public Map<String, FunctionElement> getFunctions() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyMap();
 	}
 
 	@Override
 	public Set<String> getRuleNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override
 	public Map<String, RuleElement> getRules() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyMap();
 	}
 
 	@Override
@@ -289,8 +292,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 
 	@Override
 	public Map<String, UniverseElement> getUniverses() {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyMap();
 	}
 	
 }
