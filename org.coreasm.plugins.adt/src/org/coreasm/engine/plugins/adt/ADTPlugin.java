@@ -77,9 +77,77 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			ParserTools pTools = ParserTools.getInstance(capi);
 			Parser<Node> idParser = pTools.getIdParser();			
 			
-			//TODO insert other Parser
+			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 5th recursive stage
+			Parser<Node> patternParser = Parsers.or(
+												pTools.getOprParser("_"),
+												idParser
+										);
 			
-			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )*
+			for(int i =0; i<5; i++){
+			
+			patternParser = Parsers.or(
+					Parsers.array(
+							new Parser[] {
+									pTools.getOprParser("_")
+							}
+					),
+					Parsers.array(
+							new Parser[] {
+									idParser,
+									pTools.seq(
+											pTools.getOprParser("("),
+											pTools.csplus(patternParser),
+											pTools.getOprParser(")")
+									).optional()
+							}
+					)).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+									public Node map(Object[] vals) {
+										Node node = new PatternMatchNode(((Node)vals[0]).getScannerInfo());
+										addChildren(node, vals);
+										return node;
+									}
+						
+							}
+					);
+			parsers.put("PatternDeclaration", new GrammarRule("PatternDeclaration", 
+				"ID ( '(' pattern , (',' pattern)* ')' )?", patternParser, PLUGIN_NAME));
+			
+			}
+			
+			
+			// dataconstructor : ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?
+			Parser<Node> dataconstructorParser = Parsers.array(
+					new Parser[] {
+							idParser,
+							pTools.seq(
+									pTools.getOprParser("("),
+									pTools.csplus(
+											pTools.seq(
+													idParser,
+													pTools.seq(
+															pTools.getOprParser(":"),
+															idParser
+													).optional()
+											)
+									),
+									pTools.getOprParser(")")
+							).optional()
+					}).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+									public Node map(Object[] vals) {
+											Node node = new DataconstructorNode(((Node)vals[0]).getScannerInfo());
+											addChildren(node, vals);
+											return node;
+									}
+							
+							}
+					);
+					parsers.put("Dataconstructor", new GrammarRule("Dataconstructor", 
+					"ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?", patternParser, PLUGIN_NAME));
+			
+					
+			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' dataconstructor ( '|' dataconstructor )*
 			Parser<Node> datatypeParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("datatype", PLUGIN_NAME),
@@ -90,34 +158,11 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 								pTools.getOprParser(")")
 							).optional(),
 							pTools.getOprParser("="),
-							idParser,
-							pTools.seq(
-								pTools.getOprParser(","),
-								pTools.getOprParser("("),
-								pTools.csplus(
-										idParser,
-										pTools.seq(
-												pTools.getOprParser(":"),
-												idParser
-										).optional()
-								),
-								pTools.getOprParser(")")
-							).optional(),
+							dataconstructorParser,
 							pTools.star(
 									pTools.seq(
 										pTools.getOprParser("|"),
-										idParser,
-										pTools.seq(
-												pTools.getOprParser("("),
-												pTools.csplus(
-														idParser,
-														pTools.seq(
-																pTools.getOprParser(":"),
-																idParser
-														).optional()
-												),
-												pTools.getOprParser(")")
-										).optional()
+										dataconstructorParser
 									)
 							)
 							
@@ -188,7 +233,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 											pTools.plus(
 														pTools.seq(
 																pTools.getOprParser("|"),
-																idParser
+																patternParser
 														)
 											),
 											pTools.getOprParser("->"),
@@ -208,6 +253,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					);
 			parsers.put("PatternMatchDefinition", new GrammarRule("PatternMatchDefinition", 
 				"'match' '(' ID ')' 'on' '(' ( '|' ID )+ '->' ID)+ ')'", patternMatchParser, PLUGIN_NAME));
+
 
 			
 			// ADT : (DatatypeDefinition|SelektorDefinition|PatternMatchDefinition)*
@@ -231,7 +277,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 								return node;
 							}});
 			parsers.put("ADT", new GrammarRule("ADT", 
-					"((DatatypeDefinition|SelektorDefinition|PatternMatchDefinition))*", adtParser, PLUGIN_NAME));
+					"(DatatypeDefinition|SelektorDefinition|PatternMatchDefinition|Pattern)", adtParser, PLUGIN_NAME));
 			
 			parsers.put("Header", new GrammarRule("Header", "ADT", adtParser, PLUGIN_NAME));
 			
