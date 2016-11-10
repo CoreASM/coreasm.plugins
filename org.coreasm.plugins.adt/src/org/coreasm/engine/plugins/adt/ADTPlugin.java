@@ -83,7 +83,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 												idParser
 										);
 			
-			for(int i =0; i<5; i++){
+			for(int i =0; i<64; i++){
 			
 			patternParser = Parsers.or(
 					Parsers.array(
@@ -219,7 +219,8 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
 					"(ID '.' ID) | ( ID '(' ID ')' )", selektorParser, PLUGIN_NAME));
 
-			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' ID )+ '->' ID)+ ')'
+			//TODO patternParser as placeholder for ResultFunction
+			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' pattern )+ '->' pattern)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("match", PLUGIN_NAME),
@@ -237,7 +238,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 														)
 											),
 											pTools.getOprParser("->"),
-											idParser
+											patternParser
 									)
 							),
 							pTools.getOprParser(")")
