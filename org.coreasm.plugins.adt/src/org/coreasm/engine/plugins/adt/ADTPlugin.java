@@ -77,13 +77,13 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			ParserTools pTools = ParserTools.getInstance(capi);
 			Parser<Node> idParser = pTools.getIdParser();			
 			
-			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 64th recursive stage
+			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 5th recursive stage
 			Parser<Node> patternParser = Parsers.or(
 												pTools.getOprParser("_"),
 												idParser
 										);
 			
-			for(int i =0; i<64; i++){
+			for(int i =0; i<5; i++){
 			
 			patternParser = Parsers.or(
 					Parsers.array(
@@ -144,7 +144,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							}
 					);
 					parsers.put("Dataconstructor", new GrammarRule("Dataconstructor", 
-					"ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?", patternParser, PLUGIN_NAME));
+					"ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?", dataconstructorParser, PLUGIN_NAME));
 			
 					
 			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' dataconstructor ( '|' dataconstructor )*
@@ -179,7 +179,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					"'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )**", datatypeParser, PLUGIN_NAME));
 			
 			
-			// SelektorDefinition : (ID '.' ID) | ( ID '(' ID ')' )
+			// SelektorDefinition : ID '.' ID
 			Parser<Node> selektorParser = Parsers.array(
 					new Parser[] {
 							idParser,
@@ -216,7 +216,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					)*/
 					
 			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
-					"(ID '.' ID) | ( ID '(' ID ')' )", selektorParser, PLUGIN_NAME));
+					"ID '.' ID", selektorParser, PLUGIN_NAME));
 
 			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' pattern )+ '->' functionRuleTerm)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
@@ -289,10 +289,15 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		return verInfo;
 	}
 
-	@Override
-	public ASTNode interpret(Interpreter arg0, ASTNode arg1) throws InterpreterException {
-		// TODO Auto-generated method stub
-		return null;
+public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
+		
+		ASTNode nextPos = pos;
+		String x = pos.getToken();
+		String gClass = pos.getGrammarClass();
+        
+		//TODO implement
+		
+		return nextPos;
 	}
 
 	@Override
