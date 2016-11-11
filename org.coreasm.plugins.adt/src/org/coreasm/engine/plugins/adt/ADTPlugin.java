@@ -69,15 +69,15 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 	public Map<String, GrammarRule> getParsers() {
 		if (parsers == null) {
 			parsers = new HashMap<String, GrammarRule>();
-			//Kernel kernelPlugin = (Kernel)capi.getPlugin("Kernel");
-			//KernelServices kernel = (KernelServices)kernelPlugin.getPluginInterface();
+			Kernel kernelPlugin = (Kernel)capi.getPlugin("Kernel");
+			KernelServices kernel = (KernelServices)kernelPlugin.getPluginInterface();
 
 			//Parser<Node> ruleADTParser = kernel.getRuleADTParser(); 
 
 			ParserTools pTools = ParserTools.getInstance(capi);
 			Parser<Node> idParser = pTools.getIdParser();			
 			
-			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 5th recursive stage
+			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 64th recursive stage
 			Parser<Node> patternParser = Parsers.or(
 												pTools.getOprParser("_"),
 												idParser
@@ -103,7 +103,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					)).map(
 							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 									public Node map(Object[] vals) {
-										Node node = new PatternMatchNode(((Node)vals[0]).getScannerInfo());
+										Node node = new PatternNode(((Node)vals[0]).getScannerInfo());
 										addChildren(node, vals);
 										return node;
 									}
@@ -180,23 +180,23 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			
 			
 			// SelektorDefinition : (ID '.' ID) | ( ID '(' ID ')' )
-			Parser<Node> selektorParser = Parsers.or(
-					Parsers.array(
-							new Parser[] {
-									idParser,
-									pTools.getOprParser("."),
-									idParser
-							}).map(
-									new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+			Parser<Node> selektorParser = Parsers.array(
+					new Parser[] {
+							idParser,
+							pTools.getOprParser("."),
+							idParser
+					}).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 
-										public Node map(Object[] vals) {
+									public Node map(Object[] vals) {
 											Node node = new SelektorNode(((Node)vals[0]).getScannerInfo());
 											addChildren(node, vals);
 											return node;
-										}
-						
 									}
-					),
+						
+							}
+			);
+					/*, Other Selektor-Parser,  replaced by FunctionRuleTerm
 					Parsers.array(
 							new Parser[] {
 									idParser,
@@ -213,14 +213,12 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 										}
 						
 									}
-							)
+					)*/
 					
-			);
 			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
 					"(ID '.' ID) | ( ID '(' ID ')' )", selektorParser, PLUGIN_NAME));
 
-			//TODO patternParser as placeholder for ResultFunction
-			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' pattern )+ '->' pattern)+ ')'
+			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' pattern )+ '->' functionRuleTerm)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("match", PLUGIN_NAME),
@@ -234,7 +232,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 											pTools.plus(
 														pTools.seq(
 																pTools.getOprParser("|"),
-																patternParser
+																kernel.getFunctionRuleTermParser()
 														)
 											),
 											pTools.getOprParser("->"),
