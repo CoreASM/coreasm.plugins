@@ -232,11 +232,11 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 											pTools.plus(
 														pTools.seq(
 																pTools.getOprParser("|"),
-																kernel.getFunctionRuleTermParser()
+																patternParser
 														)
 											),
 											pTools.getOprParser("->"),
-											patternParser
+											kernel.getFunctionRuleTermParser()
 									)
 							),
 							pTools.getOprParser(")")
