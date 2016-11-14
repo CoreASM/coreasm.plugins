@@ -14,7 +14,7 @@ public class SelektorNode extends ASTNode {
     public SelektorNode(ScannerInfo info) {
         super(
         		ADTPlugin.PLUGIN_NAME,
-        		ASTNode.DECLARATION_CLASS,
+        		ASTNode.FUNCTION_RULE_CLASS,
         		"SelektorDefinition",
         		null,
         		info

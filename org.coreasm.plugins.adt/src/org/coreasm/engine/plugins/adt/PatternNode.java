@@ -14,7 +14,7 @@ public class PatternNode extends ASTNode {
     public PatternNode(ScannerInfo info) {
         super(
         		ADTPlugin.PLUGIN_NAME,
-        		ASTNode.DECLARATION_CLASS,
+        		ASTNode.FUNCTION_RULE_CLASS,
         		"Pattern",
         		null,
         		info

@@ -14,7 +14,7 @@ public class PatternMatchNode extends ASTNode {
     public PatternMatchNode(ScannerInfo info) {
         super(
         		ADTPlugin.PLUGIN_NAME,
-        		ASTNode.DECLARATION_CLASS,
+        		ASTNode.FUNCTION_RULE_CLASS,
         		"PatternMatchDefinition",
         		null,
         		info
