@@ -1,7 +1,9 @@
 package org.coreasm.engine.plugins.adt;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -296,6 +298,41 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		String gClass = pos.getGrammarClass();
         
 		//TODO implement
+		if(pos instanceof DatatypeNode){
+			DatatypeNode dtNode = (DatatypeNode) pos;
+			
+			
+			//get all datacontstructorNodes
+			List<Node> nodes = dtNode.getChildNodes();
+			ArrayList<DataconstructorNode> dataconstructors = new ArrayList<DataconstructorNode>();
+			
+			for(Node n: nodes){
+				if(n instanceof DataconstructorNode){
+					dataconstructors.add((DataconstructorNode) n);
+				}
+			}
+			
+			//build a DatatypeBackgroundElement for the Datatype and its dataconstructors
+			
+		}
+		
+		else if (pos instanceof SelektorNode){
+			SelektorNode sNode = (SelektorNode) pos;
+			
+			//call SelektorFunctionElement, if it's defined, otherwise throw an error
+		}
+		
+		else if (pos instanceof PatternMatchNode){
+			PatternMatchNode pmNode = (PatternMatchNode) pos;
+			
+			
+			//get the Datatype-value from the AbstractStorage, which should be pattern-matched
+			
+			
+			
+			//try to bind the value to each Pattern. If it fits, call the next given function. 
+			//If nothing fits, throw an error 
+		}
 		
 		return nextPos;
 	}
