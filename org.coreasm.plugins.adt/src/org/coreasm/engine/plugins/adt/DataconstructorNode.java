@@ -1,7 +1,10 @@
 package org.coreasm.engine.plugins.adt;
 
 
+import java.util.ArrayList;
+
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 
@@ -28,5 +31,21 @@ public class DataconstructorNode extends ASTNode {
    
     public String getName() {
         return getFirst().getToken();
+    }
+    
+    public ArrayList<ParameterNode> getParameterNodes(){
+    	ArrayList<ParameterNode> pNodes = new ArrayList<ParameterNode>();
+    	
+		for(Node n: this.getChildNodes()){
+			if(n instanceof ParameterNode){
+				pNodes.add((ParameterNode) n);
+			}
+		}
+    	
+    	return pNodes;
+    }
+    
+    public String getDataconstructorName(){
+    	return getFirst().getToken();
     }
 }

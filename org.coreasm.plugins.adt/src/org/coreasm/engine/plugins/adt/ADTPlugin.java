@@ -117,21 +117,35 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			
 			}
 			
+			// parameter : ID ( ':' ID )?
+						Parser<Node> parameterParser = Parsers.array(
+								new Parser[] {
+										idParser,
+										pTools.seq(
+												pTools.getOprParser(":"),
+												idParser
+										).optional()
+								}).map(
+										new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+												public Node map(Object[] vals) {
+														Node node = new ParameterNode(((Node)vals[0]).getScannerInfo());
+														addChildren(node, vals);
+														return node;
+												}
+										
+										}
+								);
+								parsers.put("Dataconstructor", new GrammarRule("Parameter", 
+								"ID ( ':' ID )?", parameterParser, PLUGIN_NAME));
 			
-			// dataconstructor : ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?
+			// dataconstructor : ID ( '(' Parameter (',' Parameter)* ')' )?
 			Parser<Node> dataconstructorParser = Parsers.array(
 					new Parser[] {
 							idParser,
 							pTools.seq(
 									pTools.getOprParser("("),
 									pTools.csplus(
-											pTools.seq(
-													idParser,
-													pTools.seq(
-															pTools.getOprParser(":"),
-															idParser
-													).optional()
-											)
+											parameterParser
 									),
 									pTools.getOprParser(")")
 							).optional()
@@ -301,18 +315,38 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		if(pos instanceof DatatypeNode){
 			DatatypeNode dtNode = (DatatypeNode) pos;
 			
+			//check if datatypename is unique, otherwise throw an error
+			String datatypename = dtNode.getFirst().getToken();
 			
-			//get all datacontstructorNodes
-			List<Node> nodes = dtNode.getChildNodes();
-			ArrayList<DataconstructorNode> dataconstructors = new ArrayList<DataconstructorNode>();
+			// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
+			// if the name of the datatype, one of the dataconstructors or selektors isn't unique in the hole specification, throw an error
 			
-			for(Node n: nodes){
-				if(n instanceof DataconstructorNode){
-					dataconstructors.add((DataconstructorNode) n);
+			//get all dataconstructors and their parameters
+			for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
+				
+				//check it datatype name is unique - otherwise throw an error
+				String dcName = dcNode.getDataconstructorName();
+				
+				for(ParameterNode pNode : dcNode.getParameterNodes()){
+					
+					//check Parametertype
+					ASTNode type = pNode.getType();
+					
+					//check if selektor - if defined - is unique otherwise throw an error
+					//add it to Functions or throw an error
+					ASTNode selektor = pNode.getSelektor();
+					if(selektor!=null){
+						
+					}
+					
+					
 				}
+				
+				//build Dataconstructor
+				
 			}
 			
-			//build a DatatypeBackgroundElement for the Datatype and its dataconstructors
+			//build DatatypeBackgroundElement
 			
 		}
 		
