@@ -36,16 +36,13 @@ public class DataconstructorNode extends ASTNode {
     public ArrayList<ParameterNode> getParameterNodes(){
     	ArrayList<ParameterNode> pNodes = new ArrayList<ParameterNode>();
     	
-		for(Node n: this.getChildNodes()){
-			if(n instanceof ParameterNode){
-				pNodes.add((ParameterNode) n);
+		for(NameNodeTuple child: this.getChildNodesWithNames()){
+			if("Parameter".equals(child.name)){
+				pNodes.add((ParameterNode) child.node);
 			}
 		}
     	
     	return pNodes;
     }
     
-    public String getDataconstructorName(){
-    	return getFirst().getToken();
-    }
 }

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
+import org.coreasm.engine.CoreASMError;
 import org.coreasm.engine.EngineError;
 import org.coreasm.engine.VersionInfo;
 import org.coreasm.engine.absstorage.BackgroundElement;
@@ -42,8 +43,10 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
     private HashMap<String,RuleElement> rules;
     
     private Map<String, GrammarRule> parsers = null;
+    
+    private boolean processingDefinitions = false;
 	
-    private final String[] keywords = {"datatype", "match", "on"};
+    private final String[] keywords = {"datatype", "match", "on", "This"};
 	private final String[] operators = {"(", ",", ")", "=", "|", ".", ":", "->", "_"};
 	
 	
@@ -117,13 +120,39 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			
 			}
 			
-			// parameter : ID ( ':' ID )?
+			// typeconstructor : ID ( '(' ID ( ',' ID )* ')' )?
+			Parser<Node> typeconstructorParser = Parsers.array(
+					new Parser[] {
+							idParser,
+							pTools.seq(
+									pTools.getOprParser("("),
+									pTools.csplus(idParser),
+									pTools.getOprParser(")")
+							).optional()
+					}).map(
+							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+									public Node map(Object[] vals) {
+											Node node = new TypeconstructorNode(((Node)vals[0]).getScannerInfo());
+											addChildren(node, vals);
+											return node;
+									}
+							
+							}
+					);
+					parsers.put("Typeconstructor", new GrammarRule("Typeconstructor", 
+					"ID ( '(' ID ( ',' ID )* ')' )?", typeconstructorParser, PLUGIN_NAME));
+			
+			// parameter : ID ( ':' ('This' | ID | typeConstructor) )?
 						Parser<Node> parameterParser = Parsers.array(
 								new Parser[] {
 										idParser,
 										pTools.seq(
 												pTools.getOprParser(":"),
-												idParser
+												Parsers.or(
+														pTools.getKeywParser("This", PLUGIN_NAME),
+														typeconstructorParser,
+														idParser
+												)
 										).optional()
 								}).map(
 										new ParserTools.ArrayParseMap(PLUGIN_NAME) {
@@ -135,8 +164,8 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 										
 										}
 								);
-								parsers.put("Dataconstructor", new GrammarRule("Parameter", 
-								"ID ( ':' ID )?", parameterParser, PLUGIN_NAME));
+								parsers.put("Parameter", new GrammarRule("Parameter", 
+								"ID ( ':' ('This' | ID | typeConstructor) )?", parameterParser, PLUGIN_NAME));
 			
 			// dataconstructor : ID ( '(' Parameter (',' Parameter)* ')' )?
 			Parser<Node> dataconstructorParser = Parsers.array(
@@ -163,16 +192,11 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					"ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?", dataconstructorParser, PLUGIN_NAME));
 			
 					
-			// ADTDefinition : 'datatype' ID ('(' ID (',' ID)* ')') '=' dataconstructor ( '|' dataconstructor )*
+			// ADTDefinition : 'datatype' typeconstructor) '=' dataconstructor ( '|' dataconstructor )*
 			Parser<Node> datatypeParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("datatype", PLUGIN_NAME),
-							idParser,
-							pTools.seq(
-								pTools.getOprParser("("),
-								pTools.csplus(idParser),
-								pTools.getOprParser(")")
-							).optional(),
+							typeconstructorParser,
 							pTools.getOprParser("="),
 							dataconstructorParser,
 							pTools.star(
@@ -317,6 +341,7 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			
 			//check if datatypename is unique, otherwise throw an error
 			String datatypename = dtNode.getFirst().getToken();
+			String typeconstructor = dtNode.getTypeconstructorName();
 			
 			// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
 			// if the name of the datatype, one of the dataconstructors or selektors isn't unique in the hole specification, throw an error
@@ -325,16 +350,18 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
 				
 				//check it datatype name is unique - otherwise throw an error
-				String dcName = dcNode.getDataconstructorName();
+				String dcName = dcNode.getName();
 				
 				for(ParameterNode pNode : dcNode.getParameterNodes()){
 					
 					//check Parametertype
-					ASTNode type = pNode.getType();
+					String type = pNode.getType();
+					
+					//Check if type is "This", then replace it by the Typeconstructor
 					
 					//check if selektor - if defined - is unique otherwise throw an error
 					//add it to Functions or throw an error
-					ASTNode selektor = pNode.getSelektor();
+					String selektor = pNode.getSelektor();
 					if(selektor!=null){
 						
 					}
@@ -371,49 +398,140 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		return nextPos;
 	}
 
+	private void processDefinitions(){
+		//TODO implement
+		
+		// Don't do anything if the spec is not parsed yet
+    	if (capi.getSpec().getRootNode() == null)
+    		return;
+    	
+        processingDefinitions = true;
+        if (functions == null) {        
+            functions = new HashMap<String,FunctionElement>();
+            //functionClass = new HashMap<String,FunctionClass>();
+        }
+        if (universes == null) {
+            universes = new HashMap<String,UniverseElement>();            
+        }
+        if (backgrounds == null) {
+            backgrounds = new HashMap<String,BackgroundElement>();
+        }
+        if (rules == null) {
+            rules = new HashMap<String,RuleElement>();
+        }
+
+        
+        ASTNode node = capi.getParser().getRootNode().getFirst();
+        
+    	Interpreter interpreter = capi.getInterpreter().getInterpreterInstance(); 
+		
+		while (node != null) {
+            if ((node.getGrammarRule() != null) && node.getGrammarRule().equals("ADT")) {
+                ASTNode currentSignature = node.getFirst();
+                
+
+            	while (currentSignature != null) {
+                    //if (currentSignature instanceof EnumerationNode) {
+                    //    createEnumeration(currentSignature, interpreter);
+                   // }
+
+                    
+                    
+                    currentSignature = currentSignature.getNext();
+                }
+            }
+            
+            node = node.getNext();            
+        }        
+	}
+
 	@Override
 	public Set<Parser<? extends Object>> getLexers() {
 		return Collections.emptySet();
 	}
 
 	@Override
-	public Set<String> getBackgroundNames() {
-		return getBackgrounds().keySet();
-	}
-
-	@Override
 	public Map<String, BackgroundElement> getBackgrounds() {
-		return Collections.emptyMap();
-	}
-
-	@Override
-	public Set<String> getFunctionNames() {
-		return getFunctions().keySet();
+		if(backgrounds == null){
+			processDefinitions();
+		}
+		
+		return backgrounds;
 	}
 
 	@Override
 	public Map<String, FunctionElement> getFunctions() {
-		return Collections.emptyMap();
+		if(functions == null){
+			processDefinitions();
+		}
+		
+		return functions;
 	}
 
-	@Override
-	public Set<String> getRuleNames() {
-		return Collections.emptySet();
-	}
 
 	@Override
 	public Map<String, RuleElement> getRules() {
-		return Collections.emptyMap();
+		if(rules == null){
+			processDefinitions();
+		}
+		return rules;
 	}
 
+
+	@Override
+	public Map<String, UniverseElement> getUniverses() {
+		if(universes == null){
+			processDefinitions();
+		}
+		return universes;
+	}
+	
+	@Override
+	public Set<String> getBackgroundNames() {
+		return getBackgrounds().keySet();
+	}
+	
+	@Override
+	public Set<String> getFunctionNames() {
+		return getFunctions().keySet();
+	}
+	
+	@Override
+	public Set<String> getRuleNames() {
+		return getRules().keySet();
+	}
+	
 	@Override
 	public Set<String> getUniverseNames() {
 		return getUniverses().keySet();
 	}
-
-	@Override
-	public Map<String, UniverseElement> getUniverses() {
-		return Collections.emptyMap();
-	}
+	
+	
+	/* (non-Javadoc)
+	 * @see org.coreasm.engine.plugins.signature.SignaturePlugin#checkNameUniqueness
+	 */
+    private boolean checkNameUniqueness(String name, String type, ASTNode node, Interpreter interpreter) {
+    	boolean result = true;
+        if (rules.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A derived function with the same name already exists.", node);
+        }
+        if (functions.containsKey(name)) {
+//            capi.error("Cannot add " + type + " '" + name + "'." + 
+//            		" A function with the same name already exists.", node, interpreter);
+//            result = false;
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A function with the same name already exists.", node);
+        }
+        if (universes.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A universe with the same name already exists.", node);
+        }
+        if (backgrounds.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A background with the same name already exists.", node);
+        }
+        return result;
+    }
 	
 }

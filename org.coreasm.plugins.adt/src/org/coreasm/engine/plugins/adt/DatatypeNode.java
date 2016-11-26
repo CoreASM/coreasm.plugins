@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
+import org.coreasm.engine.interpreter.Node.NameNodeTuple;
 
 
 public class DatatypeNode extends ASTNode {
@@ -34,19 +35,24 @@ public class DatatypeNode extends ASTNode {
     }
     
     public String getDatatypeName(){
-    	return this.getFirst().getToken();
+    	return ((TypeconstructorNode)this.getFirst()).getName();
+    }
+    
+    public String getTypeconstructorName(){
+    	return ((TypeconstructorNode)this.getFirst()).getTypeconstructorName();
     }
     
     public ArrayList<DataconstructorNode> getDataconstructorNodes(){
     	ArrayList<DataconstructorNode> dcNodes = new ArrayList<DataconstructorNode>();
     	
-		for(Node n: this.getChildNodes()){
-			if(n instanceof DataconstructorNode){
-				dcNodes.add((DataconstructorNode) n);
+    	for(NameNodeTuple child: this.getChildNodesWithNames()){
+			if("Dataconstructor".equals(child.name)){
+				dcNodes.add((DataconstructorNode) child.node);
 			}
 		}
     	
     	return dcNodes;
     }
+    
     
 }

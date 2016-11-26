@@ -1,18 +1,17 @@
 package org.coreasm.engine.plugins.adt;
 
 import java.util.ArrayList;
-
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
-public class ParameterNode extends ASTNode{
+public class TypeconstructorNode extends ASTNode{
     
 	
     private static final long serialVersionUID = 1L;
     
 
-    public ParameterNode(ScannerInfo info) {
+    public TypeconstructorNode(ScannerInfo info) {
         super(
         		ADTPlugin.PLUGIN_NAME,
         		ASTNode.DECLARATION_CLASS,
@@ -22,7 +21,7 @@ public class ParameterNode extends ASTNode{
         		);
     }
 
-    public ParameterNode(ParameterNode node) {
+    public TypeconstructorNode(TypeconstructorNode node) {
     	super(node);
     }
     
@@ -31,19 +30,14 @@ public class ParameterNode extends ASTNode{
         return getFirst().getToken();
     }
     
-    public String getType(){
-    	if(getFirst().getNext() == null){
-    		return getName();
-    	}else{
-    		return getFirst().getNext().getToken();
+    public String getTypeconstructorName(){
+    	ASTNode iterator = getFirst();
+    	String result = iterator.getToken() + "(";
+    	while(iterator!=null){
+    		iterator = iterator.getNext();
+    		result += iterator.getToken();
     	}
-    }
-    
-    public String getSelektor(){
-    	if(getFirst().getNext() != null){
-    		return getFirst().getToken();
-    	}else{
-    		return null;
-    	}
+    	return (result + ")");
+    	
     }
 }
