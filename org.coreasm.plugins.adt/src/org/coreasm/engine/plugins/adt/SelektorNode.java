@@ -4,7 +4,10 @@ package org.coreasm.engine.plugins.adt;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
-
+/*
+ * A SelektorNode is build for structures like "variable.selektor". 
+ * Selektors like "selektor(variable)" are handled in a different way
+ */
 public class SelektorNode extends ASTNode {
     
 	
@@ -28,5 +31,9 @@ public class SelektorNode extends ASTNode {
    
     public String getName() {
         return getFirst().getToken();
+    }
+    
+    public String getSelektorName(){
+    	return getFirst().getNext().getToken();
     }
 }

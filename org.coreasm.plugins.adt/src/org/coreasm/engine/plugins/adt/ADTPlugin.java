@@ -10,21 +10,19 @@ import java.util.Set;
 import org.codehaus.jparsec.Parser;
 import org.codehaus.jparsec.Parsers;
 import org.coreasm.engine.CoreASMError;
-import org.coreasm.engine.EngineError;
 import org.coreasm.engine.VersionInfo;
 import org.coreasm.engine.absstorage.BackgroundElement;
+import org.coreasm.engine.absstorage.Element;
 import org.coreasm.engine.absstorage.FunctionElement;
+import org.coreasm.engine.absstorage.Location;
 import org.coreasm.engine.absstorage.RuleElement;
 import org.coreasm.engine.absstorage.UniverseElement;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.Interpreter;
-import org.coreasm.engine.interpreter.InterpreterException;
 import org.coreasm.engine.interpreter.Node;
-import org.coreasm.engine.interpreter.ScannerInfo;
 import org.coreasm.engine.kernel.Kernel;
 import org.coreasm.engine.kernel.KernelServices;
 import org.coreasm.engine.parser.GrammarRule;
-import org.coreasm.engine.parser.ParseMap;
 import org.coreasm.engine.parser.ParserTools;
 import org.coreasm.engine.plugin.InterpreterPlugin;
 import org.coreasm.engine.plugin.ParserPlugin;
@@ -82,7 +80,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			ParserTools pTools = ParserTools.getInstance(capi);
 			Parser<Node> idParser = pTools.getIdParser();			
 			
-			// Pattern : ID ( '(' pattern , (',' pattern)* ')' )?, there has to be a wildcard or a variable in the 5th recursive stage
+			// Pattern : ID ( '(' Pattern (',' Pattern)* ')' )? | '_', there has to be a wildcard or a variable in the 5th recursive stage
 			Parser<Node> patternParser = Parsers.or(
 												pTools.getOprParser("_"),
 												idParser
@@ -116,7 +114,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							}
 					);
 			parsers.put("PatternDeclaration", new GrammarRule("PatternDeclaration", 
-				"ID ( '(' pattern , (',' pattern)* ')' )?", patternParser, PLUGIN_NAME));
+				"ID ( '(' pattern , (',' pattern)* ')' )? | '_'", patternParser, PLUGIN_NAME));
 			
 			}
 			
@@ -142,7 +140,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					parsers.put("Typeconstructor", new GrammarRule("Typeconstructor", 
 					"ID ( '(' ID ( ',' ID )* ')' )?", typeconstructorParser, PLUGIN_NAME));
 			
-			// parameter : ID ( ':' ('This' | ID | typeConstructor) )?
+			// parameter : ID ( ':' ('This' | ID | typeconstructor) )?
 						Parser<Node> parameterParser = Parsers.array(
 								new Parser[] {
 										idParser,
@@ -165,7 +163,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 										}
 								);
 								parsers.put("Parameter", new GrammarRule("Parameter", 
-								"ID ( ':' ('This' | ID | typeConstructor) )?", parameterParser, PLUGIN_NAME));
+								"ID ( ':' ('This' | ID | typeconstructor) )?", parameterParser, PLUGIN_NAME));
 			
 			// dataconstructor : ID ( '(' Parameter (',' Parameter)* ')' )?
 			Parser<Node> dataconstructorParser = Parsers.array(
@@ -189,10 +187,10 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 							}
 					);
 					parsers.put("Dataconstructor", new GrammarRule("Dataconstructor", 
-					"ID ( '(' ID ( ':' ID) ? ( ',' ID ( ':' ID )? )* ')' )?", dataconstructorParser, PLUGIN_NAME));
+					"ID ( '(' Parameter (',' Parameter)* ')' )?", dataconstructorParser, PLUGIN_NAME));
 			
 					
-			// ADTDefinition : 'datatype' typeconstructor) '=' dataconstructor ( '|' dataconstructor )*
+			// Datatype : 'datatype' typeconstructor '=' dataconstructor ( '|' dataconstructor )*
 			Parser<Node> datatypeParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("datatype", PLUGIN_NAME),
@@ -258,7 +256,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
 					"ID '.' ID", selektorParser, PLUGIN_NAME));
 
-			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( '|' pattern )+ '->' functionRuleTerm)+ ')'
+			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( ( '|' Pattern )+ '->' FunctionRuleTerm)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("match", PLUGIN_NAME),
@@ -337,43 +335,8 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
         
 		//TODO implement
 		if(pos instanceof DatatypeNode){
-			DatatypeNode dtNode = (DatatypeNode) pos;
-			
-			//check if datatypename is unique, otherwise throw an error
-			String datatypename = dtNode.getFirst().getToken();
-			String typeconstructor = dtNode.getTypeconstructorName();
-			
-			// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
-			// if the name of the datatype, one of the dataconstructors or selektors isn't unique in the hole specification, throw an error
-			
-			//get all dataconstructors and their parameters
-			for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
-				
-				//check it datatype name is unique - otherwise throw an error
-				String dcName = dcNode.getName();
-				
-				for(ParameterNode pNode : dcNode.getParameterNodes()){
-					
-					//check Parametertype
-					String type = pNode.getType();
-					
-					//Check if type is "This", then replace it by the Typeconstructor
-					
-					//check if selektor - if defined - is unique otherwise throw an error
-					//add it to Functions or throw an error
-					String selektor = pNode.getSelektor();
-					if(selektor!=null){
-						
-					}
-					
-					
-				}
-				
-				//build Dataconstructor
-				
-			}
-			
-			//build DatatypeBackgroundElement
+			// Do nothing, definitions are already proceed
+			// createDatatypeBackground((DatatypeNode)pos, interpreter);
 			
 		}
 		
@@ -381,11 +344,21 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			SelektorNode sNode = (SelektorNode) pos;
 			
 			//call SelektorFunctionElement, if it's defined, otherwise throw an error
+			FunctionElement selekElement = functions.get(sNode.getSelektorName());
+			if(selekElement == null){
+				throw new CoreASMError("Cannot find the selector " + sNode.getSelektorName() + "." + 
+	            		"Maybe it wasn't defined in the definition of the algebraic Datatype.", sNode);
+			}
+			
+			//TODO
+			
 		}
 		
 		else if (pos instanceof PatternMatchNode){
 			PatternMatchNode pmNode = (PatternMatchNode) pos;
+			String variable = pmNode.getVariableName();
 			
+			Element value = null; //capi.getStorage().getValue(new Location());
 			
 			//get the Datatype-value from the AbstractStorage, which should be pattern-matched
 			
@@ -393,13 +366,15 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			
 			//try to bind the value to each Pattern. If it fits, call the next given function. 
 			//If nothing fits, throw an error 
+			
+			throw new CoreASMError("Cannot match the value " + variable + " to a pattern." + 
+            		"Try to use a Default-Pattern with a wildcard.", pmNode);
 		}
 		
 		return nextPos;
 	}
 
 	private void processDefinitions(){
-		//TODO implement
 		
 		// Don't do anything if the spec is not parsed yet
     	if (capi.getSpec().getRootNode() == null)
@@ -429,13 +404,11 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
             if ((node.getGrammarRule() != null) && node.getGrammarRule().equals("ADT")) {
                 ASTNode currentSignature = node.getFirst();
                 
-
+                // create BackgroundElements and FunctionsElements for each datatype
             	while (currentSignature != null) {
-                    //if (currentSignature instanceof EnumerationNode) {
-                    //    createEnumeration(currentSignature, interpreter);
-                   // }
-
-                    
+                    if (currentSignature instanceof DatatypeNode) {
+                       createDatatypeBackground((DatatypeNode)currentSignature, interpreter);
+                    }            
                     
                     currentSignature = currentSignature.getNext();
                 }
@@ -443,6 +416,99 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
             
             node = node.getNext();            
         }        
+	}
+
+	private void createDatatypeBackground(DatatypeNode dtNode, Interpreter interpreter) {
+		
+		//check if datatypename is unique
+		String datatypename = dtNode.getFirst().getToken();
+		String typeconstructor = dtNode.getTypeconstructorName();
+		
+		checkNameUniqueness(datatypename, "backgrond", dtNode, interpreter);
+		
+		// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
+		// if the name of the datatype, one of the dataconstructors or selektors isn't unique in the hole specification
+		
+		//get all dataconstructors and their parameters
+		for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
+			
+			//check it datatype name is unique - otherwise throw an error
+			String dcName = dcNode.getName();
+			checkNameUniqueness(dcName, "backgrond", dtNode, interpreter);
+			
+			//List for each parameter
+			ArrayList<String> parameters = new ArrayList<String>();
+			
+			int place = 0; //place of each parameter
+			
+			for(ParameterNode pNode : dcNode.getParameterNodes()){
+				
+				place++;
+				
+				//check Parametertype
+				String type = pNode.getType();
+				
+				//Check if type is "This", then replace it by the Typeconstructor
+				if("This".equals(type))
+					type = typeconstructor;
+				
+				parameters.add(type);
+				
+				//check if selektor - if defined - is unique
+				//add it to Functions
+				String selektor = pNode.getSelektor();
+				if(selektor!=null){
+					if(checkNameUniqueness(selektor, "function", dtNode, interpreter))
+						functions.put(selektor, new SelektorFunction(datatypename, dcName, place));
+						
+				}
+				
+				
+			}
+			
+			//build Dataconstructor
+			
+		}
+		
+		//build DatatypeBackgroundElement
+		
+	}
+	
+    private boolean checkNameUniqueness(String name, String type, ASTNode node, Interpreter interpreter) {
+    	boolean result = true;
+        if (rules.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A derived function with the same name already exists.", node);
+        }
+        if (functions.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A function with the same name already exists.", node);
+        }
+        if (universes.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A universe with the same name already exists.", node);
+        }
+        if (backgrounds.containsKey(name)) {
+        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
+            		" A background with the same name already exists.", node);
+        }
+        return result;
+    }
+    
+    /*
+	 * checks the validity of the arguments.
+	 */
+	protected boolean checkArguments(int count, List<? extends Element> args) {
+
+		if (args.size() != count)
+			return false;
+		else 
+			for (int i=0; i < count; i++)
+				if ( ! (args.get(i) instanceof Element)) {
+					return false;
+				}
+		
+		return true;
 	}
 
 	@Override
@@ -510,28 +576,5 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 	/* (non-Javadoc)
 	 * @see org.coreasm.engine.plugins.signature.SignaturePlugin#checkNameUniqueness
 	 */
-    private boolean checkNameUniqueness(String name, String type, ASTNode node, Interpreter interpreter) {
-    	boolean result = true;
-        if (rules.containsKey(name)) {
-        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
-            		" A derived function with the same name already exists.", node);
-        }
-        if (functions.containsKey(name)) {
-//            capi.error("Cannot add " + type + " '" + name + "'." + 
-//            		" A function with the same name already exists.", node, interpreter);
-//            result = false;
-        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
-            		" A function with the same name already exists.", node);
-        }
-        if (universes.containsKey(name)) {
-        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
-            		" A universe with the same name already exists.", node);
-        }
-        if (backgrounds.containsKey(name)) {
-        	throw new CoreASMError("Cannot add " + type + " '" + name + "'." + 
-            		" A background with the same name already exists.", node);
-        }
-        return result;
-    }
 	
 }
