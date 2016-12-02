@@ -333,7 +333,6 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		String x = pos.getToken();
 		String gClass = pos.getGrammarClass();
         
-		//TODO implement
 		if(pos instanceof DatatypeNode){
 			// Do nothing, definitions are already proceed
 			// createDatatypeBackground((DatatypeNode)pos, interpreter);
@@ -344,13 +343,17 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			SelektorNode sNode = (SelektorNode) pos;
 			
 			//call SelektorFunctionElement, if it's defined, otherwise throw an error
-			FunctionElement selekElement = functions.get(sNode.getSelektorName());
+			String selektorName = sNode.getSelektorName();
+			String valueName = sNode.getName();
+			FunctionElement selekElement = functions.get(selektorName);
 			if(selekElement == null){
 				throw new CoreASMError("Cannot find the selector " + sNode.getSelektorName() + "." + 
 	            		"Maybe it wasn't defined in the definition of the algebraic Datatype.", sNode);
 			}
 			
-			//TODO
+			//What TODO?
+			Element value = interpreter.getEnv(valueName);		
+			
 			
 		}
 		
@@ -358,7 +361,7 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			PatternMatchNode pmNode = (PatternMatchNode) pos;
 			String variable = pmNode.getVariableName();
 			
-			Element value = null; //capi.getStorage().getValue(new Location());
+			DatatypeElement value = (DatatypeElement) interpreter.getEnv(variable);
 			
 			//get the Datatype-value from the AbstractStorage, which should be pattern-matched
 			
@@ -423,11 +426,12 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		//check if datatypename is unique
 		String datatypename = dtNode.getFirst().getToken();
 		String typeconstructor = dtNode.getTypeconstructorName();
+		ArrayList<DataconstructorBackgroundElement> datatypeConstructors = new ArrayList<DataconstructorBackgroundElement>();
 		
 		checkNameUniqueness(datatypename, "backgrond", dtNode, interpreter);
 		
 		// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
-		// if the name of the datatype, one of the dataconstructors or selektors isn't unique in the hole specification
+		// check if the name of  one of the dataconstructors or selektors isn't unique in the hole specification
 		
 		//get all dataconstructors and their parameters
 		for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
@@ -455,25 +459,31 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 				parameters.add(type);
 				
 				//check if selektor - if defined - is unique
-				//add it to Functions
+				//add it to functions
 				String selektor = pNode.getSelektor();
 				if(selektor!=null){
 					if(checkNameUniqueness(selektor, "function", dtNode, interpreter))
-						functions.put(selektor, new SelektorFunction(datatypename, dcName, place));
+						functions.put(selektor, new SelektorFunction(datatypename, dcName, place, interpreter));
 						
 				}
 				
 				
 			}
 			
-			//build Dataconstructor
+			//build DataconstructorBackgrondElement
+			datatypeConstructors.add(new DataconstructorBackgroundElement(dcName, parameters));
 			
 		}
 		
-		//build DatatypeBackgroundElement
+		//build DatatypeBackgroundElement and put it to the backgrounds
+		DatatypeBackgroundElement dbElement = new DatatypeBackgroundElement(datatypename, datatypeConstructors);
+		backgrounds.put(datatypename, dbElement);
 		
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.coreasm.engine.plugins.signature.SignaturePlugin#checkNameUniqueness
+	 */
     private boolean checkNameUniqueness(String name, String type, ASTNode node, Interpreter interpreter) {
     	boolean result = true;
         if (rules.containsKey(name)) {
@@ -507,6 +517,31 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 				if ( ! (args.get(i) instanceof Element)) {
 					return false;
 				}
+		
+		return true;
+	}
+	
+	private boolean matchPattern(DatatypeElement value, DatatypeElement pattern){
+		
+		//Wildcard always match the pattern
+		if(pattern.equals("_")){
+			return true;
+		}
+		
+		//check, if all parameters match rekursive
+		if((value.getDatatype() != pattern.getDatatype()) || (value.getDataconstructor() != pattern.getDataconstructor())){
+			return false;
+		}
+		
+		for(Object o : pattern.getParameter()){
+			
+			//call function recursive, if its a datatypeElement
+			if(o instanceof DatatypeElement){
+				if(!matchPattern(value, (DatatypeElement) o)){
+					return false;
+				}
+			}
+		}
 		
 		return true;
 	}
@@ -572,9 +607,5 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		return getUniverses().keySet();
 	}
 	
-	
-	/* (non-Javadoc)
-	 * @see org.coreasm.engine.plugins.signature.SignaturePlugin#checkNameUniqueness
-	 */
 	
 }

@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
+import ch.qos.logback.core.subst.Node;
+
 
 public class PatternMatchNode extends ASTNode {
     
@@ -46,6 +48,20 @@ public class PatternMatchNode extends ASTNode {
 		}
     	
     	return dcNodes;
+    }
+    
+    public ASTNode getResult(ASTNode pattern){
+    	
+    	ASTNode node = pattern;
+    	
+    	//look for the next Node, which isn't a PatternNode. It has to be a ResultNode
+    	while(node instanceof PatternNode){
+    		node = node.getNext();
+    	}
+    	
+    	return node;
+    	
+    	
     }
     
 }
