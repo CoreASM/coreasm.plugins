@@ -141,7 +141,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					"ID ( '(' ID ( ',' ID )* ')' )?", typeconstructorParser, PLUGIN_NAME));
 			
 			// parameter : ID ( ':' ('This' | ID | typeconstructor) )?
-						Parser<Node> parameterParser = Parsers.array(
+			Parser<Node> parameterParser = Parsers.array(
 								new Parser[] {
 										idParser,
 										pTools.seq(
@@ -361,20 +361,73 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			PatternMatchNode pmNode = (PatternMatchNode) pos;
 			String variable = pmNode.getVariableName();
 			
-			DatatypeElement value = (DatatypeElement) interpreter.getEnv(variable);
-			
 			//get the Datatype-value from the AbstractStorage, which should be pattern-matched
-			
-			
+			DatatypeElement value = (DatatypeElement) interpreter.getEnv(variable);
+					
 			
 			//try to bind the value to each Pattern. If it fits, call the next given function. 
 			//If nothing fits, throw an error 
+			boolean matchFound = false;
+			HashMap<String, Element> bindings = new HashMap<String, Element>();
+			ASTNode result = null;
 			
-			throw new CoreASMError("Cannot match the value " + variable + " to a pattern." + 
+			
+			for (PatternNode pNode : pmNode.getPatternNodes()){
+				
+				//create DatatypeElement for the pattern
+				DatatypeElement pattern = createDatatypeElement(pNode);
+				
+				if(matchPattern(value, pattern, bindings)){
+					matchFound = true;
+					result = pmNode.getResult(pNode);
+					break;
+				}else{
+					bindings.clear();
+				}
+				
+			}
+			
+			if(matchFound){
+				//getResultValue TODO
+				result.getValue();
+			
+			}else{
+				throw new CoreASMError("Cannot match the value " + variable + " to a pattern." + 
             		"Try to use a Default-Pattern with a wildcard.", pmNode);
+			}
 		}
 		
 		return nextPos;
+	}
+
+	private DatatypeElement createDatatypeElement(PatternNode pNode){
+		
+		//check if it's a wildcard
+		if(pNode.isWildcard()){
+			return DatatypeElement.wildcard();
+		}else if(backgrounds.get(pNode.getName()) == null  && (!pNode.hasSubPatterns())){
+			return DatatypeElement.variable(pNode.getName());
+		}else if(backgrounds.get(pNode.getName()) != null){
+			//get the dataconstructorName
+			String dcName = pNode.getName();
+			
+			//get the dataconstructorBackgroundElement to get the datatype
+			String dtName = ((DataconstructorBackgroundElement)backgrounds.get(dcName)).getDatatypeName();
+			
+			//put all parameter into an ArrayList, look out for further dataconstructors
+			ArrayList<Object> parameter = new ArrayList<Object>();
+			
+			for(PatternNode childNode : pNode.getSubPattern()){
+				if (childNode instanceof PatternNode){
+					parameter.add(createDatatypeElement(childNode));
+				}
+			}
+			
+			return new DatatypeElement(dtName, dcName, parameter);
+		}
+		
+		return (DatatypeElement) Element.UNDEF;
+		
 	}
 
 	private void processDefinitions(){
@@ -393,6 +446,10 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
         }
         if (backgrounds == null) {
             backgrounds = new HashMap<String,BackgroundElement>();
+            
+            /*Add the wildcard as a constant background
+            backgrounds.put("_", new DataconstructorBackgroundElement("", "_", null));
+            */
         }
         if (rules == null) {
             rules = new HashMap<String,RuleElement>();
@@ -471,7 +528,7 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			}
 			
 			//build DataconstructorBackgrondElement
-			datatypeConstructors.add(new DataconstructorBackgroundElement(dcName, parameters));
+			datatypeConstructors.add(new DataconstructorBackgroundElement(dcName, datatypename, parameters));
 			
 		}
 		
@@ -521,29 +578,53 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		return true;
 	}
 	
-	private boolean matchPattern(DatatypeElement value, DatatypeElement pattern){
+	private boolean matchPattern(DatatypeElement value, DatatypeElement pattern, HashMap<String, Element> bindings){
 		
 		//Wildcard always match the pattern
-		if(pattern.equals("_")){
+		if(pattern.isWildcard()){
 			return true;
 		}
 		
-		//check, if all parameters match rekursive
+		//typecheck, it is of the same type and dataconstructor
 		if((value.getDatatype() != pattern.getDatatype()) || (value.getDataconstructor() != pattern.getDataconstructor())){
 			return false;
 		}
 		
-		for(Object o : pattern.getParameter()){
+		//check, if all parameters match recursive
+		for(int i = 0; i < pattern.getParameter().size(); i++){
 			
-			//call function recursive, if its a datatypeElement
-			if(o instanceof DatatypeElement){
-				if(!matchPattern(value, (DatatypeElement) o)){
-					return false;
+			Object valueParameter = value.getParameter(i);
+			Object patternParameter = value.getParameter(i);
+			
+			
+			//check it is a DatatypeElement
+			//if it is a wildcard, do nothing, because it always matches and doesn't bind anything
+			//if it is a variable, just create a new binding
+			//else call the matching-Algorithm recursively
+			if(patternParameter instanceof DatatypeElement){
+				DatatypeElement patternElement = (DatatypeElement) patternParameter;
+				
+				if(!patternElement.isWildcard()){
+					if(patternElement.isVariable()){
+						bindings.put(patternElement.getVariableName(), (DatatypeElement) valueParameter);
+					}else if(!matchPattern((DatatypeElement) valueParameter, patternElement, bindings)){
+						return false;
+					}
 				}
+			}else{
+			//else check if they're the same
+				if(! patternParameter.equals(valueParameter))
+					return false;
+				
 			}
 		}
 		
 		return true;
+	}
+
+	private boolean isVariable(Object patternParameter) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override

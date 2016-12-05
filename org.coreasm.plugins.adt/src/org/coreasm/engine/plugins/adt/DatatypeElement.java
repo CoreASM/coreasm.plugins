@@ -17,6 +17,14 @@ public class DatatypeElement extends Element {
 		this.parameter = parameter;
 	}
 	
+	public static DatatypeElement wildcard(){
+		return new DatatypeElement("_", "" , new ArrayList<Object>());
+	}
+	
+	public static DatatypeElement variable(String name){
+		return new DatatypeElement(name, "", new ArrayList<Object>());
+	}
+	
 	public Object getParameter(int index){
 		return parameter.get(index);
 	}
@@ -31,5 +39,17 @@ public class DatatypeElement extends Element {
 
 	public String getDataconstructor() {
 		return dataconstructor;
+	}
+	
+	public boolean isWildcard(){
+		return datatype.equals("_");
+	}
+	
+	public boolean isVariable(){
+		return datatype.equals("variable");
+	}
+
+	public String getVariableName() {
+		return getDataconstructor();
 	}
 }

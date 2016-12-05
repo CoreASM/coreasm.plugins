@@ -38,12 +38,12 @@ public class PatternMatchNode extends ASTNode {
     	return getName();
     }
     
-    public ArrayList<DataconstructorNode> getDataconstructorNodes(){
-    	ArrayList<DataconstructorNode> dcNodes = new ArrayList<DataconstructorNode>();
+    public ArrayList<PatternNode> getPatternNodes(){
+    	ArrayList<PatternNode> dcNodes = new ArrayList<PatternNode>();
     	
     	for(NameNodeTuple child: this.getChildNodesWithNames()){
-			if("Dataconstructor".equals(child.name)){
-				dcNodes.add((DataconstructorNode) child.node);
+			if("Pattern".equals(child.name)){
+				dcNodes.add((PatternNode) child.node);
 			}
 		}
     	

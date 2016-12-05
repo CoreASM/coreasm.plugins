@@ -3,6 +3,7 @@ package org.coreasm.engine.plugins.adt;
 import java.util.ArrayList;
 
 import org.coreasm.engine.absstorage.BackgroundElement;
+import org.coreasm.engine.absstorage.BooleanElement;
 import org.coreasm.engine.absstorage.Element;
 
 public class DatatypeBackgroundElement extends BackgroundElement {
@@ -27,9 +28,19 @@ public class DatatypeBackgroundElement extends BackgroundElement {
 	}
 
 	@Override
-	protected Element getValue(Element e) {
-		// TODO Auto-generated method stub
-		return null;
+	/*
+	 * Returns a <code>TRUE</code> boolean for 
+	 * Datatype Elements. Otherwise <code>FALSE<code> is returned.
+	 * 
+	 * (non-Javadoc)
+	 * @see org.coreasm.engine.absstorage.AbstractUniverse#getValue(org.coreasm.engine.absstorage.Element)
+	 */
+	protected BooleanElement getValue(Element e) {
+		if(e instanceof DatatypeElement){
+			return BooleanElement.TRUE;
+		}else{
+			return BooleanElement.FALSE;
+		}
 	}
 
 }
