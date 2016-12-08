@@ -7,10 +7,10 @@ import org.coreasm.engine.absstorage.Element;
 public class DatatypeElement extends Element {
 	private String datatype;
 	private String dataconstructor;
-	private ArrayList<Object> parameter;
+	private ArrayList<Element> parameter;
 	
 	
-	public DatatypeElement(String datatype, String dataconstructor, ArrayList<Object> parameter) {
+	public DatatypeElement(String datatype, String dataconstructor, ArrayList<Element> parameter) {
 		super();
 		this.datatype = datatype;
 		this.dataconstructor = dataconstructor;
@@ -18,18 +18,18 @@ public class DatatypeElement extends Element {
 	}
 	
 	public static DatatypeElement wildcard(){
-		return new DatatypeElement("_", "" , new ArrayList<Object>());
+		return new DatatypeElement("_", "" , new ArrayList<Element>());
 	}
 	
 	public static DatatypeElement variable(String name){
-		return new DatatypeElement(name, "", new ArrayList<Object>());
+		return new DatatypeElement(name, "", new ArrayList<Element>());
 	}
 	
-	public Object getParameter(int index){
+	public Element getParameter(int index){
 		return parameter.get(index);
 	}
 
-	public ArrayList<Object> getParameter() {
+	public ArrayList<Element> getParameter() {
 		return parameter;
 	}
 

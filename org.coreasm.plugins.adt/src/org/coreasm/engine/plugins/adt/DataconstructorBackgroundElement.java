@@ -25,8 +25,11 @@ public class DataconstructorBackgroundElement extends BackgroundElement{
 
 	@Override
 	protected BooleanElement getValue(Element e) {
-		// TODO Auto-generated method stub
-		return null;
+		if(e instanceof DatatypeElement){
+			return BooleanElement.TRUE;
+		}else{
+			return BooleanElement.FALSE;
+		}
 	}
 	
 	public String getParameterType(int index){

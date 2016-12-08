@@ -45,11 +45,19 @@ public class DatatypeNode extends ASTNode {
     public ArrayList<DataconstructorNode> getDataconstructorNodes(){
     	ArrayList<DataconstructorNode> dcNodes = new ArrayList<DataconstructorNode>();
     	
-    	for(NameNodeTuple child: this.getChildNodesWithNames()){
+    	/*for(NameNodeTuple child: getChildNodesWithNames()){
+    		System.out.println("Child-Name: " + child.name);
 			if("Dataconstructor".equals(child.name)){
 				dcNodes.add((DataconstructorNode) child.node);
 			}
 		}
+    	*/
+    	
+    	for(ASTNode child : getAbstractChildNodes()){
+    		if(child instanceof DataconstructorNode){
+    			dcNodes.add((DataconstructorNode)child);
+    		}
+    	}
     	
     	return dcNodes;
     }

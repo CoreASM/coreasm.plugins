@@ -29,18 +29,23 @@ public class SelektorFunction extends FunctionElement {
 	 */
 	public Element getValue(List<? extends Element> args) {
 		
-		String valueName = args.get(1).toString();
-		DatatypeElement value = (DatatypeElement) interpreter.getEnv(valueName);
-		
-		// if there is either (only) one argument nor the same datatype nor the same dataconstructor, return a undefined Element
-		if(!(checkArguments(1, args)) && datatype.equals(value.getDatatype()) && dataconstructor.equals(value.getDataconstructor())){
+		//if there is not (only) one argument, return a undefined Element
+		if (!checkArguments(1, args)){
 			return Element.UNDEF;
 		}
-		Object returnvalue = value.getParameter(place);
-		String type = ((DataconstructorBackgroundElement)interpreter.getEnv(dataconstructor)).getParameterType(place);
-
-
-		return new Element(); //TODO
+		
+		System.out.println(datatype  + " " + dataconstructor + " " + place);
+		
+		String valueName = args.get(0).toString();
+		System.out.println("Variable: " + valueName);
+		System.out.println("is DatatypeElement" + (args.get(0) instanceof DatatypeElement));
+		DatatypeElement value = (DatatypeElement) interpreter.getEnv(valueName);
+		
+		// if it is neither the same datatype nor the same dataconstructor, return a undefined Element
+		if(!(datatype.equals(value.getDatatype()) && dataconstructor.equals(value.getDataconstructor()))){
+			return Element.UNDEF;
+		}
+		return value.getParameter(place);
 	}
 
 	protected FunctionClass getSelektorFunctionClass() {

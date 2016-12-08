@@ -44,7 +44,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
     
     private boolean processingDefinitions = false;
 	
-    private final String[] keywords = {"datatype", "match", "on", "This"};
+    private final String[] keywords = {"datatype", "match", "on"};
 	private final String[] operators = {"(", ",", ")", "=", "|", ".", ":", "->", "_"};
 	
 	
@@ -140,18 +140,15 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					parsers.put("Typeconstructor", new GrammarRule("Typeconstructor", 
 					"ID ( '(' ID ( ',' ID )* ')' )?", typeconstructorParser, PLUGIN_NAME));
 			
-			// parameter : ID ( ':' ('This' | ID | typeconstructor) )?
+			// parameter : (ID | typeconstructor) ( ':' (ID | typeconstructor) )?
+			// the ID-Parser is included in the typeconstrutorParser
 			Parser<Node> parameterParser = Parsers.array(
 								new Parser[] {
-										idParser,
+										typeconstructorParser,
 										pTools.seq(
 												pTools.getOprParser(":"),
-												Parsers.or(
-														pTools.getKeywParser("This", PLUGIN_NAME),
-														typeconstructorParser,
-														idParser
-												)
-										).optional()
+												typeconstructorParser
+										).optional()									
 								}).map(
 										new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 												public Node map(Object[] vals) {
@@ -163,7 +160,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 										}
 								);
 								parsers.put("Parameter", new GrammarRule("Parameter", 
-								"ID ( ':' ('This' | ID | typeconstructor) )?", parameterParser, PLUGIN_NAME));
+								"(ID | typeconstructor) ( ':' ( ID | typeconstructor) )? ", parameterParser, PLUGIN_NAME));
 			
 			// dataconstructor : ID ( '(' Parameter (',' Parameter)* ')' )?
 			Parser<Node> dataconstructorParser = Parsers.array(
@@ -345,16 +342,19 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			//call SelektorFunctionElement, if it's defined, otherwise throw an error
 			String selektorName = sNode.getSelektorName();
 			String valueName = sNode.getName();
-			FunctionElement selekElement = functions.get(selektorName);
-			if(selekElement == null){
+			SelektorFunction selekFunct = (SelektorFunction) functions.get(selektorName);
+			if(selekFunct == null){
 				throw new CoreASMError("Cannot find the selector " + sNode.getSelektorName() + "." + 
-	            		"Maybe it wasn't defined in the definition of the algebraic Datatype.", sNode);
+	            		"Maybe it wasn't defined in the definition of the algebraic datatype.", sNode);
 			}
 			
-			//What TODO?
-			Element value = interpreter.getEnv(valueName);		
+			Element value = interpreter.getEnv(valueName);	
+			ArrayList<Element> args = new ArrayList<Element>();
+			args.add(value);
+			Element returnvalue = selekFunct.getValue(args);
 			
-			
+			//TODO And now?
+		
 		}
 		
 		else if (pos instanceof PatternMatchNode){
@@ -415,7 +415,7 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 			String dtName = ((DataconstructorBackgroundElement)backgrounds.get(dcName)).getDatatypeName();
 			
 			//put all parameter into an ArrayList, look out for further dataconstructors
-			ArrayList<Object> parameter = new ArrayList<Object>();
+			ArrayList<Element> parameter = new ArrayList<Element>();
 			
 			for(PatternNode childNode : pNode.getSubPattern()){
 				if (childNode instanceof PatternNode){
@@ -480,12 +480,11 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 
 	private void createDatatypeBackground(DatatypeNode dtNode, Interpreter interpreter) {
 		
-		//check if datatypename is unique
-		String datatypename = dtNode.getFirst().getToken();
+		//check, if datatypename is unique, is done later, to ensure neither a dataconstructor nor a selector has got the same name
+		String datatypename = dtNode.getDatatypeName();
 		String typeconstructor = dtNode.getTypeconstructorName();
-		ArrayList<DataconstructorBackgroundElement> datatypeConstructors = new ArrayList<DataconstructorBackgroundElement>();
+		ArrayList<DataconstructorBackgroundElement> dataConstructors = new ArrayList<DataconstructorBackgroundElement>();
 		
-		checkNameUniqueness(datatypename, "backgrond", dtNode, interpreter);
 		
 		// build a DatatypeBackgroundElement for the new algebraic datatype and its dataconstructors and a SelektorFunctionElement for each Selektor
 		// check if the name of  one of the dataconstructors or selektors isn't unique in the hole specification
@@ -493,18 +492,15 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		//get all dataconstructors and their parameters
 		for(DataconstructorNode dcNode : dtNode.getDataconstructorNodes()){
 			
-			//check it datatype name is unique - otherwise throw an error
+			//checkNameUniqueness is done later, if there is a selector-function with this name
 			String dcName = dcNode.getName();
-			checkNameUniqueness(dcName, "backgrond", dtNode, interpreter);
 			
 			//List for each parameter
 			ArrayList<String> parameters = new ArrayList<String>();
 			
 			int place = 0; //place of each parameter
 			
-			for(ParameterNode pNode : dcNode.getParameterNodes()){
-				
-				place++;
+			for(ParameterNode pNode : dcNode.getParameterNodes()){		
 				
 				//check Parametertype
 				String type = pNode.getType();
@@ -518,22 +514,30 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 				//check if selektor - if defined - is unique
 				//add it to functions
 				String selektor = pNode.getSelektor();
+				
 				if(selektor!=null){
 					if(checkNameUniqueness(selektor, "function", dtNode, interpreter))
-						functions.put(selektor, new SelektorFunction(datatypename, dcName, place, interpreter));
-						
+						functions.put(selektor, new SelektorFunction(datatypename, dcName, place, interpreter));	
 				}
 				
+				place++;
 				
 			}
 			
-			//build DataconstructorBackgrondElement
-			datatypeConstructors.add(new DataconstructorBackgroundElement(dcName, datatypename, parameters));
+			//build DataconstructorBackgrondElement for the datatype
+			dataConstructors.add(new DataconstructorBackgroundElement(dcName, datatypename, parameters));
+			
+			//build DataconstructorFunctions for the functions
+			checkNameUniqueness(dcName, "backgrond", dtNode, interpreter);
+			DataconstructorFunction dcFunction = new DataconstructorFunction(datatypename, dcName, parameters);
+			functions.put(dcName, dcFunction);
 			
 		}
 		
+		
 		//build DatatypeBackgroundElement and put it to the backgrounds
-		DatatypeBackgroundElement dbElement = new DatatypeBackgroundElement(datatypename, datatypeConstructors);
+		checkNameUniqueness(datatypename, "backgrond", dtNode, interpreter);
+		DatatypeBackgroundElement dbElement = new DatatypeBackgroundElement(datatypename, dataConstructors);
 		backgrounds.put(datatypename, dbElement);
 		
 	}
@@ -622,10 +626,6 @@ public ASTNode interpret(Interpreter interpreter, ASTNode pos) {
 		return true;
 	}
 
-	private boolean isVariable(Object patternParameter) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public Set<Parser<? extends Object>> getLexers() {
