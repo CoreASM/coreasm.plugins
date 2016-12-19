@@ -1,3 +1,15 @@
+/*	
+ * DatatypeBackgroundElement.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 import java.util.ArrayList;
@@ -41,6 +53,15 @@ public class DatatypeBackgroundElement extends BackgroundElement {
 		}else{
 			return BooleanElement.FALSE;
 		}
+	}
+
+
+	public String getDATATYPE_BACKGROUND_NAME() {
+		return DATATYPE_BACKGROUND_NAME;
+	}
+
+	public ArrayList<DataconstructorBackgroundElement> getDatatypeConstructors() {
+		return datatypeConstructors;
 	}
 
 }

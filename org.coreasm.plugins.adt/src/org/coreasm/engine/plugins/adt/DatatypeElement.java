@@ -1,3 +1,15 @@
+/*	
+ * DatatypeElement.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 import java.util.ArrayList;
@@ -17,10 +29,16 @@ public class DatatypeElement extends Element {
 		this.parameter = parameter;
 	}
 	
+	/*
+	 * creates a default Wildcard-DatatypeElement
+	 */
 	public static DatatypeElement wildcard(){
 		return new DatatypeElement("_", "" , new ArrayList<Element>());
 	}
 	
+	/*
+	 * creates a Variable-DatatypeElement with the given name
+	 */
 	public static DatatypeElement variable(String name){
 		return new DatatypeElement(name, "", new ArrayList<Element>());
 	}
@@ -50,6 +68,11 @@ public class DatatypeElement extends Element {
 	}
 
 	public String getVariableName() {
-		return getDataconstructor();
+		return getDatatype();
+	}
+	
+	@Override
+	public String getBackground(){
+		return getDatatype();
 	}
 }

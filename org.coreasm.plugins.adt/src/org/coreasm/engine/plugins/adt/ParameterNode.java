@@ -1,3 +1,15 @@
+/*	
+ * ParameterNode.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 import org.coreasm.engine.interpreter.ASTNode;
@@ -38,7 +50,7 @@ public class ParameterNode extends ASTNode{
     		TypeconstructorNode tNode = (TypeconstructorNode) getFirst();
     		
     		//if the Type is at first place
-    		if(tNode.hasVariables()){
+    		if(getSecond() == null){
     			return tNode.getTypeconstructorName();
     		}else{
     			//if there is a selektor and the type is at second place
@@ -54,7 +66,7 @@ public class ParameterNode extends ASTNode{
     		TypeconstructorNode tNode = (TypeconstructorNode) getFirst();
     		
     		//if there is a selektor, it is in the first place
-    		if(!tNode.hasVariables()){
+    		if(getSecond() != null){
     			return tNode.getName();
     		}
     	}

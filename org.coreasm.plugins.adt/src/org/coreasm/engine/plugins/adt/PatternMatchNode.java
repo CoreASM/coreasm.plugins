@@ -1,3 +1,15 @@
+/*	
+ * PatternMatchNode.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 
@@ -5,9 +17,6 @@ import java.util.ArrayList;
 
 import org.coreasm.engine.interpreter.ASTNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
-
-import ch.qos.logback.core.subst.Node;
-
 
 public class PatternMatchNode extends ASTNode {
     
@@ -39,15 +48,15 @@ public class PatternMatchNode extends ASTNode {
     }
     
     public ArrayList<PatternNode> getPatternNodes(){
-    	ArrayList<PatternNode> dcNodes = new ArrayList<PatternNode>();
+    	ArrayList<PatternNode> patNodes = new ArrayList<PatternNode>();
     	
-    	for(NameNodeTuple child: this.getChildNodesWithNames()){
-			if("Pattern".equals(child.name)){
-				dcNodes.add((PatternNode) child.node);
-			}
-		}
+    	for(ASTNode child : getAbstractChildNodes()){
+    		if(child instanceof PatternNode){
+    			patNodes.add((PatternNode)child);
+    		}
+    	}
     	
-    	return dcNodes;
+    	return patNodes;
     }
     
     public ASTNode getResult(ASTNode pattern){
@@ -62,6 +71,10 @@ public class PatternMatchNode extends ASTNode {
     	return node;
     	
     	
+    }
+    
+    public ASTNode getValueNode(){
+    	return getFirst();
     }
     
 }

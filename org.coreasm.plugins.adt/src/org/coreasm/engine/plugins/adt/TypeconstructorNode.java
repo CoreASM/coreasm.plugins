@@ -1,8 +1,18 @@
+/*	
+ * TypeconstructorNode.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
-import java.util.ArrayList;
 import org.coreasm.engine.interpreter.ASTNode;
-import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 public class TypeconstructorNode extends ASTNode{
@@ -30,9 +40,6 @@ public class TypeconstructorNode extends ASTNode{
         return getFirst().getToken();
     }
     
-    public boolean hasVariables(){
-    	return (getFirst().getNext() != null);
-    }
     
     public String getTypeconstructorName(){
     	ASTNode iterator = getFirst();

@@ -1,3 +1,15 @@
+/*	
+ * DataconstructorBackgroundElement.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 import java.util.ArrayList;
@@ -38,6 +50,10 @@ public class DataconstructorBackgroundElement extends BackgroundElement{
 
 	public String getDatatypeName() {
 		return datatypeName;
+	}
+
+	public static DataconstructorBackgroundElement wildcard() {
+		return new DataconstructorBackgroundElement("_",null,new ArrayList<String>());
 	}
 	
 	

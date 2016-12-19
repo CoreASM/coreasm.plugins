@@ -1,30 +1,41 @@
+/*	
+ * SelektorFunction.java 	1.0
+ * 
+ *
+ * Copyright (C) 2016 Matthias Jörg
+ *
+ * Licensed under the Academic Free License version 3.0 
+ *   http://www.opensource.org/licenses/afl-3.0.php
+ *   http://www.coreasm.org/afl-3.0.php
+ *
+ */
+
 package org.coreasm.engine.plugins.adt;
 
 import java.util.List;
 
 import org.coreasm.engine.absstorage.Element;
 import org.coreasm.engine.absstorage.FunctionElement;
-import org.coreasm.engine.interpreter.Interpreter;
 
 public class SelektorFunction extends FunctionElement {
 
 	private String datatype; //name of the datatype
 	private String dataconstructor; //name of the specific dataconstructor
 	private int place; //index of the parameter
-	private Interpreter interpreter;
 	
 	
 	
-	public SelektorFunction(String datatype, String dataconstructor, int place, Interpreter interpreter) {
+	public SelektorFunction(String datatype, String dataconstructor, int index) {
 		super();
 		this.datatype = datatype;
 		this.dataconstructor = dataconstructor;
-		this.place = place;
-		this.interpreter = interpreter;
+		this.place = index;
 	}
 
 	/*
-	 * the argument is the datatype
+	 * returns the parameter with this selectorName, 
+	 * returns an undefined Element, if the given Element hasn't got this selector,
+	 * the only argument is the datatype
 	 * 
 	 */
 	public Element getValue(List<? extends Element> args) {
@@ -34,12 +45,9 @@ public class SelektorFunction extends FunctionElement {
 			return Element.UNDEF;
 		}
 		
-		System.out.println(datatype  + " " + dataconstructor + " " + place);
-		
-		String valueName = args.get(0).toString();
-		System.out.println("Variable: " + valueName);
-		System.out.println("is DatatypeElement" + (args.get(0) instanceof DatatypeElement));
-		DatatypeElement value = (DatatypeElement) interpreter.getEnv(valueName);
+		String valueName = args.toString();
+
+		DatatypeElement value = (DatatypeElement) args.get(0);
 		
 		// if it is neither the same datatype nor the same dataconstructor, return a undefined Element
 		if(!(datatype.equals(value.getDatatype()) && dataconstructor.equals(value.getDataconstructor()))){
