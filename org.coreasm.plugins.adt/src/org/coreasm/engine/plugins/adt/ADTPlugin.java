@@ -92,7 +92,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			//The wildcard is treated as id, because the operator isn't accessible
 			Parser<Node> patternParser = idParser;
 			
-			for(int i =0; i<5; i++){
+			for(int i =0; i<64; i++){
 			
 			patternParser = Parsers.array(
 					new Parser[] {
@@ -350,7 +350,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			String valueName = pmNode.getVariableName(); 
 
 			DatatypeElement value = (DatatypeElement) iInstance.getEnv(valueName); 
-			System.out.println("Value to match:" + value.getDatatype() + " " + value.getDataconstructor() + " " + value.getParameter());
 			
 			//try to bind the value to each Pattern. If it fits, call the next given function. 
 			//If nothing fits, throw an error 
@@ -365,8 +364,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 				
 				//create DatatypeElement for the pattern
 				DatatypeElement pattern = (DatatypeElement) createDatatypeElement(pNode);
-				
-				System.out.println("Try to match pattern: " + pattern.getDatatype() + ", " + pattern.getDataconstructor() + ", " + pattern.getParameter());
 				
 				if(matchPattern(value, pattern, bindings)){
 					matchFound = true;
@@ -387,7 +384,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 				
 				// add all bindings to the environment, existing variables will be shadowed not replaced
 				for(Entry<String, Element> entry : bindings.entrySet()){
-					System.out.println("Add Environment " + entry.getKey());
 					iInstance.addEnv(entry.getKey(), entry.getValue());
 				}
 				
@@ -397,7 +393,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 				// remove all bindings in the environment, shadowed variables will be restored
 				// the environment will be reset how it was before the patternMatching
 				for(String entry : bindings.keySet()){
-					System.out.println("Remove Environment " + entry);
 					iInstance.removeEnv(entry);
 				}
 			
@@ -602,8 +597,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		
 		//Variable alwas match the pattern and creates a new binding
 		if(pattern.isVariable()){
-			System.out.println("There's a new binding");
-			bindings.put(pattern.getVariableName(),pattern);
+			bindings.put(pattern.getVariableName(), value);
 			return true;
 		}
 		
@@ -616,14 +610,25 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		//check, if all parameters match recursive
 		for(int i = 0; i < pattern.getParameter().size(); i++){
 			
-			Object valueParameter = value.getParameter(i);
-			Object patternParameter = value.getParameter(i);
-			
-			System.out.println("Check Parameter: " + patternParameter);
+			Element valueParameter = value.getParameter(i);
+			Element patternParameter = pattern.getParameter(i);
 			
 			//check if it is a DatatypeElement and call the matching-Algorithm recursively. If it fails, this matching fails
 			if(patternParameter instanceof DatatypeElement && valueParameter instanceof DatatypeElement){
 				matchPattern((DatatypeElement) valueParameter, (DatatypeElement) patternParameter, bindings);
+			
+			//If Variable isn't a Datatype, check Pattern for Variable or Wildcard
+			//If Pattern is a DatatypeElement (not Wildcard or Variable) and the value not, return false
+			}else if(patternParameter instanceof DatatypeElement){
+				DatatypeElement patternElement = (DatatypeElement) patternParameter;
+				
+				if(patternElement.isWildcard()){
+				}else if(patternElement.isVariable()){
+					bindings.put(patternElement.getVariableName(), valueParameter);
+				}else{
+					return false;
+				}
+				
 			}else{
 			//else check if they're the same
 				if(! patternParameter.equals(valueParameter))

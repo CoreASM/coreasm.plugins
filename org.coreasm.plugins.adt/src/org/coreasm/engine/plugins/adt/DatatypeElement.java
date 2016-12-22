@@ -40,7 +40,7 @@ public class DatatypeElement extends Element {
 	 * creates a Variable-DatatypeElement with the given name
 	 */
 	public static DatatypeElement variable(String name){
-		return new DatatypeElement(name, "", new ArrayList<Element>());
+		return new DatatypeElement("variable", name, new ArrayList<Element>());
 	}
 	
 	public Element getParameter(int index){
@@ -68,7 +68,9 @@ public class DatatypeElement extends Element {
 	}
 
 	public String getVariableName() {
-		return getDatatype();
+		if(isVariable())
+			return getDataconstructor();
+		return "";
 	}
 	
 	@Override
