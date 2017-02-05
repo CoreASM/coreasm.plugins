@@ -53,7 +53,7 @@ public class DataconstructorBackgroundElement extends BackgroundElement{
 	}
 
 	public static DataconstructorBackgroundElement wildcard() {
-		return new DataconstructorBackgroundElement("_",null,new ArrayList<String>());
+		return new DataconstructorBackgroundElement("Wildcard","_",new ArrayList<String>());
 	}
 	
 	

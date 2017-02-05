@@ -33,7 +33,7 @@ public class DatatypeElement extends Element {
 	 * creates a default Wildcard-DatatypeElement
 	 */
 	public static DatatypeElement wildcard(){
-		return new DatatypeElement("_", "" , new ArrayList<Element>());
+		return new DatatypeElement("Wildcard", "_" , new ArrayList<Element>());
 	}
 	
 	/*
@@ -60,7 +60,7 @@ public class DatatypeElement extends Element {
 	}
 	
 	public boolean isWildcard(){
-		return datatype.equals("_");
+		return datatype.equals("Wildcard");
 	}
 	
 	public boolean isVariable(){

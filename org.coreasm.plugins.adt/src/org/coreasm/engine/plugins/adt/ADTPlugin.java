@@ -20,6 +20,7 @@ import org.coreasm.engine.absstorage.RuleElement;
 import org.coreasm.engine.absstorage.UniverseElement;
 import org.coreasm.engine.absstorage.UpdateMultiset;
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.Interpreter;
 import org.coreasm.engine.interpreter.Node;
 import org.coreasm.engine.kernel.Kernel;
@@ -85,38 +86,30 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			//Parser<Node> ruleADTParser = kernel.getRuleADTParser(); 
 
 			ParserTools pTools = ParserTools.getInstance(capi);
+			
+			//get important Parser
 			Parser<Node> idParser = pTools.getIdParser();
 			Parser<Node> termParser  = kernel.getTermParser();
-			
-			// Pattern : ID ( '(' Pattern (',' Pattern)* ')' )? | '_', there has to be a wildcard or a variable in the 5th recursive stage
-			//The wildcard is treated as id, because the operator isn't accessible
-			Parser<Node> patternParser = idParser;
-			
-			for(int i =0; i<64; i++){
-			
-			patternParser = Parsers.array(
+			Parser<Node> functionParser = kernel.getFunctionRuleTermParser();
+						
+			//Pattern: FunctionRuleTerm, is interpreted by the PatternMatchNode
+			Parser<Node> patternParser = Parsers.array(
 					new Parser[] {
-							idParser,
-							pTools.seq(
-									pTools.getOprParser("("),
-									pTools.csplus(patternParser),
-									pTools.getOprParser(")")
-							).optional()
-					}
-					).map(
+							functionParser
+					}).map(
 							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
 									public Node map(Object[] vals) {
-										Node node = new PatternNode(((Node)vals[0]).getScannerInfo());
-										addChildren(node, vals);
-										return node;
+											Node node = new PatternNode(((Node)vals[0]).getScannerInfo());
+											addChildren(node, vals);
+											return node;
 									}
-						
+							
 							}
 					);
-			parsers.put("PatternDeclaration", new GrammarRule("PatternDeclaration", 
-				"ID ( '(' pattern , (',' pattern)* ')' )? | '_'", patternParser, PLUGIN_NAME));
+				parsers.put("PatternDeclaration", new GrammarRule("PatternDeclaration", 
+						"ID ( '(' pattern , (',' pattern)* ')' )? | '_'", patternParser, PLUGIN_NAME));
+
 			
-			}
 			
 			// typeconstructor : ID ( '(' ID ( ',' ID )* ')' )?
 			Parser<Node> typeconstructorParser = Parsers.array(
@@ -213,53 +206,18 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			parsers.put("DatatypeDefinition", new GrammarRule("DatatypeDefinition", 
 					"'datatype' ID ('(' ID (',' ID)* ')') '=' ID ('(' ID (':' ID)? (',' ID (':' ID)? )* ')') ( '|' ID ('(' ID (':' ID)? (',' ID (':' ID)?)* ')') )**", datatypeParser, PLUGIN_NAME));
 			
-			/* Replaced by Operator
-			// SelektorDefinition : ID '.' ID
-			Parser<Node> selektorParser = Parsers.array(
-					new Parser[] {
-							idParser,
-							pTools.getOprParser("."),
-							idParser
-					}).map(
-							new ParserTools.ArrayParseMap(PLUGIN_NAME) {
+			// Selector replaced by Operator and functionElement
 
-									public Node map(Object[] vals) {
-											Node node = new SelektorNode(((Node)vals[0]).getScannerInfo());
-											addChildren(node, vals);
-											return node;
-									}
-						
-							}
-			);
-				, Other Selektor-Parser,  replaced by FunctionRuleTerm
-					Parsers.array(
-							new Parser[] {
-									idParser,
-									pTools.getOprParser("("),
-									idParser,
-									pTools.getOprParser(")")
-							}).map(
-									new ParserTools.ArrayParseMap(PLUGIN_NAME) {
-
-										public Node map(Object[] vals) {
-											Node node = new SelektorNode(((Node)vals[0]).getScannerInfo());
-											addChildren(node, vals);
-											return node;
-										}
-						
-									}
-			)
-					
-			parsers.put("SelektorDefinition", new GrammarRule("SelektorDefinition", 
-					"ID '.' ID", selektorParser, PLUGIN_NAME));
-			*/
 
 			// PatternMatchDefinition : 'match' '(' ID ')' 'on' '(' ( ( '|' Pattern )+ '->' Term)+ ')'
 			Parser<Node> patternMatchParser = Parsers.array(
 					new Parser[] {
 							pTools.getKeywParser("match", PLUGIN_NAME),
 							pTools.getOprParser("("),
-							idParser,
+							Parsers.or(
+									idParser,
+									functionParser
+							),
 							pTools.getOprParser(")"),
 							pTools.getKeywParser("on", PLUGIN_NAME),
 							pTools.getOprParser("("),
@@ -298,7 +256,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 					new Parser[] {
 						Parsers.or(
 								datatypeParser,
-								//selektorParser,
 								patternMatchParser)
 						}).map(
 						new ParserTools.ArrayParseMap(PLUGIN_NAME) {
@@ -334,22 +291,36 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		String x = pos.getToken();
 		String gClass = pos.getGrammarClass();
 		
+		System.out.println("Interpreting node " + x);
 		
-		if (pos instanceof PatternMatchNode){
+		
+		if ("PatternMatchNode".equals(x)){
+			System.out.println("hab den node");
 			PatternMatchNode pmNode = (PatternMatchNode) pos;
-			
-			/*if(!pmNode.getValueNode().isEvaluated()){
-				return pmNode.getValueNode();
-			
-			}*/
 			
 			//get the InterpreterInstance to read and change the environment
 			Interpreter iInstance = capi.getInterpreter().getInterpreterInstance();
 			
-			//get the Datatype-value, which should be pattern-matched
-			String valueName = pmNode.getVariableName(); 
-
-			DatatypeElement value = (DatatypeElement) iInstance.getEnv(valueName); 
+			Element value =  Element.UNDEF;
+			ASTNode valueNode = pmNode.getValueNode();
+			
+			//look if the value to match is a variable or a new Element
+			//it its a FunctionRuleTerm, evaluate it
+			//else get the value of the variable
+			if(valueNode instanceof FunctionRuleTermNode){
+				
+				System.out.println("Evaluate ValueNode");
+				if(!valueNode.isEvaluated())
+					return valueNode;
+				
+				value = valueNode.getValue(); 
+				
+			}else{
+				//get the Datatype-value, which should be pattern-matched
+				String valueName = pmNode.getVariableName(); 
+	
+				value = iInstance.getEnv(valueName); 
+			}
 			
 			//try to bind the value to each Pattern. If it fits, call the next given function. 
 			//If nothing fits, throw an error 
@@ -359,12 +330,19 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			//The resultNode is the TermParserNode of the corresponding Pattern
 			ASTNode resultNode = null;
 			
+			System.out.println("Try to match to a pattern");
 			
 			for (PatternNode pNode : pmNode.getPatternNodes()){
 				
-				//create DatatypeElement for the pattern
-				DatatypeElement pattern = (DatatypeElement) createDatatypeElement(pNode);
+				System.out.println("Create Pattern-Element");
+				//evaluate the pattern
+				if(!pNode.isEvaluated())
+					return pNode;
 				
+				//create a Element for the pattern
+				Element pattern = createPatternElement(pNode);
+				
+				System.out.println("Try to match pattern");
 				if(matchPattern(value, pattern, bindings)){
 					matchFound = true;
 					resultNode = pmNode.getResult(pNode);
@@ -378,14 +356,17 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			//
 			if(matchFound){
 				//check if the result is already interpreted, otherwise interpret it and then return to this node
-				if(!resultNode.isEvaluated())
+				if(!resultNode.isEvaluated()){
+					
+					// add all bindings to the environment, existing variables will be shadowed not replaced
+					for(Entry<String, Element> entry : bindings.entrySet()){
+						iInstance.addEnv(entry.getKey(), entry.getValue());
+					}
+					
+					//then evaluate the result
 					return resultNode;
-				
-				
-				// add all bindings to the environment, existing variables will be shadowed not replaced
-				for(Entry<String, Element> entry : bindings.entrySet()){
-					iInstance.addEnv(entry.getKey(), entry.getValue());
 				}
+				
 				
 				// "return" the value of the patternMatch-Term to the higher expression
 				pos.setNode(null, new UpdateMultiset(), resultNode.getValue());
@@ -398,17 +379,60 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			
 			}else{
 				throw new CoreASMError("Cannot match the value " + pmNode.getVariableName() + " to a pattern." + 
-            		"Try to use a Default-Pattern with a wildcard.", pmNode);
+	        		"Try to use a Default-Pattern with a wildcard.", pmNode);
 			}
+		}else{
+			System.out.println("Zu dumm zum matchen");
 		}
 		
 		return nextPos;
 	}
 
-
-	private Element createDatatypeElement(PatternNode pNode){
+	private Element createPatternElement(PatternNode pNode){
 		
-		//check if it's a wildcard
+		//in each PatternNode, there is a FunctionRuleTerm, which has to be extractet und evaluated
+		for(ASTNode node : pNode.getAbstractChildNodes()){
+			if(node instanceof FunctionRuleTermNode){
+				
+				return createPatternElement((FunctionRuleTermNode)node);
+			}
+		}
+		
+		return Element.UNDEF;
+		
+	}
+	
+	private Element createPatternElement(FunctionRuleTermNode pNode){
+		
+		//check if it's a single function or variable
+		//then return this Element; if it's undefined, its a variable
+		if(!pNode.hasArguments()){
+			Element value = pNode.getValue();
+			if (value.equals(Element.UNDEF)){
+				return DatatypeElement.variable(pNode.getName());
+			}
+			return value;
+		}else{
+		//else it's a DatatypeElement and the function is in our functions-HashMap
+		 
+			//get function
+			String functionName = pNode.getName();
+			FunctionElement dcFunction = functions.get(functionName);
+			
+			//get all arguments
+			ArrayList<Element> arguments = new ArrayList<Element>();
+			
+			for(ASTNode node : pNode.getArguments()){
+				if(node instanceof FunctionRuleTermNode){
+					arguments.add(createPatternElement((FunctionRuleTermNode)node));
+				}
+			}
+			
+			//pass all arguments to the DataconstructorFunction and return this value
+			return dcFunction.getValue(arguments);
+			
+		}
+		/*check if it's a wildcard
 		if(pNode.isWildcard()){
 			return DatatypeElement.wildcard();
 		}else if(functions.get(pNode.getName()) == null  && (!pNode.hasSubPatterns())){
@@ -417,24 +441,22 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		}else if(functions.containsKey(pNode.getName())){
 			//get the dataconstructorName
 			String dcName = pNode.getName();
-			
+					
 			//the datatype-Name is taken from the corresponding FunctionElement
 			String dtName = ((DataconstructorFunction)functions.get(dcName)).DATATYPE_NAME;
-			
+					
 			//put all parameter into an ArrayList, look out for further dataconstructors
 			ArrayList<Element> parameter = new ArrayList<Element>();
-			
+					
 			for(PatternNode childNode : pNode.getSubPattern()){
 				if (childNode instanceof PatternNode){
-					parameter.add(createDatatypeElement(childNode));
+					parameter.add(createPatternElement(childNode));
 				}
 			}
-			
+					
 			return new DatatypeElement(dtName, dcName, parameter);
 		}
-		
-		return Element.UNDEF;
-		
+		*/
 	}
 
 	private void processDefinitions(){
@@ -446,7 +468,10 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
         processingDefinitions = true;
         if (functions == null) {        
             functions = new HashMap<String,FunctionElement>();
-            //functionClass = new HashMap<String,FunctionClass>();
+            
+            //Add the wildcard as a constant DataconstructorFunction
+            DataconstructorFunction dcFunction = new DataconstructorFunction("Wildcard", "_", new ArrayList<String>());
+			functions.put("_", dcFunction);
         }
         if (universes == null) {
             universes = new HashMap<String,UniverseElement>();            
@@ -455,7 +480,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
             backgrounds = new HashMap<String,BackgroundElement>();
             
             // Add the wildcard as a constant Datatype-background
-            backgrounds.put("_", DataconstructorBackgroundElement.wildcard());
+            backgrounds.put("Wildcard", DataconstructorBackgroundElement.wildcard());
         }
         if (rules == null) {
             rules = new HashMap<String,RuleElement>();
@@ -588,53 +613,47 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		return true;
 	}
 	
-	private boolean matchPattern(DatatypeElement value, DatatypeElement pattern, HashMap<String, Element> bindings){
+	private boolean matchPattern(Element value, Element pattern, HashMap<String, Element> bindings){
+		
+		//if its not a DatatypeElement, wildcard or variable, check if they're equal
+		if(!(pattern instanceof DatatypeElement)){
+			return value.equals(pattern);
+		}else if (!(value instanceof DatatypeElement)){
+			return false;
+		}
+		
+		//now it's sure both are a DatatypeElement
+		DatatypeElement valueDT = (DatatypeElement) value;
+		DatatypeElement patternDT = (DatatypeElement) pattern;
 		
 		//Wildcard always match the pattern
-		if(pattern.isWildcard()){
+		if(patternDT.isWildcard()){
 			return true;
 		}
 		
 		//Variable alwas match the pattern and creates a new binding
-		if(pattern.isVariable()){
-			bindings.put(pattern.getVariableName(), value);
+		if(patternDT.isVariable()){
+			bindings.put(patternDT.getVariableName(), value);
 			return true;
 		}
 		
 		//typecheck, it is of the same type and dataconstructor
-		if((!value.getDatatype().equals(pattern.getDatatype())) || (!value.getDataconstructor().equals(pattern.getDataconstructor()))){
+		if((!valueDT.getDatatype().equals(patternDT.getDatatype())) || (!valueDT.getDataconstructor().equals(patternDT.getDataconstructor()))){
 			return false;
 		}
 		
 		
 		//check, if all parameters match recursive
-		for(int i = 0; i < pattern.getParameter().size(); i++){
+		for(int i = 0; i < patternDT.getParameter().size(); i++){
 			
-			Element valueParameter = value.getParameter(i);
-			Element patternParameter = pattern.getParameter(i);
+			Element valueParameter = valueDT.getParameter(i);
+			Element patternParameter = patternDT.getParameter(i);
 			
-			//check if it is a DatatypeElement and call the matching-Algorithm recursively. If it fails, this matching fails
-			if(patternParameter instanceof DatatypeElement && valueParameter instanceof DatatypeElement){
-				matchPattern((DatatypeElement) valueParameter, (DatatypeElement) patternParameter, bindings);
-			
-			//If Variable isn't a Datatype, check Pattern for Variable or Wildcard
-			//If Pattern is a DatatypeElement (not Wildcard or Variable) and the value not, return false
-			}else if(patternParameter instanceof DatatypeElement){
-				DatatypeElement patternElement = (DatatypeElement) patternParameter;
-				
-				if(patternElement.isWildcard()){
-				}else if(patternElement.isVariable()){
-					bindings.put(patternElement.getVariableName(), valueParameter);
-				}else{
-					return false;
-				}
-				
-			}else{
-			//else check if they're the same
-				if(! patternParameter.equals(valueParameter))
-					return false;
-				
-			}
+			//call the matching-Algorithm recursively. 
+			//If it fails, this matching fails
+			if (!matchPattern(valueParameter, patternParameter, bindings))
+				return false;
+		
 		}
 		
 		return true;

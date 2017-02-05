@@ -28,8 +28,8 @@ public class PatternMatchNode extends ASTNode {
         super(
         		ADTPlugin.PLUGIN_NAME,
         		ASTNode.FUNCTION_RULE_CLASS,
-        		"PatternMatchDefinition",
-        		null,
+        		"PatternsAndResult",
+        		"PatternMatchNode",
         		info
         		);
     }
