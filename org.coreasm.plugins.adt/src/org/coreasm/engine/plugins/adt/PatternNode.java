@@ -16,6 +16,7 @@ package org.coreasm.engine.plugins.adt;
 import java.util.ArrayList;
 
 import org.coreasm.engine.interpreter.ASTNode;
+import org.coreasm.engine.interpreter.FunctionRuleTermNode;
 import org.coreasm.engine.interpreter.ScannerInfo;
 
 public class PatternNode extends ASTNode {
@@ -29,7 +30,7 @@ public class PatternNode extends ASTNode {
         		ADTPlugin.PLUGIN_NAME,
         		ASTNode.FUNCTION_RULE_CLASS,
         		"Pattern",
-        		null,
+        		"PatternNode",
         		info
         		);
     }
@@ -43,23 +44,14 @@ public class PatternNode extends ASTNode {
         return getFirst().getToken();
     }
     
-    public boolean isWildcard(){
-    	return "_".equals(getName());
-    }
-    
-    public boolean hasSubPatterns(){
-    	return (!getSubPattern().isEmpty());
-    }
-    
-    public ArrayList<PatternNode> getSubPattern(){
-    	ArrayList<PatternNode> subNodes = new ArrayList<PatternNode>();
+    public FunctionRuleTermNode getPattern(){
     	
     	for(ASTNode child : getAbstractChildNodes()){
-    		if(child instanceof PatternNode){
-    			subNodes.add((PatternNode)child);
+    		if(child instanceof FunctionRuleTermNode){
+    			return (FunctionRuleTermNode)child;
     		}
     	}
     	
-    	return subNodes;
+    	return null;
     }
 }

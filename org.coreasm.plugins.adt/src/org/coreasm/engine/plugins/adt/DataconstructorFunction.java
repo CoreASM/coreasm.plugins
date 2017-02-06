@@ -60,7 +60,11 @@ public class DataconstructorFunction extends FunctionElement{
 					
 				//if it is a Element, typecheck it
 				Element arg = (Element) args.get(i);
-				if(!arg.getBackground().equals(PARAMETERS.get(i)))
+				
+				if(arg.getBackground().equals(DatatypeElement.getWildcardTyp()) || arg.getBackground().equals(DatatypeElement.getVariableTyp()))
+					return true;
+				
+				if(!arg.getBackground().equals(PARAMETERS.get(i) ))
 				{
 					System.out.println( new CoreASMError("Typechecking-Error at Dataconstructor " + DATACONSTRUCTOR_NAME + " of the datatype " + DATATYPE_NAME + " in the " + i  + ". argument. \n "
 							+ "An Element of the type " + PARAMETERS.get(i) + " was expected, but there is an Element of the type " + arg.getBackground()));

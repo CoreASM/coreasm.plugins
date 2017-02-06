@@ -291,115 +291,107 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 		String x = pos.getToken();
 		String gClass = pos.getGrammarClass();
 		
-		System.out.println("Interpreting node " + x);
-		
-		
-		if ("PatternMatchNode".equals(x)){
-			System.out.println("hab den node");
-			PatternMatchNode pmNode = (PatternMatchNode) pos;
-			
-			//get the InterpreterInstance to read and change the environment
-			Interpreter iInstance = capi.getInterpreter().getInterpreterInstance();
-			
-			Element value =  Element.UNDEF;
-			ASTNode valueNode = pmNode.getValueNode();
-			
-			//look if the value to match is a variable or a new Element
-			//it its a FunctionRuleTerm, evaluate it
-			//else get the value of the variable
-			if(valueNode instanceof FunctionRuleTermNode){
-				
-				System.out.println("Evaluate ValueNode");
-				if(!valueNode.isEvaluated())
-					return valueNode;
-				
-				value = valueNode.getValue(); 
-				
+		if(pos instanceof PatternNode){
+			PatternNode pNode = (PatternNode) pos;
+			FunctionRuleTermNode fNode = pNode.getPattern();
+			if(!fNode.isEvaluated()){
+				return fNode;
 			}else{
-				//get the Datatype-value, which should be pattern-matched
-				String valueName = pmNode.getVariableName(); 
-	
-				value = iInstance.getEnv(valueName); 
+				pNode.setNode(fNode.getLocation(), fNode.getUpdates(), fNode.getValue());
+				return nextPos;
 			}
+		}
+		
+		PatternMatchNode pmNode = (PatternMatchNode) pos;
 			
-			//try to bind the value to each Pattern. If it fits, call the next given function. 
-			//If nothing fits, throw an error 
-			boolean matchFound = false;
-			HashMap<String, Element> bindings = new HashMap<String, Element>();
+		//get the InterpreterInstance to read and change the environment
+		Interpreter iInstance = capi.getInterpreter().getInterpreterInstance();
 			
-			//The resultNode is the TermParserNode of the corresponding Pattern
-			ASTNode resultNode = null;
+		Element value =  Element.UNDEF;
+		ASTNode valueNode = pmNode.getValueNode();
 			
-			System.out.println("Try to match to a pattern");
-			
-			for (PatternNode pNode : pmNode.getPatternNodes()){
+		//look if the value to match is a variable or a new Element
+		//it its a FunctionRuleTerm, evaluate it
+		//else get the value of the variable
+		if(valueNode instanceof FunctionRuleTermNode){
 				
-				System.out.println("Create Pattern-Element");
-				//evaluate the pattern
-				if(!pNode.isEvaluated())
-					return pNode;
+			if(!valueNode.isEvaluated())
+				return valueNode;
 				
-				//create a Element for the pattern
-				Element pattern = createPatternElement(pNode);
+			value = valueNode.getValue(); 
 				
-				System.out.println("Try to match pattern");
-				if(matchPattern(value, pattern, bindings)){
-					matchFound = true;
-					resultNode = pmNode.getResult(pNode);
-					break;
-				}else{
-					bindings.clear();
-				}
-				
-			}
-			
-			//
-			if(matchFound){
-				//check if the result is already interpreted, otherwise interpret it and then return to this node
-				if(!resultNode.isEvaluated()){
-					
-					// add all bindings to the environment, existing variables will be shadowed not replaced
-					for(Entry<String, Element> entry : bindings.entrySet()){
-						iInstance.addEnv(entry.getKey(), entry.getValue());
-					}
-					
-					//then evaluate the result
-					return resultNode;
-				}
-				
-				
-				// "return" the value of the patternMatch-Term to the higher expression
-				pos.setNode(null, new UpdateMultiset(), resultNode.getValue());
-				
-				// remove all bindings in the environment, shadowed variables will be restored
-				// the environment will be reset how it was before the patternMatching
-				for(String entry : bindings.keySet()){
-					iInstance.removeEnv(entry);
-				}
-			
-			}else{
-				throw new CoreASMError("Cannot match the value " + pmNode.getVariableName() + " to a pattern." + 
-	        		"Try to use a Default-Pattern with a wildcard.", pmNode);
-			}
 		}else{
-			System.out.println("Zu dumm zum matchen");
+			//get the Datatype-value, which should be pattern-matched
+			String valueName = pmNode.getVariableName(); 
+	
+			value = iInstance.getEnv(valueName); 
 		}
-		
-		return nextPos;
-	}
-
-	private Element createPatternElement(PatternNode pNode){
-		
-		//in each PatternNode, there is a FunctionRuleTerm, which has to be extractet und evaluated
-		for(ASTNode node : pNode.getAbstractChildNodes()){
-			if(node instanceof FunctionRuleTermNode){
+			
+		//try to bind the value to each Pattern. If it fits, call the next given function. 
+		//If nothing fits, throw an error 
+		boolean matchFound = false;
+		HashMap<String, Element> bindings = new HashMap<String, Element>();
+			
+		//The resultNode is the TermParserNode of the corresponding Pattern
+		ASTNode resultNode = null;
+			
+		System.out.println("--------------------------");
+		System.out.println("Try to match" + value.toString());
+		System.out.println();
+			
+		for (PatternNode pNode : pmNode.getPatternNodes()){
 				
-				return createPatternElement((FunctionRuleTermNode)node);
+			FunctionRuleTermNode patNode = pNode.getPattern();
+			
+			//evaluate the pattern
+			if(!patNode.isEvaluated())
+				return patNode;
+				
+			//create a Element for the pattern
+			Element pattern = createPatternElement(patNode);
+				
+			System.out.println();
+			System.out.println("Try to match pattern");
+			if(matchPattern(value, pattern, bindings)){
+				matchFound = true;
+				resultNode = pmNode.getResult(pNode);
+				break;
+			}else{
+				bindings.clear();
 			}
+				
 		}
-		
-		return Element.UNDEF;
-		
+			
+		//
+		if(matchFound){
+			//check if the result is already interpreted, otherwise interpret it and then return to this node
+			if(!resultNode.isEvaluated()){
+					
+				// add all bindings to the environment, existing variables will be shadowed not replaced
+				for(Entry<String, Element> entry : bindings.entrySet()){
+					iInstance.addEnv(entry.getKey(), entry.getValue());
+				}
+					
+				//then evaluate the result
+				return resultNode;
+			}
+				
+				
+			// "return" the value of the patternMatch-Term to the higher expression
+			pos.setNode(null, new UpdateMultiset(), resultNode.getValue());
+			
+			// remove all bindings in the environment, shadowed variables will be restored
+			// the environment will be reset how it was before the patternMatching
+			for(String entry : bindings.keySet()){
+				iInstance.removeEnv(entry);
+			}
+			
+		}else{
+			throw new CoreASMError("Cannot match the value " + pmNode.getVariableName() + " to a pattern." + 
+	       		"Try to use a Default-Pattern with a wildcard.", pmNode);
+		}
+
+		return nextPos;
 	}
 	
 	private Element createPatternElement(FunctionRuleTermNode pNode){
@@ -425,6 +417,7 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			for(ASTNode node : pNode.getArguments()){
 				if(node instanceof FunctionRuleTermNode){
 					arguments.add(createPatternElement((FunctionRuleTermNode)node));
+					System.out.println("Add Element " + createPatternElement((FunctionRuleTermNode)node));
 				}
 			}
 			
@@ -432,31 +425,6 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 			return dcFunction.getValue(arguments);
 			
 		}
-		/*check if it's a wildcard
-		if(pNode.isWildcard()){
-			return DatatypeElement.wildcard();
-		}else if(functions.get(pNode.getName()) == null  && (!pNode.hasSubPatterns())){
-			return DatatypeElement.variable(pNode.getName());
-		//if it is a Dataconstructor, there is a functionElement in the function-HashMap
-		}else if(functions.containsKey(pNode.getName())){
-			//get the dataconstructorName
-			String dcName = pNode.getName();
-					
-			//the datatype-Name is taken from the corresponding FunctionElement
-			String dtName = ((DataconstructorFunction)functions.get(dcName)).DATATYPE_NAME;
-					
-			//put all parameter into an ArrayList, look out for further dataconstructors
-			ArrayList<Element> parameter = new ArrayList<Element>();
-					
-			for(PatternNode childNode : pNode.getSubPattern()){
-				if (childNode instanceof PatternNode){
-					parameter.add(createPatternElement(childNode));
-				}
-			}
-					
-			return new DatatypeElement(dtName, dcName, parameter);
-		}
-		*/
 	}
 
 	private void processDefinitions(){
@@ -615,27 +583,37 @@ public class ADTPlugin extends Plugin implements ParserPlugin, VocabularyExtende
 	
 	private boolean matchPattern(Element value, Element pattern, HashMap<String, Element> bindings){
 		
-		//if its not a DatatypeElement, wildcard or variable, check if they're equal
+		//if the pattern not a DatatypeElement, wildcard or variable, check if they're equal
 		if(!(pattern instanceof DatatypeElement)){
+			System.out.println("Check if it's equal");
+			System.out.println("Pattern is: " + pattern.toString() + "; Value is: " + value.toString());
 			return value.equals(pattern);
-		}else if (!(value instanceof DatatypeElement)){
-			return false;
 		}
 		
-		//now it's sure both are a DatatypeElement
-		DatatypeElement valueDT = (DatatypeElement) value;
+		System.out.println("Datatype Handling");
+		
+		//it's sure, the pattern is a DatatypeElement
 		DatatypeElement patternDT = (DatatypeElement) pattern;
 		
 		//Wildcard always match the pattern
 		if(patternDT.isWildcard()){
+			System.out.println("Pattern is wildcard");
 			return true;
 		}
 		
 		//Variable alwas match the pattern and creates a new binding
 		if(patternDT.isVariable()){
+			System.out.println("Pattern is variable " + patternDT.getVariableName());
 			bindings.put(patternDT.getVariableName(), value);
 			return true;
 		}
+		
+		//if the pattern is no Wildcard or variable and the value is no DatatypeElement, there's no possible matching
+		if(!(value instanceof DatatypeElement))
+				return false;
+		
+		//Else the value is a DatatypeElement too
+		DatatypeElement valueDT = (DatatypeElement) value;
 		
 		//typecheck, it is of the same type and dataconstructor
 		if((!valueDT.getDatatype().equals(patternDT.getDatatype())) || (!valueDT.getDataconstructor().equals(patternDT.getDataconstructor()))){

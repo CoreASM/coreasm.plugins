@@ -20,6 +20,8 @@ public class DatatypeElement extends Element {
 	private String datatype;
 	private String dataconstructor;
 	private ArrayList<Element> parameter;
+	private final static String WILDCARD = "Wildcard";
+	private final static String VARIABLE = "variable";
 	
 	
 	public DatatypeElement(String datatype, String dataconstructor, ArrayList<Element> parameter) {
@@ -33,14 +35,14 @@ public class DatatypeElement extends Element {
 	 * creates a default Wildcard-DatatypeElement
 	 */
 	public static DatatypeElement wildcard(){
-		return new DatatypeElement("Wildcard", "_" , new ArrayList<Element>());
+		return new DatatypeElement(WILDCARD, "_" , new ArrayList<Element>());
 	}
 	
 	/*
 	 * creates a Variable-DatatypeElement with the given name
 	 */
 	public static DatatypeElement variable(String name){
-		return new DatatypeElement("variable", name, new ArrayList<Element>());
+		return new DatatypeElement(VARIABLE, name, new ArrayList<Element>());
 	}
 	
 	public Element getParameter(int index){
@@ -60,13 +62,21 @@ public class DatatypeElement extends Element {
 	}
 	
 	public boolean isWildcard(){
-		return datatype.equals("Wildcard");
+		return datatype.equals(WILDCARD);
 	}
 	
 	public boolean isVariable(){
-		return datatype.equals("variable");
+		return datatype.equals(VARIABLE);
+	}
+	
+	public static String getWildcardTyp(){
+		return WILDCARD;
 	}
 
+	public static String getVariableTyp(){
+		return VARIABLE;
+	}
+	
 	public String getVariableName() {
 		if(isVariable())
 			return getDataconstructor();
